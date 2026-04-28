@@ -1,0 +1,565 @@
+/* ============================================================
+   Quro — Global Stylesheet
+   High-End Medical Spa Design System
+   Brushed Metals · Soft Teal Illumination · Frosted Glass
+   Quro Systems by ModernQure LLC © 2026
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   THEME: Custom Properties
+   ============================================================ */
+@theme {
+  --color-quro-50: #f0fdfa;
+  --color-quro-100: #ccfbf1;
+  --color-quro-200: #99f6e4;
+  --color-quro-300: #5eead4;
+  --color-quro-400: #2dd4bf;
+  --color-quro-500: #14b8a6;
+  --color-quro-600: #0d9488;
+  --color-quro-700: #0f766e;
+  --color-quro-800: #115e59;
+  --color-quro-900: #134e4a;
+  
+  --color-quro-slate: #F8FAFC;
+  --color-quro-charcoal: #1E293B;
+  --color-quro-teal: #0D9488;
+  --color-quro-glow: #14B8A6;
+
+  --color-alert-amber: #f59e0b;
+  --color-alert-amber-soft: #fef3c7;
+  --color-alert-red: #ef4444;
+  --color-alert-red-soft: #fef2f2;
+  --color-alert-green: #22c55e;
+  --color-alert-green-soft: #f0fdf4;
+
+  --color-surface-primary: #4A5E6F;
+  --color-surface-card: rgba(255, 255, 255, 0.08);
+  --color-surface-glass: rgba(255, 255, 255, 0.12);
+  --color-surface-frost: rgba(248, 250, 252, 0.1);
+  --color-surface-dark: #2A3A48;
+  --color-surface-sidebar: rgba(0, 0, 0, 0.15);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --shadow-glass: 0 8px 32px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.4);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 16px rgba(15, 23, 42, 0.03);
+  --shadow-card-hover: 0 8px 40px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-glow-teal: 0 0 24px rgba(13, 148, 136, 0.2), 0 0 60px rgba(13, 148, 136, 0.08);
+  --shadow-glow-amber: 0 0 24px rgba(245, 158, 11, 0.2), 0 0 60px rgba(245, 158, 11, 0.08);
+  --shadow-glow-red: 0 0 24px rgba(239, 68, 68, 0.15), 0 0 60px rgba(239, 68, 68, 0.06);
+  --shadow-inner-glass: inset 0 1px 1px rgba(255, 255, 255, 0.4);
+
+  @keyframes pulse-teal {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .7; transform: scale(1.02); }
+  }
+
+  --animate-pulse-teal: pulse-teal 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  --spacing-sidebar: 264px;
+
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-surface-primary);
+  /* Subtle depth with radial gradients */
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 70%),
+    radial-gradient(circle at 100% 100%, rgba(20,184,166,0.03) 0%, transparent 50%);
+  color: white;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   FROSTED GLASS CARDS
+   Semi-transparent "frost" with depth
+   ============================================================ */
+.glass {
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Brushed-metal inner highlight */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.7) 20%,
+    rgba(255,255,255,0.9) 50%,
+    rgba(255,255,255,0.7) 80%,
+    transparent 100%
+  );
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+/* ============================================================
+   GLOW STATES — Soft, Pulsing, Non-Alarming
+   Catches the eye without feeling cheap
+   ============================================================ */
+@keyframes pulse-glow-teal {
+  0%, 100% { box-shadow: 0 0 12px rgba(13, 148, 136, 0.1), 0 0 40px rgba(13, 148, 136, 0.04); }
+  50% { box-shadow: 0 0 20px rgba(13, 148, 136, 0.2), 0 0 60px rgba(13, 148, 136, 0.08); }
+}
+
+@keyframes pulse-glow-amber {
+  0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.1), 0 0 40px rgba(245, 158, 11, 0.04); }
+  50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.2), 0 0 60px rgba(245, 158, 11, 0.08); }
+}
+
+@keyframes pulse-glow-red {
+  0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.08), 0 0 40px rgba(239, 68, 68, 0.03); }
+  50% { box-shadow: 0 0 24px rgba(239, 68, 68, 0.16), 0 0 60px rgba(239, 68, 68, 0.06); }
+}
+
+.glow-active { animation: var(--animate-pulse-teal); }
+.glow-warning { animation: pulse-glow-amber 3s ease-in-out infinite; }
+.glow-critical { animation: pulse-glow-red 2.5s ease-in-out infinite; }
+
+/* Medical Spa Glassmorphism */
+.glass-card-quro {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-inner-glass), var(--shadow-card);
+}
+
+.critical-glow-quro {
+  border-color: rgba(20, 184, 166, 0.5);
+  box-shadow: var(--shadow-glow-teal);
+  animation: var(--animate-pulse-teal);
+  background: radial-gradient(circle at center, rgba(20, 184, 166, 0.1) 0%, transparent 70%);
+}
+
+/* ============================================================
+   SHIMMER EFFECT — High-End Micro-Interaction
+   Used on Shift Handshake button and primary CTAs
+   ============================================================ */
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 40%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.15) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  transition: none;
+  pointer-events: none;
+}
+
+.shimmer-btn:hover::after {
+  animation: shimmer 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.shimmer-btn:active::after {
+  animation: shimmer 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ============================================================
+   SLIDE-OVER PANEL (Deep Frosted Glass)
+   ============================================================ */
+.slide-over-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(6px);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.slide-over-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slide-over-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 500px;
+  max-width: 92vw;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: -12px 0 60px rgba(15, 23, 42, 0.08);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-y: auto;
+}
+
+.slide-over-panel.active {
+  transform: translateX(0);
+}
+
+/* ============================================================
+   SIDEBAR — Dark Gradient with Teal Illumination
+   ============================================================ */
+.sidebar {
+  width: var(--spacing-sidebar);
+  background: var(--color-surface-sidebar);
+  backdrop-filter: blur(20px);
+  color: white;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: radial-gradient(ellipse at 30% -20%, rgba(13,148,136,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 10px;
+  margin: 1px 12px;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  text-decoration: none;
+  position: relative;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.sidebar-link.active {
+  background: rgba(13, 148, 136, 0.1);
+  color: #5eead4;
+  box-shadow: inset 0 0 20px rgba(13, 148, 136, 0.05);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+/* ============================================================
+   MAIN CONTENT AREA
+   ============================================================ */
+.main-content {
+  margin-left: var(--spacing-sidebar);
+  min-height: 100vh;
+  padding: 28px 36px;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary {
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  color: white;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow-teal);
+}
+
+.btn-primary:hover::after {
+  animation: shimmer 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  color: #334155;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+.btn-alert {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
+}
+
+/* ============================================================
+   STATUS BADGES
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.badge-active { background: rgba(220, 252, 231, 0.7); color: #166534; backdrop-filter: blur(4px); }
+.badge-alert { background: rgba(254, 243, 199, 0.7); color: #92400e; backdrop-filter: blur(4px); }
+.badge-critical { background: rgba(254, 242, 242, 0.8); color: #991b1b; backdrop-filter: blur(4px); }
+.badge-info { background: rgba(224, 242, 254, 0.7); color: #075985; backdrop-filter: blur(4px); }
+.badge-muted { background: rgba(241, 245, 249, 0.8); color: #475569; backdrop-filter: blur(4px); }
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  color: #1e293b;
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.08), 0 0 16px rgba(20, 184, 166, 0.06);
+  background: rgba(255,255,255,0.9);
+}
+
+.input::placeholder { color: #94a3b8; }
+
+/* ============================================================
+   PATIENT CARD
+   ============================================================ */
+.patient-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.patient-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+/* Fall monitoring — soft amber glow bar */
+.patient-card.monitoring::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
+.patient-card.monitoring {
+  animation: pulse-glow-amber 3s ease-in-out infinite;
+}
+
+/* ============================================================
+   PRINT STYLES (High-Contrast B&W for Fax)
+   ============================================================ */
+@media print {
+  .sidebar, .no-print { display: none !important; }
+  .main-content { margin-left: 0 !important; padding: 0 !important; }
+  body { color: black !important; background: white !important; font-size: 10pt !important; }
+  .glass-card, .patient-card {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid black !important;
+    backdrop-filter: none !important;
+  }
+  * { color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ============================================================
+   MICRO-ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-in { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-slide { animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ============================================================
+   AUTH LAYOUT — Full viewport, no sidebar
+   ============================================================ */
+.auth-layout {
+  min-height: 100vh;
+  background: var(--color-surface-primary);
+}
+
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 0.7s linear infinite;
+}
+

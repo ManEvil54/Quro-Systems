@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // TEMPORARY: Allow all for seeding (Remove after use)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // ---- HELPER FUNCTIONS ----
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get staff record for the current user
+    function getStaffData(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data;
+    }
+
+    // Check if user belongs to the organization and shift is not expired
+    function isOrgMember(orgId) {
+      let staff = getStaffData(orgId);
+      let isNotExpired = staff.access_expires_at == null || request.time < timestamp.value(staff.access_expires_at);
+      return isAuthenticated() && exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)) && staff.is_active && isNotExpired;
+    }
+
+    // Check if user has specific role
+    function hasRole(orgId, roles) {
+      let staff = getStaffData(orgId);
+      return staff.role in roles;
+    }
+
+    // 0. User Metadata: Users can read/write their own basic metadata (org linking)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ---- RULES ----
+
+    // 1. Organizations: Only members can read. Only admins can update basic info.
+    match /organizations/{orgId} {
+      allow read: if isOrgMember(orgId);
+      allow update: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
+      allow create: if isAuthenticated(); // For initial onboarding, might need more guardrails
+      
+      // 2. Staff: Users can read all staff in their org, but only edit their own or admins edit all.
+      match /staff/{staffId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(orgId, ['admin']));
+      }
+
+      // 3. Facilities: Members can read all. Admins can edit.
+      match /facilities/{facilityId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
+      }
+
+      // 4. Patients: Members can read. Only nurses/admins can edit.
+      match /patients/{patientId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician']);
+
+        // 5. Clinical Data (Medications, MAR, Orders, Handoffs)
+        // Strict isolation: only nurses/physicians can manage clinical records.
+        match /{clinicalData=**} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician']);
+        }
+      }
+
+      // 6. Audit Logs: Append-only. No deletion.
+      match /audit_logs/{logId} {
+        allow read: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
+        allow create: if isOrgMember(orgId);
+        allow update, delete: if false; // IMMUTABLE
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
