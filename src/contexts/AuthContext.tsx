@@ -23,6 +23,7 @@ interface AuthContextType {
   organization: { id: string; name: string } | null;
   loading: boolean;
   isImpersonating: boolean;
+  impersonatedDonName: string | null;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (data: any) => Promise<void>;
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     staff: Staff | null;
     organization: { id: string, name: string } | null;
     isImpersonating: boolean;
+    impersonatedDonName: string | null;
     loading: boolean;
     error: string | null;
   }>({
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     staff: null,
     organization: null,
     isImpersonating: false,
+    impersonatedDonName: null,
     loading: true,
     error: null,
   });
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setState({ user, staff: staffData, organization: orgData, isImpersonating: false, loading: false, error: null });
+    setState({ user, staff: staffData, organization: orgData, isImpersonating: false, impersonatedDonName: null, loading: false, error: null });
   };
 
   // Helper: Perform Impersonation
@@ -104,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         staff: staffData,
         organization: orgData,
         isImpersonating: true,
+        impersonatedDonName: staffData ? `${staffData.first_name} ${staffData.last_name}` : orgData.name,
         loading: false,
         error: null
       });
@@ -154,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }, 
               organization: { id: 'SYSTEM', name: 'Quro Global Operations' }, 
               isImpersonating: false,
+              impersonatedDonName: null,
               loading: false, 
               error: null 
             });
@@ -173,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setState(prev => ({ ...prev, user, loading: false }));
         }
       } else {
-        setState({ user: null, staff: null, organization: null, isImpersonating: false, loading: false, error: null });
+        setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, loading: false, error: null });
       }
     });
 
