@@ -8,10 +8,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/client';
 import type { Staff, StaffRole } from '@/lib/firebase/types';
 
@@ -23,6 +25,7 @@ interface AuthContextType {
   isImpersonating: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (data: any) => Promise<void>;
   signOut: () => Promise<void>;
   impersonate: (orgId: string, staffId?: string) => Promise<void>;
   stopImpersonating: () => void;
@@ -144,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 phone: null,
                 is_active: true,
                 is_onboarded: true,
+                must_change_password: false,
+                access_expires_at: null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               }, 
@@ -185,6 +190,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (data: any) => {
+    setState((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
+      await updateProfile(credential.user, {
+        displayName: `${data.firstName} ${data.lastName}`,
+      });
+
+      await setDoc(doc(db, 'staff', credential.user.uid), {
+        auth_id: credential.user.uid,
+        org_id: '',
+        facility_id: null,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        initials: data.initials,
+        role: data.role,
+        credential: data.credential || null,
+        email: data.email,
+        phone: null,
+        is_active: true,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+    } catch (err: any) {
+      setState((s) => ({ ...s, loading: false, error: err.message }));
+      throw err;
+    }
+  };
+
   const impersonate = async (orgId: string, staffId?: string) => {
     if (!state.user) return;
     const idTokenResult = await state.user.getIdTokenResult();
@@ -211,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearError = () => setState((s) => ({ ...s, error: null }));
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut, impersonate, stopImpersonating, clearError }}>
+    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, impersonate, stopImpersonating, clearError }}>
       {children}
     </AuthContext.Provider>
   );
