@@ -1,0 +1,28 @@
+# ============================================================
+# Quro — Firebase App Hosting Configuration
+# ModernQure LLC
+# ============================================================
+kind: "AppHostingYaml"
+apiVersion: "v1beta"
+
+# Environment variables for build and runtime
+env:
+  # NEXT_PUBLIC variables must be available at BUILD time to be bundled into the client-side code.
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAcyoZHtkwsSY-f7Bsls76ThvNXGGm00ts"
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "quro-13d98.firebaseapp.com"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "quro-13d98"
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "quro-13d98.firebasestorage.app"
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "714072302945"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:714072302945:web:7d36c87b7b2b5900151120"
+  
+  # App specific configs
+  - variable: NEXT_PUBLIC_APP_NAME
+    value: "Quro"
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://quro-13d98.web.app"

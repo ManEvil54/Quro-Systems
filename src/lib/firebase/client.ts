@@ -15,15 +15,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Prevent re-initialization in dev hot-reload
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Validate config presence to prevent build-time crashes
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
 
-export const auth = getAuth(app);
+// Prevent re-initialization in dev hot-reload and handle missing config during build
+const app = getApps().length 
+  ? getApp() 
+  : (isConfigValid ? initializeApp(firebaseConfig) : undefined);
 
-// Configure Firestore for better reliability
-export const db = initializeFirestore(app, {
+// Safely export services (will be undefined during build if config is missing)
+export const auth = app ? getAuth(app) : ({} as any);
+export const db = app ? initializeFirestore(app, {
   experimentalForceLongPolling: true,
-});
+}) : ({} as any);
 
 // Enable persistence if possible
 if (typeof window !== 'undefined') {
