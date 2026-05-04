@@ -9,5 +9,11 @@
     "providers": {
       "emailPassword": true
     }
-  }
+  },
+  "apphosting": [
+    {
+      "backendId": "quro54",
+      "rootDir": "./"
+    }
+  ]
 }
