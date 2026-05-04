@@ -22,9 +22,10 @@ interface PatientCardProps {
   patient: any;
   isCritical: boolean;
   viewType: 'boutique' | 'enterprise';
+  showDiagnostics?: boolean;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType, showDiagnostics }) => {
   if (patient.empty) {
     return (
       <div className="bg-white/5 rounded-2xl p-4 flex flex-col items-center justify-center h-full min-h-[180px] opacity-10 border-dashed border-2 border-white/10">
@@ -142,6 +143,26 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
         </div>
         <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">CENSUS READY</span>
       </div>
+
+      {/* Diagnostic Overlay (Level 0 Only) */}
+      {showDiagnostics && (
+        <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-2">
+          <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest">
+            <span className="text-rose-300">Data Integrity</span>
+            <span className="text-white">ID: {patient.id.substring(0, 8)}...</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="px-2 py-1 bg-black/20 rounded-md">
+              <p className="text-[7px] text-slate-400 uppercase">MRN</p>
+              <p className="text-[9px] font-bold text-white tracking-tighter">{patient.mrn || '772-401'}</p>
+            </div>
+            <div className="px-2 py-1 bg-black/20 rounded-md">
+              <p className="text-[7px] text-slate-400 uppercase">Fall Protocol</p>
+              <p className="text-[9px] font-bold text-teal-400 tracking-tighter">{patient.is_active_monitoring ? 'ACTIVE' : 'NULL'}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

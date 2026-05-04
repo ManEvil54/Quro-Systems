@@ -15,12 +15,14 @@ import {
   Clock,
   LayoutDashboard
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
 
 export default function DashboardPage() {
   const [activeFacility, setActiveFacility] = useState('house-a');
   const [viewType, setViewType] = useState<'boutique' | 'enterprise'>('boutique');
+  const { isImpersonating } = useAuth();
   
   const facilityNames: Record<string, string> = {
     'house-a': 'Maple House',
@@ -42,7 +44,36 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="animate-in -m-8 p-8 min-h-screen bg-[#4A5E6F]">
+    <div className={`animate-in -m-8 p-8 min-h-screen bg-[#4A5E6F] ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
+      {/* Ghost Mode Advanced Tools */}
+      {isImpersonating && (
+        <div className="mb-8 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-rose-900/10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-rose-500 rounded-2xl text-white shadow-lg shadow-rose-500/20">
+              <ShieldAlert size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-rose-300 uppercase tracking-widest">Diagnostic Level 0 Active</p>
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">Advanced Diagnostics Console</h3>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Latency</p>
+              <p className="text-sm font-bold text-teal-400">0.02ms</p>
+            </div>
+            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Sync Load</p>
+              <p className="text-sm font-bold text-blue-400">12%</p>
+            </div>
+            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Audit Trail</p>
+              <p className="text-sm font-bold text-amber-400">Active</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-4 mb-8">
         {['house-a', 'house-b', 'house-c'].map((facId) => (
           <button
@@ -107,6 +138,7 @@ export default function DashboardPage() {
             patient={bed} 
             isCritical={bed.status === 'Critical'} 
             viewType={viewType}
+            showDiagnostics={isImpersonating}
           />
         ))}
       </div>
