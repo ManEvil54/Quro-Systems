@@ -81,6 +81,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+        {/* Core Links */}
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -100,14 +101,49 @@ export default function Sidebar() {
                 <item.icon size={18} className={isActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'} />
                 <span className={`font-medium tracking-wide ${isActive ? 'text-white' : ''}`}>{item.label}</span>
               </div>
-              {item.hasSubmenu && (
-                <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
             </Link>
           );
         })}
+
+        {/* Dynamic Admin Links */}
+        {staff?.role === 'SUPER_ADMIN' && (
+          <div className="pt-4 border-t border-white/5 mt-4">
+            <p className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Master Access</p>
+            <Link
+              href="/admin/master"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                pathname === '/admin/master' ? 'bg-white/5 text-amber-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <ShieldAlert size={18} />
+              <span className="font-medium">Master Console</span>
+            </Link>
+          </div>
+        )}
+
+        {staff?.role === 'FACILITY_ADMIN' && (
+          <div className="pt-4 border-t border-white/5 mt-4">
+            <p className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Administration</p>
+            <Link
+              href="/admin/facility"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                pathname === '/admin/facility' ? 'bg-white/5 text-teal-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Settings size={18} />
+              <span className="font-medium">Facility Manager</span>
+            </Link>
+            <Link
+              href="/admin/staff"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                pathname === '/admin/staff' ? 'bg-white/5 text-teal-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Users size={18} />
+              <span className="font-medium">Staff Roster</span>
+            </Link>
+          </div>
+        )}
 
         <div className="pt-8 space-y-2">
           {footerItems.map((item) => (
