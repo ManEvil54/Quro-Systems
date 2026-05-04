@@ -35,7 +35,7 @@ export default function HandoverPage() {
     general_notes: '',
     shift: 'day' as any,
     is_urgent: false,
-    patient_id: null,
+    patient_id: null as string | null,
     facility_id: staff?.facility_id || '',
     shift_date: new Date().toISOString().split('T')[0]
   });

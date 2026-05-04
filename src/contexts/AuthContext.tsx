@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (staffData && (!staffData.is_active || isExpired)) {
       await firebaseSignOut(auth);
       const reason = isExpired ? 'Your shift access has expired.' : 'Access revoked. Contact your DON.';
-      setState({ user: null, staff: null, organization: null, isImpersonating: false, loading: false, error: reason });
+      setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, loading: false, error: reason });
       return;
     }
 
