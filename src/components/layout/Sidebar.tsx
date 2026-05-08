@@ -62,8 +62,8 @@ export default function Sidebar() {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <div className="text-left">
-                <p className="text-slate-200 font-bold text-[10px] uppercase tracking-widest leading-none mb-1">Current Facility</p>
-                <p className="text-slate-400 font-medium text-xs truncate">Cedar House (25 Beds)</p>
+                <p className="text-teal-500 font-black text-[10px] uppercase tracking-widest leading-none mb-1">Current Facility</p>
+                <p className="text-slate-200 font-medium text-xs truncate">Maple House (6 Beds)</p>
               </div>
             </div>
             <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +160,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Profile Footer */}
-      <div className="px-4 py-6 border-t border-white/5">
+      <div className="px-4 py-6 border-t border-white/5 bg-black/20">
         <div className="flex items-center gap-3 px-2">
           <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-800 text-[10px] font-black">
             {staff?.initials || user?.displayName?.charAt(0) || 'JD'}

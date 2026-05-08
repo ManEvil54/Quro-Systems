@@ -1,9 +1,9 @@
 // ============================================================
 // Quro — PatientCard Component
-// High-Density Bento Layout with Medical Spa Aesthetic
+// High-Density Bento Layout with High-End Clinical Aesthetic
 // ============================================================
 import React from 'react';
-import { Heart, Activity, Pill, AlertTriangle } from 'lucide-react';
+import { Heart, Activity, Pill, AlertTriangle, FileText } from 'lucide-react';
 
 interface Patient {
   id: string;
@@ -28,11 +28,11 @@ interface PatientCardProps {
 const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType, showDiagnostics }) => {
   if (patient.empty) {
     return (
-      <div className="bg-white/5 rounded-2xl p-4 flex flex-col items-center justify-center h-full min-h-[180px] opacity-10 border-dashed border-2 border-white/10">
-        <div className="w-10 h-10 rounded-full border border-dashed border-white/20 mb-2 flex items-center justify-center">
-          <span className="text-white/30 text-xl font-light">+</span>
+      <div className="bg-slate-50 rounded-2xl p-4 flex flex-col items-center justify-center h-full min-h-[180px] opacity-40 border-dashed border-2 border-slate-200">
+        <div className="w-10 h-10 rounded-full border border-dashed border-slate-300 mb-2 flex items-center justify-center">
+          <span className="text-slate-400 text-xl font-light">+</span>
         </div>
-        <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Bed {patient.id_num} Empty</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bed {patient.id_num} Empty</p>
       </div>
     );
   }
@@ -42,8 +42,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
   return (
     <div className={`rounded-2xl transition-all duration-500 overflow-hidden group border ${
       isCritical 
-        ? 'bg-[#1E293B] border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.2)] scale-[1.02]' 
-        : 'bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20'
+        ? 'bg-slate-900 border-red-500 shadow-[0_0_40px_rgba(239,68,68,0.15)] scale-[1.02]' 
+        : 'bg-white border-slate-100 hover:border-teal-500/20 hover:shadow-xl hover:shadow-slate-200/50'
     } ${isBoutique ? 'p-6' : 'p-4'}`}>
       
       {/* Header: Initial & Badge */}
@@ -55,10 +55,10 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
             {patient.initials}
           </div>
           <div>
-            <p className={`font-bold tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isCritical ? 'text-red-400' : 'text-quro-glow'}`}>
+            <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isCritical ? 'text-red-400' : 'text-quro-teal'}`}>
               Room {patient.room_number || 'TBD'}
             </p>
-            <p className={`font-bold text-white truncate ${isBoutique ? 'text-lg' : 'text-sm'}`}>
+            <p className={`font-black truncate ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-white' : 'text-quro-charcoal'}`}>
               {patient.initials} Patient
             </p>
           </div>
@@ -73,38 +73,38 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
 
       {/* Vitals Bento Grid */}
       <div className={`grid grid-cols-2 gap-2 rounded-xl p-3 border backdrop-blur-sm ${
-        isCritical ? 'bg-black/20 border-white/5' : 'bg-white/5 border-white/5'
+        isCritical ? 'bg-black/20 border-white/5' : 'bg-slate-50 border-slate-100'
       } ${isBoutique ? 'mt-2' : ''}`}>
         <div className="flex flex-col">
           <div className="flex items-center gap-1 mb-1">
-            <Heart size={10} className={patient.hr > 120 || patient.hr < 60 || isCritical ? 'text-red-400' : 'text-quro-glow'} />
-            <span className={`text-[9px] font-bold uppercase tracking-tighter ${isCritical ? 'text-white/60' : 'text-white/50'}`}>HR</span>
+            <Heart size={10} className={patient.hr > 120 || patient.hr < 60 || isCritical ? 'text-red-400' : 'text-quro-teal'} />
+            <span className={`text-[9px] font-black uppercase tracking-tighter ${isCritical ? 'text-white/60' : 'text-slate-400'}`}>HR</span>
           </div>
-          <span className={`font-bold ${isBoutique ? 'text-xl' : 'text-sm'} ${patient.hr > 120 || patient.hr < 60 || isCritical ? 'text-red-400' : 'text-white'}`}>
+          <span className={`font-black ${isBoutique ? 'text-xl' : 'text-sm'} ${patient.hr > 120 || patient.hr < 60 || isCritical ? 'text-red-400' : 'text-quro-charcoal'}`}>
             {patient.hr || '--'}
           </span>
         </div>
         
-        <div className="flex flex-col border-l border-white/10 pl-3">
+        <div className="flex flex-col border-l border-slate-200 pl-3">
           <div className="flex items-center gap-1 mb-1">
-            <Activity size={10} className={isCritical ? 'text-red-400' : 'text-quro-glow'} />
-            <span className={`text-[9px] font-bold uppercase tracking-tighter ${isCritical ? 'text-white/60' : 'text-white/50'}`}>BP</span>
+            <Activity size={10} className={isCritical ? 'text-red-400' : 'text-quro-teal'} />
+            <span className={`text-[9px] font-black uppercase tracking-tighter ${isCritical ? 'text-white/60' : 'text-slate-400'}`}>BP</span>
           </div>
-          <span className={`font-bold text-white ${isBoutique ? 'text-xl' : 'text-sm'}`}>
+          <span className={`font-black ${isBoutique ? 'text-xl' : 'text-sm'} ${isCritical ? 'text-white' : 'text-quro-charcoal'}`}>
             {patient.bp || '--'}
           </span>
         </div>
 
-        <div className="flex flex-col mt-2 pt-2 border-t border-white/10">
-          <span className="text-[8px] text-white/40 font-bold uppercase tracking-tighter mb-1">Temp</span>
-          <span className={`font-bold text-white ${isBoutique ? 'text-sm' : 'text-xs'}`}>
+        <div className="flex flex-col mt-2 pt-2 border-t border-slate-200">
+          <span className="text-[8px] text-slate-400 font-black uppercase tracking-tighter mb-1">Temp</span>
+          <span className={`font-black ${isBoutique ? 'text-sm' : 'text-xs'} ${isCritical ? 'text-white' : 'text-quro-charcoal'}`}>
             {patient.temp ? `${patient.temp}°F` : '--'}
           </span>
         </div>
 
-        <div className="flex flex-col mt-2 pt-2 border-t border-white/10 border-l pl-3">
-          <span className="text-[8px] text-white/40 font-bold uppercase tracking-tighter mb-1">SpO2</span>
-          <span className={`font-bold text-quro-glow ${isBoutique ? 'text-sm' : 'text-xs'}`}>
+        <div className="flex flex-col mt-2 pt-2 border-t border-slate-200 border-l pl-3">
+          <span className="text-[8px] text-slate-400 font-black uppercase tracking-tighter mb-1">SpO2</span>
+          <span className={`font-black text-quro-teal ${isBoutique ? 'text-sm' : 'text-xs'}`}>
             {patient.spo2 || '98'}%
           </span>
         </div>
@@ -113,16 +113,16 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
       {/* Handoff Insight */}
       <div className={`mt-3 p-3 rounded-xl border ${
         patient.latest_handoff?.is_signed_off 
-          ? 'bg-white/5 border-white/5' 
-          : 'bg-rose-500/10 border-rose-500/30'
+          ? 'bg-slate-50 border-slate-100' 
+          : 'bg-rose-50 border-rose-100'
       }`}>
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Latest Shift Note</span>
+          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Latest Shift Note</span>
           {patient.latest_handoff && !patient.latest_handoff.is_signed_off && (
             <span className="text-[8px] font-black text-rose-500 uppercase animate-pulse">!! PENDING SIGN-OFF !!</span>
           )}
         </div>
-        <p className="text-[10px] text-white/80 line-clamp-2 leading-relaxed italic">
+        <p className="text-[10px] text-slate-600 line-clamp-2 leading-relaxed italic">
           {patient.latest_handoff?.situation || "No shift notes yet."}
         </p>
         {patient.latest_handoff && patient.latest_handoff.pending_tasks_count > 0 && (
@@ -136,12 +136,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
       </div>
 
       {/* Footer Actions */}
-      <div className={`mt-4 pt-4 border-t border-white/5 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity`}>
+      <div className={`mt-4 pt-4 border-t border-slate-100 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity`}>
         <div className="flex gap-3">
-          <Pill size={14} className="text-white/40 hover:text-quro-glow cursor-pointer transition-colors" />
-          <FileText size={14} className="text-white/40 hover:text-quro-glow cursor-pointer transition-colors" />
+          <Pill size={14} className="text-slate-300 hover:text-quro-teal cursor-pointer transition-colors" />
+          <FileText size={14} className="text-slate-300 hover:text-quro-teal cursor-pointer transition-colors" />
         </div>
-        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">CENSUS READY</span>
+        <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">CENSUS READY</span>
       </div>
 
       {/* Diagnostic Overlay (Level 0 Only) */}
@@ -167,5 +167,4 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, isCritical, viewType
   );
 };
 
-import { FileText } from 'lucide-react';
 export default PatientCard;
