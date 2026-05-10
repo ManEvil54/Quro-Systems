@@ -17,14 +17,15 @@ import {
   Check,
   ChevronRight,
   MoreVertical,
-  Building
+  Building,
+  ClipboardList
 } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function SettingsPage() {
   const { org, facilities, invitations, loading, updateOrg, addFacility, inviteStaff } = useSettings();
-  const [activeTab, setActiveTab] = useState<'general' | 'facilities' | 'staff'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'facilities' | 'staff' | 'clinical'>('general');
 
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'nurse', facilityId: '' });
   const [isInviting, setIsInviting] = useState(false);
@@ -57,6 +58,7 @@ export default function SettingsPage() {
               { id: 'general', label: 'Organization', icon: Building },
               { id: 'facilities', label: 'Facilities (Houses)', icon: Home },
               { id: 'staff', label: 'Staff & Security', icon: Users },
+              { id: 'clinical', label: 'MAR Templates', icon: ClipboardList },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -136,6 +138,85 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {activeTab === 'clinical' && (
+              <div className="space-y-6">
+                <div className="glass-card p-8">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <ClipboardList size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">MAR Standard Templates</h3>
+                      <p className="text-xs text-slate-500 font-medium">Configure global clinical monitoring rules and documentation templates.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Psych Monitoring */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Psychotropic Medication Monitoring</p>
+                          <p className="text-[11px] text-slate-500 font-medium max-w-md mt-1">
+                            Automatically generate a monitoring flow-sheet in the MAR when a psychotropic medication is ordered. 
+                            Includes AIMS testing and side-effect tracking.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                    </div>
+
+                    {/* Monthly Weights */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Monthly Weight Tracking</p>
+                          <p className="text-[11px] text-slate-500 font-medium max-w-md mt-1">
+                            Schedule a mandatory weight check on the first day of each month for all active patients. 
+                            Flags significant weight changes (&gt;5%).
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                    </div>
+
+                    {/* Sleep Hours */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Sleep Monitoring (Per Shift)</p>
+                          <p className="text-[11px] text-slate-500 font-medium max-w-md mt-1">
+                            Add a required entry for "Hours Slept" to the MAR for every nursing shift (AM/PM/NOC).
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <button className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20">
+                      Update Global Template Rules
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'staff' && (
               <div className="space-y-6">
                 {/* Invite Form */}
