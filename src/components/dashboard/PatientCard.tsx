@@ -94,7 +94,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
         <div className="flex flex-col mt-2 pt-4 border-t border-white/40">
           <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">Temp</span>
           <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
-            {patient.temp ? `${patient.temp}°F` : '--'}
+            {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
           </span>
         </div>
 

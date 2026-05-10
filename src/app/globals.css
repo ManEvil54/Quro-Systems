@@ -155,13 +155,13 @@ body {
 .glow-warning { animation: pulse-glow-amber 3s ease-in-out infinite; }
 .glow-critical { animation: pulse-glow-red 2.5s ease-in-out infinite; }
 
-/* High-End Glassmorphism — Dark Mode Edition */
+/* High-End Glassmorphism — Quro Deep Green Edition */
 .glass-card-quro {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.92) 100%);
+  background: linear-gradient(135deg, #061210 0%, #134e4a 100%);
   backdrop-filter: blur(16px) saturate(1.8);
   -webkit-backdrop-filter: blur(16px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: var(--shadow-inner-glass), var(--shadow-card), 0 20px 50px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-inner-glass), var(--shadow-card), 0 20px 50px rgba(0,0,0,0.3);
   color: white;
 }
 
