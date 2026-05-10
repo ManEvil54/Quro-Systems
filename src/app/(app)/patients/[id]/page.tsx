@@ -38,8 +38,10 @@ import {
   Accessibility,
   Shield,
   Send,
-  Archive
+  Archive,
+  Search
 } from 'lucide-react';
+import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
@@ -80,6 +82,8 @@ export default function PatientChartPage() {
     frequency: 'QD' as MedFrequency,
     is_psychotropic: false
   });
+  const [drugSearch, setDrugSearch] = useState('');
+  const [showDrugDropdown, setShowDrugDropdown] = useState(false);
 
   // Charting State
   const [chartingSide, setChartingSide] = useState<'front' | 'back'>('front');
@@ -812,14 +816,77 @@ export default function PatientChartPage() {
                       </div>
                     </div>
 
-                    <div className="mb-8">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Description / Instructions</p>
-                      <textarea 
-                        value={newOrder.order_text}
-                        onChange={e => setNewOrder({...newOrder, order_text: e.target.value})}
-                        placeholder={newOrder.order_type === 'medication' ? "e.g. Aspirin 81mg PO Daily..." : "Enter clinical directive..."}
-                        className="w-full h-24 p-6 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-quro-teal transition-all resize-none"
-                      />
+                    <div className="mb-8 relative">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Description / Drug Name</p>
+                      <div className="relative">
+                        <textarea 
+                          value={newOrder.order_text}
+                          onChange={e => {
+                            setNewOrder({...newOrder, order_text: e.target.value});
+                            if (newOrder.order_type === 'medication') {
+                              setDrugSearch(e.target.value);
+                              setShowDrugDropdown(true);
+                            }
+                          }}
+                          onFocus={() => {
+                            if (newOrder.order_type === 'medication') setShowDrugDropdown(true);
+                          }}
+                          placeholder={newOrder.order_type === 'medication' ? "Search drug library or enter custom..." : "Enter clinical directive..."}
+                          className="w-full h-24 p-6 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-quro-teal transition-all resize-none"
+                        />
+                        {newOrder.order_type === 'medication' && (
+                          <Search size={16} className="absolute right-6 top-6 text-slate-300 pointer-events-none" />
+                        )}
+                      </div>
+
+                      {/* Drug Dropdown */}
+                      {showDrugDropdown && newOrder.order_type === 'medication' && (
+                        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-2">
+                          {COMMON_DRUGS.filter(d => 
+                            d.generic.toLowerCase().includes(drugSearch.toLowerCase()) || 
+                            d.brand?.toLowerCase().includes(drugSearch.toLowerCase())
+                          ).length > 0 ? (
+                            COMMON_DRUGS.filter(d => 
+                              d.generic.toLowerCase().includes(drugSearch.toLowerCase()) || 
+                              d.brand?.toLowerCase().includes(drugSearch.toLowerCase())
+                            ).map((drug, i) => (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  setNewOrder({ 
+                                    ...newOrder, 
+                                    order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''}`,
+                                    is_psychotropic: drug.is_psychotropic || false
+                                  });
+                                  setShowDrugDropdown(false);
+                                }}
+                                className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-all text-left group"
+                              >
+                                <div>
+                                  <p className="text-xs font-black text-slate-900 group-hover:text-quro-teal transition-colors">{drug.generic}</p>
+                                  {drug.brand && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{drug.brand}</p>}
+                                </div>
+                                {drug.is_psychotropic && (
+                                  <span className="px-2 py-1 bg-rose-50 text-rose-500 text-[8px] font-black rounded-lg uppercase tracking-widest border border-rose-100">
+                                    PSYCH
+                                  </span>
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center">
+                              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No matching drugs found</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {showDrugDropdown && (
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setShowDrugDropdown(false)}
+                        />
+                      )}
                     </div>
 
                     {newOrder.order_type === 'medication' && (
