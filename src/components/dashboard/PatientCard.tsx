@@ -33,6 +33,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
     );
   }
 
+  return (
     <Link href={`/patients/${patient.id}`} className="block h-full">
       <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
         isCritical 
