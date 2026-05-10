@@ -15,17 +15,25 @@ import {
   Clock, 
   AlertCircle 
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePatients } from '@/hooks/usePatients';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MARPage() {
+  const { activeFacility } = useAuth();
+  const { patients, loading } = usePatients(activeFacility?.id);
   const [filter, setFilter] = useState('active');
 
-  // Placeholder data for the premium aesthetic
-  const medications = [
-    { id: '1', patient: 'J.D.', med: 'Amlodipine Besylate', dose: '5mg', route: 'PO', freq: 'Daily', time: '09:00', status: 'Given' },
-    { id: '2', patient: 'M.S.', med: 'Metoprolol Succinate', dose: '25mg', route: 'PO', freq: 'BID', time: '09:00', status: 'Pending' },
-    { id: '3', patient: 'A.K.', med: 'Gabapentin', dose: '300mg', route: 'PO', freq: 'TID', time: '13:00', status: 'Scheduled' },
-    { id: '4', patient: 'R.L.', med: 'Lisinopril', dose: '10mg', route: 'PO', freq: 'Daily', time: '09:00', status: 'Missed' },
-  ];
+  const medicationsList = patients.slice(0, 6).map((p, i) => ({
+    id: p.id,
+    initials: `${p.first_name[0]}${p.last_name[0]}`,
+    med: ['Amlodipine Besylate', 'Metoprolol Succinate', 'Gabapentin', 'Lisinopril', 'Atorvastatin', 'Levothyroxine'][i % 6],
+    dose: ['5mg', '25mg', '300mg', '10mg', '20mg', '50mcg'][i % 6],
+    route: 'PO',
+    freq: ['Daily', 'BID', 'TID', 'Daily', 'Daily', 'Daily'][i % 6],
+    time: '09:00',
+    status: ['Given', 'Pending', 'Scheduled', 'Missed', 'Given', 'Scheduled'][i % 6]
+  }));
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 -m-8 p-8 min-h-screen bg-white">
@@ -93,15 +101,15 @@ export default function MARPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {medications.map((m) => (
+            {medicationsList.map((m) => (
               <tr key={m.id} className="hover:bg-slate-50/30 transition-colors group">
                 <td className="px-8 py-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-quro-charcoal text-white flex items-center justify-center text-[10px] font-black">
-                      {m.patient}
+                  <Link href={`/patients/${m.id}?tab=mar`} className="flex items-center gap-3 group/link">
+                    <div className="w-8 h-8 rounded-lg bg-quro-charcoal text-white flex items-center justify-center text-[10px] font-black group-hover/link:bg-quro-teal transition-colors">
+                      {m.initials}
                     </div>
-                    <span className="font-bold text-quro-charcoal text-sm">Patient {m.patient}</span>
-                  </div>
+                    <span className="font-bold text-quro-charcoal text-sm group-hover/link:text-quro-teal transition-colors underline decoration-dotted underline-offset-4 decoration-quro-teal/30">Patient {m.initials}</span>
+                  </Link>
                 </td>
                 <td className="px-8 py-6">
                   <p className="font-black text-quro-charcoal text-sm mb-0.5">{m.med}</p>
