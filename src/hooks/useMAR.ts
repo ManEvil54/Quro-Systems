@@ -55,18 +55,39 @@ export function useMAR(patientId: string) {
     return () => unsubscribe();
   }, [staff?.org_id, patientId]);
 
-  const logAdministration = async (data: Omit<MarEntry, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => {
+  const logAdministration = async (data: Partial<MarEntry>) => {
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
+    // Captured for CFR Part 11 Compliance
+    const audit_log = {
+      ip_address: 'Logged by System', // In production, get from API route or client
+      device_id: window.navigator.userAgent,
+      auth_method: 'pin' as const,
+      timestamp: new Date().toISOString()
+    };
+
     const marRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'mar_entries');
     return await addDoc(marRef, {
       ...data,
       org_id: staff.org_id,
       patient_id: patientId,
       administered_by: staff.id,
+      audit_log,
       actual_time: new Date().toLocaleTimeString('en-US', { hour12: false }),
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const updatePRNEffectiveness = async (entryId: string, effectiveness: { score: number, comment: string }) => {
+    if (!staff?.org_id || !patientId) throw new Error('Context missing');
+    
+    const docRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'mar_entries', entryId);
+    return await updateDoc(docRef, {
+      effectiveness_score: effectiveness.score,
+      effectiveness_comment: effectiveness.comment,
+      effectiveness_noted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
   };
 

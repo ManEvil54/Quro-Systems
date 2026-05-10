@@ -39,6 +39,8 @@ export interface Organization {
     mar_template_psych: boolean;
     mar_template_weights: boolean;
     mar_template_sleep: boolean;
+    emar_mode: boolean; // Toggle between Hybrid (Print) and Full Electronic
+    require_pin_for_narcotics: boolean;
   };
   created_at: string;
   updated_at: string;
@@ -132,12 +134,36 @@ export interface MAREntry {
   org_id: string;
   patient_id: string;
   medication_id: string;
+  action: 'given' | 'held' | 'refused' | 'npo' | 'absent';
+  delay_reason?: string;
   administered_by: string;
+  witnessed_by?: string; // For narcotics/insulin
+  
+  // Compliance & Audit
+  audit_log?: {
+    ip_address: string;
+    device_id: string;
+    auth_method: 'pin' | 'biometric' | 'session';
+    timestamp: string;
+  };
+
+  // Vitals linked to administration
+  linked_vitals?: {
+    systolic?: number;
+    diastolic?: number;
+    pulse?: number;
+    temp?: number;
+  };
+
+  // PRN Effectiveness
+  is_prn?: boolean;
+  effectiveness_noted_at?: string;
+  effectiveness_score?: number; // 1-10
+  effectiveness_comment?: string;
+
   scheduled_date: string;
   scheduled_time: string;
-  action: 'given' | 'held' | 'refused' | 'not_available' | 'see_notes';
   actual_time: string;
-  vital_reading?: any;
   notes?: string;
   created_at: string;
 }

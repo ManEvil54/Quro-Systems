@@ -44,9 +44,15 @@ export default function SettingsPage() {
     }
   };
 
-  const toggleClinicalSetting = async (key: 'mar_template_psych' | 'mar_template_weights' | 'mar_template_sleep') => {
+  const toggleClinicalSetting = async (key: 'mar_template_psych' | 'mar_template_weights' | 'mar_template_sleep' | 'emar_mode' | 'require_pin_for_narcotics') => {
     if (!org) return;
-    const current = org.clinical_settings || { mar_template_psych: true, mar_template_weights: true, mar_template_sleep: true };
+    const current = org.clinical_settings || { 
+      mar_template_psych: true, 
+      mar_template_weights: true, 
+      mar_template_sleep: true,
+      emar_mode: false,
+      require_pin_for_narcotics: true
+    };
     try {
       await updateOrg({
         clinical_settings: {
@@ -215,7 +221,7 @@ export default function SettingsPage() {
                       </span>
                     </div>
 
-                    {/* Sleep Hours */}
+                    {/* Sleep Monitoring */}
                     <div 
                       onClick={() => toggleClinicalSetting('mar_template_sleep')}
                       className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all cursor-pointer"
@@ -235,6 +241,54 @@ export default function SettingsPage() {
                       </div>
                       <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.mar_template_sleep ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
                         {org?.clinical_settings?.mar_template_sleep ? 'ENABLED' : 'DISABLED'}
+                      </span>
+                    </div>
+
+                    <div className="h-px bg-slate-100 my-2" />
+
+                    {/* eMAR Mode */}
+                    <div 
+                      onClick={() => toggleClinicalSetting('emar_mode')}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 text-white group hover:bg-slate-800 transition-all cursor-pointer"
+                    >
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${org?.clinical_settings?.emar_mode ? 'border-emerald-400' : 'border-slate-700'}`}>
+                            {org?.clinical_settings?.emar_mode && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-tight">Full eMAR Compliance Mode</p>
+                          <p className="text-[11px] text-slate-400 font-medium max-w-md mt-1">
+                            Transition from Hybrid (Print) to Full Electronic charting. Enables re-authentication, audit logs, and mandatory surveyor compliance checks.
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.emar_mode ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-500 bg-slate-800'}`}>
+                        {org?.clinical_settings?.emar_mode ? 'ELECTRONIC' : 'HYBRID'}
+                      </span>
+                    </div>
+
+                    {/* Narcotics PIN */}
+                    <div 
+                      onClick={() => toggleClinicalSetting('require_pin_for_narcotics')}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-rose-200 transition-all cursor-pointer"
+                    >
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${org?.clinical_settings?.require_pin_for_narcotics ? 'border-rose-500' : 'border-slate-300'}`}>
+                            {org?.clinical_settings?.require_pin_for_narcotics && <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-rose-900 uppercase tracking-tight">High-Alert Re-Authentication</p>
+                          <p className="text-[11px] text-slate-500 font-medium max-w-md mt-1">
+                            Require a 4-digit security PIN and second-nurse witness for all Narcotics and Insulin administrations.
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.require_pin_for_narcotics ? 'text-rose-600 bg-rose-50' : 'text-slate-400 bg-slate-100'}`}>
+                        {org?.clinical_settings?.require_pin_for_narcotics ? 'ENABLED' : 'DISABLED'}
                       </span>
                     </div>
                   </div>

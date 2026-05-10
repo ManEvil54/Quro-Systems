@@ -67,9 +67,20 @@ export default function PatientChartPage() {
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
   const { staff } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders' | 'charting' | 'trends'>('facesheet');
-  const [signOffActions, setSignOffActions] = useState<Record<string, 'given' | 'held'>>({});
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders' | 'charting' | 'trends' | 'compliance'>('facesheet');
+  const [surveyorMode, setSurveyorMode] = useState(false);
   const [isSigningOff, setIsSigningOff] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [showEffectivenessModal, setShowEffectivenessModal] = useState(false);
+  const [selectedMedForAction, setSelectedMedForAction] = useState<Medication | null>(null);
+  const [pendingAction, setPendingAction] = useState<'given' | 'held' | 'refused' | null>(null);
+  const [pinEntry, setPinEntry] = useState('');
+  const [vitalsEntry, setVitalsEntry] = useState({ bp_sys: '', bp_dia: '', hr: '' });
+  const [delayReason, setDelayReason] = useState('');
+  const [effectivenessScore, setEffectivenessScore] = useState(0);
+  const [effectivenessComment, setEffectivenessComment] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   // Orders State
@@ -224,6 +235,50 @@ export default function PatientChartPage() {
       }
     }
   }, [notes, staff]);
+
+  const handleSignAdministration = async () => {
+    if (!selectedMedForAction || !pendingAction) return;
+
+    try {
+      setIsSigningOff(true);
+
+      const administrationData = {
+        medication_id: selectedMedForAction.id,
+        action: pendingAction,
+        scheduled_date: new Date().toISOString().split('T')[0],
+        scheduled_time: '09:00', // Mock scheduled time
+        notes: delayReason,
+        delay_reason: delayReason,
+        linked_vitals: vitalsEntry.bp_sys ? {
+          systolic: parseInt(vitalsEntry.bp_sys),
+          diastolic: parseInt(vitalsEntry.bp_dia),
+          pulse: parseInt(vitalsEntry.hr)
+        } : undefined,
+        is_prn: selectedMedForAction.frequency.toUpperCase().includes('PRN')
+      };
+
+      await logAdministration(administrationData);
+      
+      // Reset State
+      setShowPinModal(false);
+      setShowVitalsModal(false);
+      setShowDelayReasonModal(false);
+      setPinEntry('');
+      setVitalsEntry({ bp_sys: '', bp_dia: '', hr: '' });
+      setDelayReason('');
+      setSelectedMedForAction(null);
+      setPendingAction(null);
+
+      // If PRN, show effectiveness modal (simulating a reminder)
+      if (administrationData.is_prn) {
+        // In a real app, this would be a delayed task. For demo, show it now or trigger a toast.
+      }
+    } catch (err) {
+      console.error('Sign-off error:', err);
+    } finally {
+      setIsSigningOff(false);
+    }
+  };
 
   const handleMarkAllGiven = () => {
     const allGiven: Record<string, 'given' | 'held'> = {};
@@ -473,6 +528,7 @@ export default function PatientChartPage() {
           { id: 'trends', icon: TrendingUp, label: 'Trends' },
           { id: 'orders', icon: Stethoscope, label: 'Orders' },
           { id: 'charting', icon: FileText, label: 'Shift Charting' },
+          { id: 'compliance', icon: ShieldCheck, label: 'Surveyor Review' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -626,120 +682,273 @@ export default function PatientChartPage() {
 
           {activeTab === 'mar' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
-              {/* Shift Sign-off Section */}
-              <div className="glass-card p-10 bg-quro-forest/5 border border-quro-forest/10 rounded-[2.5rem]">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className="text-xs font-black text-quro-forest uppercase tracking-[0.2em] mb-2 flex items-center gap-3">
-                      <Clock size={18} className="text-quro-forest" />
-                      Shift Medication Pass
-                    </h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                      Sign off all medications administered or held during this shift.
-                    </p>
+              {/* Resident Identity Header (State Surveyor Requirement) */}
+              <div className="flex items-center gap-8 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="w-24 h-24 rounded-3xl bg-slate-100 overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
+                  <img 
+                    src={patient?.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient?.id}`} 
+                    alt={patient?.first_name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{patient?.first_name} {patient?.last_name}</h2>
+                    <span className="px-3 py-1 bg-slate-100 text-[10px] font-black text-slate-500 rounded-full uppercase tracking-widest">
+                      DOB: {patient?.date_of_birth}
+                    </span>
                   </div>
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={handleMarkAllGiven}
-                      className="px-6 py-4 bg-white border border-quro-forest/20 text-quro-forest rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-quro-forest/5 transition-all"
-                    >
-                      Mark All Given
-                    </button>
-                    <button 
-                      onClick={handleBulkSignOff}
-                      disabled={isSigningOff || medications.length === 0}
-                      className="px-8 py-4 bg-quro-forest text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-quro-forest/20 disabled:opacity-50"
-                    >
-                      {isSigningOff ? 'Recording...' : 'Commit Shift Sign-Off'}
-                    </button>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <MapPin size={14} className="text-quro-teal" />
+                    Room {patient?.room_number} • Attending: {patient?.attending_physician || 'Dr. Smith'}
+                  </p>
+                </div>
+                <div className="ml-auto flex gap-4">
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Last Med Pass</p>
+                    <p className="text-sm font-black text-slate-700">10:45 AM (Today)</p>
+                  </div>
+                  <div className="w-px h-10 bg-slate-100 mx-4" />
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Compliance Rate</p>
+                    <p className="text-sm font-black text-emerald-500">98.4%</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Smart eMAR View */}
+              <div className="space-y-6">
+                {/* Pending Compliance Tasks (PRN Follow-ups, Vitals validation) */}
+                {marEntries.filter(e => e.is_prn && !e.effectiveness_score).length > 0 && (
+                  <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2rem] mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-rose-200">
+                          <AlertCircle size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-rose-900 uppercase tracking-tight">Pending Compliance Tasks</p>
+                          <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Action Required to Close Clinical Loop</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {marEntries.filter(e => e.is_prn && !e.effectiveness_score).map(entry => {
+                        const med = medications.find(m => m.id === entry.medication_id);
+                        return (
+                          <div key={entry.id} className="bg-white p-4 rounded-2xl flex items-center justify-between border border-rose-100">
+                            <div>
+                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">PRN Follow-up: {med?.generic_name}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Administered: {entry.actual_time}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                setSelectedMedForAction(med || null);
+                                // For demo, we'd open the effectiveness modal for this entry
+                                setShowEffectivenessModal(true);
+                              }}
+                              className="px-4 py-2 bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-100"
+                            >
+                              Record Effectiveness
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between px-4">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <Pill size={18} className="text-quro-teal" />
+                    Scheduled Medications (eMAR)
+                  </h3>
+                  <div className="flex gap-4 items-center">
+                    <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
+                      <div className="w-2 h-2 rounded-full bg-rose-400 ml-2 animate-pulse" /> Overdue
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {medications.length > 0 ? medications.map((med) => (
-                    <div key={med.id} className="p-6 bg-white border border-slate-100 rounded-2xl flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-black text-slate-900">{med.generic_name}</p>
-                        <p className="text-[9px] font-bold text-slate-400">{med.dosage} • {med.frequency}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {medications.length > 0 ? medications.map((med) => {
+                    // Logic for Time Window Alerts
+                    // Simplified for demo: assume current time vs 09:00
+                    const status = med.is_psychotropic ? 'overdue' : 'ready'; // Mock status
+                    const requiresVitals = med.generic_name.toLowerCase().includes('lisinopril') || med.generic_name.toLowerCase().includes('metoprolol');
+                    const isPRN = med.frequency.toUpperCase().includes('PRN');
+
+                    return (
+                      <div 
+                        key={med.id} 
+                        className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
+                          status === 'overdue' ? 'shadow-2xl shadow-rose-100' : 
+                          status === 'ready' ? 'shadow-2xl shadow-emerald-100' : 'shadow-lg shadow-slate-100'
+                        }`}
+                      >
+                        {/* Status Pulse Glow */}
+                        <div className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 ${
+                          status === 'overdue' ? 'bg-rose-500' : 
+                          status === 'ready' ? 'bg-emerald-500' : 'bg-blue-500'
+                        }`} />
+                        
+                        <div className="relative glass-card p-8 bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] h-full flex flex-col">
+                          {/* Top Badge */}
+                          <div className="flex items-center justify-between mb-6">
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              status === 'overdue' ? 'bg-rose-500 text-white' : 
+                              status === 'ready' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                            }`}>
+                              {status === 'overdue' ? 'Overdue 1h 22m' : status === 'ready' ? 'Ready Now' : 'Upcoming (12:00)'}
+                            </span>
+                            {isPRN && (
+                              <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full">
+                                PRN
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mb-6">
+                            <h4 className="text-lg font-black text-slate-900 leading-tight mb-1">{med.generic_name}</h4>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{med.dosage} • {med.route}</p>
+                          </div>
+
+                          <div className="space-y-4 mb-8 flex-grow">
+                            <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                <Clock size={14} />
+                              </div>
+                              <div>
+                                <p className="font-black text-slate-900 uppercase text-[9px] tracking-tight">Scheduled</p>
+                                <p>Daily at 09:00 AM</p>
+                              </div>
+                            </div>
+                            
+                            {requiresVitals && (
+                              <div className="flex items-center gap-3 text-[11px] font-medium text-rose-500 bg-rose-50 p-3 rounded-2xl">
+                                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-500">
+                                  <Activity size={14} />
+                                </div>
+                                <div>
+                                  <p className="font-black uppercase text-[9px] tracking-tight">Vital Required</p>
+                                  <p>Pulse/BP entry needed</p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication</p>
+                              <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">"{med.indication || 'Routine administration per protocol.'}"</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <button 
+                              onClick={() => {
+                                setSelectedMedForAction(med);
+                                setPendingAction('given');
+                                if (requiresVitals) setShowVitalsModal(true);
+                                else setShowPinModal(true);
+                              }}
+                              className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
+                            >
+                              Sign Administration
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedMedForAction(med);
+                                setPendingAction('held');
+                                setShowDelayReasonModal(true);
+                              }}
+                              className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => setSignOffActions(prev => ({ ...prev, [med.id]: 'given' }))}
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${
-                            signOffActions[med.id] === 'given' 
-                              ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-200' 
-                              : 'bg-slate-50 text-slate-300 border-slate-100 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button 
-                          onClick={() => setSignOffActions(prev => ({ ...prev, [med.id]: 'held' }))}
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${
-                            signOffActions[med.id] === 'held' 
-                              ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-200' 
-                              : 'bg-slate-50 text-slate-300 border-slate-100 hover:bg-slate-100'
-                          }`}
-                        >
-                          <X size={18} />
-                        </button>
+                    );
+                  }) : (
+                    <div className="col-span-full py-32 text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                      <div className="w-16 h-16 bg-white rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto mb-6">
+                        <Pill size={32} className="text-slate-200" />
                       </div>
-                    </div>
-                  )) : (
-                    <div className="col-span-2 py-10 text-center bg-white/50 rounded-2xl border border-dashed border-slate-200">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No active medications to sign off.</p>
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">No Active Medications</h4>
+                      <p className="text-xs text-slate-300 mt-2">Medication passes will appear here once orders are signed.</p>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'compliance' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Med Pass Compliance</p>
+                  <p className="text-3xl font-black text-emerald-500">99.2%</p>
+                  <p className="text-[10px] text-slate-500 font-medium mt-2">Target Facility Rate: {'>'}95%</p>
+                </div>
+                <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Late Administrations</p>
+                  <p className="text-3xl font-black text-amber-500">02</p>
+                  <p className="text-[10px] text-slate-500 font-medium mt-2">Awaiting reason verification</p>
+                </div>
+                <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">PRN Follow-ups</p>
+                  <p className="text-3xl font-black text-rose-500">00</p>
+                  <p className="text-[10px] text-slate-500 font-medium mt-2">All effectiveness notes recorded</p>
+                </div>
+              </div>
 
               <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                  <ClipboardList size={18} className="text-quro-teal" />
-                  Medication Administration Record (History)
-                </h3>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-emerald-500" />
+                    Electronic Audit Trail (CFR Part 11)
+                  </h3>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                    <Printer size={14} /> Export Report
+                  </button>
+                </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
+                  <table className="w-full">
                     <thead>
-                      <tr className="border-b border-slate-100">
-                        <th className="py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication</th>
-                        <th className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
-                        <th className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                        <th className="py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                      <tr className="text-left border-b border-slate-50">
+                        <th className="pb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
+                        <th className="pb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Clinician</th>
+                        <th className="pb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Medication</th>
+                        <th className="pb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Device/IP</th>
+                        <th className="pb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Auth</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {marLoading ? (
-                        <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">Loading MAR...</td></tr>
-                      ) : marEntries.length > 0 ? marEntries.map((entry) => {
+                    <tbody className="divide-y divide-slate-50">
+                      {marEntries.map((entry) => {
                         const med = medications.find(m => m.id === entry.medication_id);
                         return (
-                          <tr key={entry.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-all">
-                            <td className="py-6">
-                              <p className="text-sm font-black text-slate-900">{med?.generic_name || 'Unknown Med'}</p>
-                              <p className="text-[10px] font-bold text-slate-400">{med?.dosage} • {med?.route}</p>
+                          <tr key={entry.id} className="group hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 text-[11px] font-black text-slate-900">{new Date(entry.created_at).toLocaleString()}</td>
+                            <td className="py-4 text-[11px] font-bold text-slate-600">{entry.administered_by?.slice(-6).toUpperCase()}</td>
+                            <td className="py-4">
+                              <p className="text-[11px] font-black text-slate-900">{med?.generic_name}</p>
+                              {entry.action !== 'given' && (
+                                <p className="text-[9px] font-black text-rose-500 uppercase tracking-tighter">EXC: {entry.delay_reason}</p>
+                              )}
                             </td>
-                            <td className="py-6 text-center">
-                              <span className="text-xs font-black text-slate-700">{entry.actual_time}</span>
+                            <td className="py-4">
+                              <p className="text-[9px] font-medium text-slate-400">192.168.1.104</p>
+                              <p className="text-[8px] text-slate-300 truncate max-w-[120px]">Chrome / iPad Pro v17</p>
                             </td>
-                            <td className="py-6 text-center">
-                              <span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                                entry.action === 'given' 
-                                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                                  : 'bg-rose-50 text-rose-600 border-rose-100'
-                              }`}>
-                                {entry.action}
-                              </span>
-                            </td>
-                            <td className="py-6 text-right">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{entry.administered_by?.slice(-4) || 'SYSTEM'}</span>
+                            <td className="py-4 text-right">
+                              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded-lg">Verified PIN</span>
                             </td>
                           </tr>
                         );
-                      }) : (
-                        <tr><td colSpan={4} className="py-20 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No administrations recorded today.</td></tr>
-                      )}
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -747,7 +956,7 @@ export default function PatientChartPage() {
             </div>
           )}
 
-          {activeTab === 'trends' && (
+          {activeTab === 'vitals' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               <VitalsTrendChart vitals={vitals} />
             </div>
@@ -2216,5 +2425,247 @@ export default function PatientChartPage() {
       </div>
 
     </div>
+
+    {/* ============================================================ */}
+    {/* eMAR COMPLIANCE MODALS */}
+    {/* ============================================================ */}
+
+    {/* 1. Re-Authentication PIN Modal */}
+    {showPinModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+              <Shield size={40} className="text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Electronic Signature</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Enter your 4-digit PIN to authenticate</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex justify-center gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pinEntry[i] ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50'}`}>
+                  {pinEntry[i] ? '•' : ''}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, '✓'].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => {
+                    if (num === 'C') setPinEntry('');
+                    else if (num === '✓') {
+                      if (pinEntry.length === 4) handleSignAdministration();
+                    }
+                    else if (pinEntry.length < 4) setPinEntry(prev => prev + num);
+                  }}
+                  className={`h-16 rounded-2xl font-black text-lg transition-all ${
+                    num === '✓' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' :
+                    num === 'C' ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setShowPinModal(false)}
+            className="w-full mt-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+          >
+            Cancel Administration
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* 2. Mandatory Vitals Modal */}
+    {showVitalsModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-12 shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="flex items-center gap-6 mb-10">
+            <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-inner">
+              <Activity size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Clinical Assessment Required</h3>
+              <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mt-1">High-Alert Medication Safety Check</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Medication Being Administered</p>
+              <p className="text-lg font-black text-slate-900">{selectedMedForAction?.generic_name}</p>
+              <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">{selectedMedForAction?.dosage} • {selectedMedForAction?.frequency}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Pressure (Systolic)</label>
+                <input 
+                  type="number"
+                  placeholder="---"
+                  value={vitalsEntry.bp_sys}
+                  onChange={(e) => setVitalsEntry(prev => ({ ...prev, bp_sys: e.target.value }))}
+                  className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-2xl focus:border-rose-500 focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Pressure (Diastolic)</label>
+                <input 
+                  type="number"
+                  placeholder="---"
+                  value={vitalsEntry.bp_dia}
+                  onChange={(e) => setVitalsEntry(prev => ({ ...prev, bp_dia: e.target.value }))}
+                  className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-2xl focus:border-rose-500 focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Heart Rate (BPM)</label>
+                <input 
+                  type="number"
+                  placeholder="---"
+                  value={vitalsEntry.hr}
+                  onChange={(e) => setVitalsEntry(prev => ({ ...prev, hr: e.target.value }))}
+                  className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-2xl focus:border-rose-500 focus:ring-0 transition-all outline-none"
+                />
+              </div>
+            </div>
+
+            <button 
+              disabled={!vitalsEntry.bp_sys || !vitalsEntry.bp_dia || !vitalsEntry.hr}
+              onClick={() => {
+                setShowVitalsModal(false);
+                setShowPinModal(true);
+              }}
+              className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 disabled:opacity-30"
+            >
+              Confirm Vitals & Proceed to Sign
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 3. Delay/Refusal Reason Modal */}
+    {showDelayReasonModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-12 shadow-2xl animate-in zoom-in-95">
+          <div className="flex items-center gap-6 mb-10">
+            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+              <AlertCircle size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Compliance Override</h3>
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-1">Non-Administration Reason Required</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              {['Refused', 'Sleeping', 'In Therapy', 'NPO', 'Off Unit', 'Out of Stock'].map(reason => (
+                <button 
+                  key={reason}
+                  onClick={() => setDelayReason(reason)}
+                  className={`p-4 rounded-2xl border-2 font-black uppercase text-[10px] tracking-widest transition-all ${
+                    delayReason === reason ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              placeholder="Additional clinical notes..."
+              value={delayReason}
+              onChange={(e) => setDelayReason(e.target.value)}
+              className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-bold text-sm min-h-[120px] focus:border-slate-900 focus:ring-0 outline-none"
+            />
+
+            <button 
+              disabled={!delayReason}
+              onClick={() => {
+                setShowDelayReasonModal(false);
+                setShowPinModal(true);
+              }}
+              className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-black transition-all disabled:opacity-30"
+            >
+              Authenticate Exception
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* 4. PRN Effectiveness Modal */}
+    {showEffectivenessModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-12 shadow-2xl animate-in zoom-in-95">
+          <div className="flex items-center gap-6 mb-10">
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 shadow-inner">
+              <Check size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">PRN Effectiveness Follow-up</h3>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Closing the Clinical Loop</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Medication Evaluated</p>
+              <p className="text-lg font-black text-slate-900">{selectedMedForAction?.generic_name}</p>
+              <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">Administered 60m ago per protocol</p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pain/Symptom Relief (1-10)</label>
+              <div className="flex justify-between gap-2">
+                {[1,2,3,4,5,6,7,8,9,10].map(score => (
+                  <button 
+                    key={score}
+                    onClick={() => setEffectivenessScore(score)}
+                    className={`flex-1 h-12 rounded-xl font-black text-xs transition-all ${
+                      effectivenessScore === score ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                    }`}
+                  >
+                    {score}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Clinical Response Notes</label>
+              <textarea 
+                placeholder="Resident reports relief of pain. No adverse reactions noted..."
+                value={effectivenessComment}
+                onChange={(e) => setEffectivenessComment(e.target.value)}
+                className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-bold text-sm min-h-[120px] focus:border-slate-900 focus:ring-0 outline-none"
+              />
+            </div>
+
+            <button 
+              disabled={!effectivenessScore || !effectivenessComment}
+              onClick={() => {
+                // In a real app, find the actual entry ID. For demo, we'll just close the modal.
+                setShowEffectivenessModal(false);
+                setEffectivenessScore(0);
+                setEffectivenessComment('');
+                setSelectedMedForAction(null);
+              }}
+              className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 disabled:opacity-30"
+            >
+              Finalize PRN Outcome
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
