@@ -702,14 +702,14 @@ export default function PatientChartPage() {
                         <Activity size={28} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Vital Signs Charting</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900 mb-1">Vital Signs Charting</p>
                         <h2 className="text-lg font-black uppercase tracking-tighter">Current Shift Assessment</h2>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Temperature</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Temperature</p>
                         <div className="flex items-center gap-2">
                           <input 
                             type="number" 
@@ -723,7 +723,7 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">B/P (Sys/Dia)</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">B/P (Sys/Dia)</p>
                         <div className="flex items-center gap-1">
                           <input 
                             type="number" 
@@ -742,7 +742,7 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pulse / Resp</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pulse / Resp</p>
                         <div className="flex items-center gap-1">
                           <input 
                             type="number" 
@@ -761,7 +761,7 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">SpO2</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">SpO2</p>
                         <div className="flex items-center gap-2">
                           <input 
                             type="number" 
@@ -774,7 +774,7 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Site</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BP Site</p>
                         <select 
                           value={assessments.vitals.bp_site} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as any}})}
@@ -787,7 +787,7 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Position</p>
+                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BP Position</p>
                         <select 
                           value={assessments.vitals.bp_position} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as any}})}
@@ -812,7 +812,7 @@ export default function PatientChartPage() {
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Orientation (A&O)</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Orientation (A&O)</p>
                           <div className="flex flex-wrap gap-1">
                             {['Person', 'Place', 'Time', 'Situation'].map(o => (
                               <button 
@@ -823,7 +823,7 @@ export default function PatientChartPage() {
                                     : [...assessments.neuro.orientation, o];
                                   setAssessments({...assessments, neuro: {...assessments.neuro, orientation}});
                                 }}
-                                className={`px-2 py-1 rounded-lg text-[8px] font-black border transition-all ${assessments.neuro.orientation.includes(o) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                                className={`px-2 py-1 rounded-lg text-[8px] font-black border transition-all ${assessments.neuro.orientation.includes(o) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}
                               >
                                 {o}
                               </button>
@@ -832,7 +832,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Level of Consciousness</p>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Level of Consciousness</p>
                             <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Alert</option>
                               <option>Lethargic</option>
@@ -841,7 +841,7 @@ export default function PatientChartPage() {
                             </select>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Pupils</p>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Pupils</p>
                             <select value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>PERRLA</option>
                               <option>Sluggish</option>
@@ -863,20 +863,20 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Short-Term Memory</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Short-Term Memory</p>
                               <button onClick={() => setAssessments({...assessments, cognitive: {...assessments.cognitive, short_term_memory: assessments.cognitive.short_term_memory === 'Intact' ? 'Impaired' : 'Intact'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cognitive.short_term_memory === 'Intact' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                                 {assessments.cognitive.short_term_memory}
                               </button>
                            </div>
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Long-Term Memory</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Long-Term Memory</p>
                               <button onClick={() => setAssessments({...assessments, cognitive: {...assessments.cognitive, long_term_memory: assessments.cognitive.long_term_memory === 'Intact' ? 'Impaired' : 'Intact'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cognitive.long_term_memory === 'Intact' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                                 {assessments.cognitive.long_term_memory}
                               </button>
                            </div>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Decision Making</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Decision Making</p>
                           <select value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                             <option>Independent</option>
                             <option>Modified Independence</option>
@@ -898,7 +898,7 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Hearing</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Hearing</p>
                               <select value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Minimal Difficulty</option>
@@ -907,7 +907,7 @@ export default function PatientChartPage() {
                               </select>
                            </div>
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Vision</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Vision</p>
                               <select value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Impaired</option>
@@ -917,10 +917,10 @@ export default function PatientChartPage() {
                            </div>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Speech Clarity</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Speech Clarity</p>
                           <div className="grid grid-cols-3 gap-2">
                             {['Clear', 'Slurred', 'Aphasic'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, sensory: {...assessments.sensory, speech: val as any}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.sensory.speech === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, sensory: {...assessments.sensory, speech: val as any}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.sensory.speech === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
@@ -938,7 +938,7 @@ export default function PatientChartPage() {
                         <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">IV. Mood Indicators</h3>
                       </div>
                       <div className="space-y-4">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">PHQ Indicators Observed</p>
+                        <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">PHQ Indicators Observed</p>
                         <div className="flex flex-wrap gap-2">
                            {['Little Interest', 'Feeling Down', 'Tired', 'Poor Appetite', 'Bad about Self'].map(ind => (
                              <button 
@@ -949,14 +949,14 @@ export default function PatientChartPage() {
                                    : [...assessments.mood.indicators, ind];
                                  setAssessments({...assessments, mood: {...assessments.mood, indicators}});
                                }}
-                               className={`px-3 py-1.5 rounded-full text-[8px] font-black border transition-all ${assessments.mood.indicators.includes(ind) ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                               className={`px-3 py-1.5 rounded-full text-[8px] font-black border transition-all ${assessments.mood.indicators.includes(ind) ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}
                              >
                                {ind}
                              </button>
                            ))}
                         </div>
                         <div className="pt-2 border-t border-slate-100">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Indicator Frequency</p>
+                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Indicator Frequency</p>
                            <select value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Never</option>
                               <option>2-6 Days</option>
@@ -986,7 +986,7 @@ export default function PatientChartPage() {
                                    : [...assessments.behavior.types, type];
                                  setAssessments({...assessments, behavior: {...assessments.behavior, types}});
                                }}
-                               className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.behavior.types.includes(type) ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                               className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.behavior.types.includes(type) ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}
                              >
                                {type}
                              </button>
@@ -994,7 +994,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Frequency</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Frequency</p>
                               <select value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>None</option>
                                 <option>1-3 times</option>
@@ -1003,7 +1003,7 @@ export default function PatientChartPage() {
                               </select>
                            </div>
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Intervention</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Intervention</p>
                               <input 
                                 type="text" 
                                 placeholder="e.g. Redirected"
@@ -1017,19 +1017,19 @@ export default function PatientChartPage() {
                     </div>
 
                     {/* 5. Functional Status (ADLs) */}
-                    <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/40 border border-white/5 md:col-span-2 xl:col-span-1">
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 md:col-span-2 xl:col-span-1">
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-teal-400">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-900">
                           <Accessibility size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">VI. Functional Status</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-emerald-900">VI. Functional Status</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
-                           <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Activity</p>
+                           <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Activity</p>
                            <div className="grid grid-cols-2 gap-2">
-                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Self-Perf</p>
-                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Support</p>
+                              <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest text-center">Self-Perf</p>
+                              <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest text-center">Support</p>
                            </div>
                         </div>
                         {['Eating', 'Hygiene', 'Toileting', 'Mobility'].map(adl => (
@@ -1039,23 +1039,23 @@ export default function PatientChartPage() {
                                <select 
                                  value={assessments.functional.self_perf[adl.toLowerCase() as keyof typeof assessments.functional.self_perf]} 
                                  onChange={e => setAssessments({...assessments, functional: {...assessments.functional, self_perf: {...assessments.functional.self_perf, [adl.toLowerCase()]: e.target.value}}})}
-                                 className="bg-white/5 border border-white/10 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-white text-center"
+                                 className="bg-slate-50 border border-slate-100 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-emerald-900 text-center"
                                >
-                                 <option className="bg-slate-900">Ind.</option>
-                                 <option className="bg-slate-900">Supv.</option>
-                                 <option className="bg-slate-900">Lim.</option>
-                                 <option className="bg-slate-900">Ext.</option>
-                                 <option className="bg-slate-900">Total</option>
+                                 <option>Ind.</option>
+                                 <option>Supv.</option>
+                                 <option>Lim.</option>
+                                 <option>Ext.</option>
+                                 <option>Total</option>
                                </select>
                                <select 
                                  value={assessments.functional.support[adl.toLowerCase() as keyof typeof assessments.functional.support]} 
                                  onChange={e => setAssessments({...assessments, functional: {...assessments.functional, support: {...assessments.functional.support, [adl.toLowerCase()]: e.target.value}}})}
-                                 className="bg-white/5 border border-white/10 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-white text-center"
+                                 className="bg-slate-50 border border-slate-100 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-emerald-900 text-center"
                                >
-                                 <option className="bg-slate-900">0</option>
-                                 <option className="bg-slate-900">1</option>
-                                 <option className="bg-slate-900">2+</option>
-                                 <option className="bg-slate-900">Setup</option>
+                                 <option>0</option>
+                                 <option>1</option>
+                                 <option>2+</option>
+                                 <option>Setup</option>
                                </select>
                             </div>
                           </div>
@@ -1073,7 +1073,7 @@ export default function PatientChartPage() {
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Breathing Pattern</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Breathing Pattern</p>
                           <select value={assessments.resp.pattern} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, pattern: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                             <option>Even/Unlabored</option>
                             <option>Labored</option>
@@ -1083,10 +1083,10 @@ export default function PatientChartPage() {
                           </select>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Breath Sounds</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Breath Sounds</p>
                           <div className="grid grid-cols-2 gap-2">
                             {['Clear', 'Wheezing', 'Crackles', 'Diminished'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, resp: {...assessments.resp, sounds: val}})} className={`py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.resp.sounds === val ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, resp: {...assessments.resp, sounds: val}})} className={`py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.resp.sounds === val ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-emerald-900 border-slate-100 hover:border-slate-200'}`}>
                                 {val}
                               </button>
                             ))}
@@ -1094,7 +1094,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4 pt-2">
                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                              <p className="text-[8px] font-black text-blue-600 uppercase mb-1">Oxygen</p>
+                              <p className="text-[8px] font-black text-emerald-900 uppercase mb-1">Oxygen</p>
                               <select value={assessments.resp.oxygen} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, oxygen: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
                                 <option>Room Air</option>
                                 <option>NC</option>
@@ -1102,7 +1102,7 @@ export default function PatientChartPage() {
                               </select>
                            </div>
                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                              <p className="text-[8px] font-black text-blue-600 uppercase mb-1">Flow (LPM)</p>
+                              <p className="text-[8px] font-black text-emerald-900 uppercase mb-1">Flow (LPM)</p>
                               <input type="number" value={assessments.resp.o2_flow} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, o2_flow: parseInt(e.target.value)}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none" />
                            </div>
                         </div>
@@ -1120,30 +1120,30 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Rhythm</p>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Rhythm</p>
                             <button onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, rhythm: assessments.cardio.rhythm === 'Regular' ? 'Irregular' : 'Regular'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cardio.rhythm === 'Regular' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                               {assessments.cardio.rhythm}
                             </button>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Cap Refill</p>
-                            <button onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, cap_refill: assessments.cardio.cap_refill === '< 3s' ? '> 3s' : '< 3s'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cardio.cap_refill === '< 3s' ? 'bg-slate-50 text-slate-600 border-slate-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Cap Refill</p>
+                            <button onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, cap_refill: assessments.cardio.cap_refill === '< 3s' ? '> 3s' : '< 3s'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cardio.cap_refill === '< 3s' ? 'bg-slate-50 text-emerald-900 border-slate-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                               {assessments.cardio.cap_refill}
                             </button>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Edema Tracking</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Edema Tracking</p>
                           <div className="flex gap-1">
                             {['None', '1+', '2+', '3+', '4+'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, edema: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.cardio.edema === val ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, edema: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.cardio.edema === val ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
                           </div>
                         </div>
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Pulses (Radial/Pedal)</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-1">Pulses (Radial/Pedal)</p>
                           <select value={assessments.cardio.pulses} onChange={e => setAssessments({...assessments, cardio: {...assessments.cardio, pulses: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
                             <option>Strong</option>
                             <option>Weak</option>
@@ -1163,10 +1163,10 @@ export default function PatientChartPage() {
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Appetite / Intake</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Appetite / Intake</p>
                           <div className="flex gap-2">
                             {['Poor', 'Fair', 'Good'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, gi: {...assessments.gi, appetite: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.appetite.includes(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, gi: {...assessments.gi, appetite: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.appetite.includes(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
@@ -1174,13 +1174,13 @@ export default function PatientChartPage() {
                         </div>
                         <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100">
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-[8px] font-black text-orange-600 uppercase">Bristol Stool Scale</p>
+                            <p className="text-[8px] font-black text-emerald-900 uppercase">Bristol Stool Scale</p>
                             <span className="text-[10px] font-black text-orange-700">Type {assessments.gi.stool_bristol}</span>
                           </div>
                           <input type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
                         </div>
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fluid Intake (mL)</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Fluid Intake (mL)</p>
                           <input 
                             type="number" 
                             value={assessments.gi.fluids_in_ml} 
@@ -1202,7 +1202,7 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Device</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Device</p>
                               <select value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>None</option>
                                 <option>Foley</option>
@@ -1211,7 +1211,7 @@ export default function PatientChartPage() {
                               </select>
                            </div>
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Urine</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Urine</p>
                               <select value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Clear</option>
                                 <option>Cloudy</option>
@@ -1221,7 +1221,7 @@ export default function PatientChartPage() {
                            </div>
                         </div>
                         <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-100 flex justify-between items-center">
-                          <p className="text-[9px] font-black text-cyan-600 uppercase">Void Count (Shift)</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase">Void Count (Shift)</p>
                           <div className="flex items-center gap-3">
                             <button onClick={() => setAssessments({...assessments, gu: {...assessments.gu, voiding_count: Math.max(0, assessments.gu.voiding_count - 1)}})} className="w-6 h-6 rounded-full bg-white border border-cyan-200 flex items-center justify-center font-black">-</button>
                             <span className="font-black text-xs">{assessments.gu.voiding_count}</span>
@@ -1242,14 +1242,14 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Turgor</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Turgor</p>
                               <select value={assessments.skin.turgor} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, turgor: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Elastic</option>
                                 <option>Tenting</option>
                               </select>
                            </div>
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Temperature</p>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Temperature</p>
                               <select value={assessments.skin.temp} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, temp: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Warm</option>
                                 <option>Cool</option>
@@ -1258,10 +1258,10 @@ export default function PatientChartPage() {
                            </div>
                         </div>
                         <div>
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Moisture</p>
+                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Moisture</p>
                            <div className="grid grid-cols-3 gap-2">
                              {['Dry', 'Diaphoretic', 'Clammy'].map(val => (
-                               <button key={val} onClick={() => setAssessments({...assessments, skin: {...assessments.skin, moisture: val}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.skin.moisture === val ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                               <button key={val} onClick={() => setAssessments({...assessments, skin: {...assessments.skin, moisture: val}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.skin.moisture === val ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                  {val}
                                </button>
                              ))}
@@ -1280,7 +1280,7 @@ export default function PatientChartPage() {
                       </div>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100 shadow-sm">
-                           <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Ulcers Present</p>
+                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Ulcers Present</p>
                            <button 
                              onClick={() => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, present: !assessments.pressure_ulcers.present}})}
                              className={`w-12 h-6 rounded-full transition-all relative ${assessments.pressure_ulcers.present ? 'bg-rose-500' : 'bg-slate-200'}`}
@@ -1291,7 +1291,7 @@ export default function PatientChartPage() {
                         {assessments.pressure_ulcers.present && (
                           <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div>
-                               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Highest Stage</p>
+                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Highest Stage</p>
                                <select value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as any}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
                                  <option>1</option>
                                  <option>2</option>
@@ -1302,7 +1302,7 @@ export default function PatientChartPage() {
                                </select>
                             </div>
                             <div>
-                               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Primary Site</p>
+                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Primary Site</p>
                                <input 
                                  type="text" 
                                  placeholder="e.g. Coccyx"
@@ -1326,18 +1326,18 @@ export default function PatientChartPage() {
                       </div>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pain Level (0-10)</p>
-                          <span className={`px-3 py-1 rounded-full text-xs font-black ${assessments.pain.level > 5 ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{assessments.pain.level}</span>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Pain Level (0-10)</p>
+                          <span className={`px-3 py-1 rounded-full text-xs font-black ${assessments.pain.level > 5 ? 'bg-rose-500 text-white' : 'bg-slate-100 text-emerald-900'}`}>{assessments.pain.level}</span>
                         </div>
                         <input type="range" min="0" max="10" step="1" value={assessments.pain.level} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, level: parseInt(e.target.value)}})} className="w-full accent-rose-500 mb-4" />
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</p>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Location</p>
                             <input type="text" placeholder="e.g. Back" value={assessments.pain.location} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, location: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] outline-none" />
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Type</p>
+                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Type</p>
                             <select value={assessments.pain.type} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, type: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>None</option>
                               <option>Aching</option>
@@ -1351,16 +1351,16 @@ export default function PatientChartPage() {
                     </div>
 
                     {/* 13. Safety & Precautions */}
-                    <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/40 border border-white/5">
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-teal-400">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-900">
                           <ShieldCheck size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">XIV. Safety & Environmental</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-emerald-900">XIV. Safety & Environmental</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Safety Verification</p>
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-3">Safety Verification</p>
                           <div className="space-y-2">
                             {['Bed Lowest', 'Call Light', 'Side Rails', 'Floor Mats'].map(check => (
                               <button 
@@ -1371,7 +1371,7 @@ export default function PatientChartPage() {
                                     : [...assessments.adl.safety_checks, check];
                                   setAssessments({...assessments, adl: {...assessments.adl, safety_checks: checks}});
                                 }}
-                                className={`w-full py-2 px-4 rounded-lg text-left text-[9px] font-black border transition-all flex items-center justify-between ${assessments.adl.safety_checks.includes(check) ? 'bg-teal-500 text-white border-teal-500' : 'bg-white/5 text-slate-400 border-transparent'}`}
+                                className={`w-full py-2 px-4 rounded-lg text-left text-[9px] font-black border transition-all flex items-center justify-between ${assessments.adl.safety_checks.includes(check) ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}
                               >
                                 {check}
                                 {assessments.adl.safety_checks.includes(check) && <Check size={12} />}
@@ -1391,12 +1391,12 @@ export default function PatientChartPage() {
                       <div className="flex items-center justify-between mb-8">
                         <div>
                           <h3 className="text-xs font-black text-emerald-900 uppercase tracking-[0.2em] mb-2">Clinical Narrative Progress Note</h3>
-                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Document the clinical story of the shift (DAR/SOAP Format).</p>
+                          <p className="text-[10px] font-medium text-emerald-900 uppercase tracking-widest">Document the clinical story of the shift (DAR/SOAP Format).</p>
                         </div>
                         <select 
                           value={noteFocus} 
                           onChange={e => setNoteFocus(e.target.value)}
-                          className="bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest outline-none text-quro-teal"
+                          className="bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest outline-none text-emerald-900"
                         >
                           <option>Routine Shift Note</option>
                           <option>Change in Condition</option>
@@ -1408,9 +1408,9 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="mb-6 flex flex-wrap gap-2">
-                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest self-center mr-2">Quick Macros:</span>
+                        <span className="text-[9px] font-black text-emerald-900 uppercase tracking-widest self-center mr-2">Quick Macros:</span>
                         {macros.map((m, i) => (
-                          <button key={i} onClick={() => applyMacro(m.text)} className="px-4 py-2 bg-slate-50 hover:bg-quro-teal/10 hover:text-quro-teal text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100 transition-all">
+                          <button key={i} onClick={() => applyMacro(m.text)} className="px-4 py-2 bg-slate-50 hover:bg-quro-teal/10 hover:text-emerald-900 text-emerald-900 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100 transition-all">
                             {m.label}
                           </button>
                         ))}
@@ -1420,14 +1420,14 @@ export default function PatientChartPage() {
                         value={narrativeNote}
                         onChange={(e) => setNarrativeNote(e.target.value)}
                         placeholder="Write your clinical note here... Use macros for rapid entry."
-                        className="w-full h-[500px] p-8 bg-slate-50 border border-slate-100 rounded-3xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-quro-teal/20 transition-all mb-6 leading-relaxed"
+                        className="w-full h-[500px] p-8 bg-slate-50 border border-slate-100 rounded-3xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-900/20 transition-all mb-6 leading-relaxed"
                       />
 
                       <div className="flex justify-end gap-4">
                         <button 
                           onClick={() => handleSaveCharting(true)}
                           disabled={isSavingNote || !narrativeNote.trim()}
-                          className="px-8 py-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all flex items-center gap-3"
+                          className="px-8 py-5 bg-white border border-slate-200 text-emerald-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all flex items-center gap-3"
                         >
                           {isSavingNote ? 'Saving...' : 'Save as Draft'}
                         </button>
@@ -1447,16 +1447,16 @@ export default function PatientChartPage() {
                         <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest mb-6">Note Guidelines</h3>
                         <div className="space-y-4">
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mb-1">Data</p>
-                              <p className="text-[10px] text-slate-500 font-medium">Objective observations and clinical facts.</p>
+                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Data</p>
+                              <p className="text-[10px] text-emerald-900 font-medium">Objective observations and clinical facts.</p>
                            </div>
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Action</p>
-                              <p className="text-[10px] text-slate-500 font-medium">Nursing interventions performed.</p>
+                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Action</p>
+                              <p className="text-[10px] text-emerald-900 font-medium">Nursing interventions performed.</p>
                            </div>
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Response</p>
-                              <p className="text-[10px] text-slate-500 font-medium">Patient reaction and effectiveness of care.</p>
+                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Response</p>
+                              <p className="text-[10px] text-emerald-900 font-medium">Patient reaction and effectiveness of care.</p>
                            </div>
                         </div>
                      </div>
@@ -1471,27 +1471,27 @@ export default function PatientChartPage() {
         <div className="xl:col-span-4 space-y-8 no-print">
           <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
             <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-              <ShieldCheck size={18} className="text-teal-600" />
+              <ShieldCheck size={18} className="text-emerald-900" />
               Clinical Summary
             </h3>
             <div className="space-y-6">
               <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Dietary Order</p>
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-3">Dietary Order</p>
                 <div className="flex items-center gap-3">
-                  <Droplets size={20} className="text-blue-500" />
-                  <p className="text-lg font-black text-slate-900 capitalize">{patient.diet || 'Regular'}</p>
+                  <Droplets size={20} className="text-emerald-900" />
+                  <p className="text-lg font-black text-emerald-900 capitalize">{patient.diet || 'Regular'}</p>
                 </div>
               </div>
 
               <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Next Scheduled Vital</p>
-                <div className="flex items-center gap-3 text-slate-400">
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-3">Next Scheduled Vital</p>
+                <div className="flex items-center gap-3 text-emerald-900">
                   <Clock size={20} />
                   <p className="text-sm font-bold">Today, 02:00 PM</p>
                 </div>
               </div>
 
-              <button className="w-full py-5 bg-quro-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all shadow-xl shadow-teal-500/20">
+              <button className="w-full py-5 bg-emerald-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-950 transition-all shadow-xl shadow-emerald-900/20">
                 Modify Treatment Plan
               </button>
             </div>
@@ -1499,12 +1499,12 @@ export default function PatientChartPage() {
 
           <div className="glass-card p-10 bg-slate-900 text-white rounded-[2.5rem] relative overflow-hidden">
             <Phone className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5" />
-            <h3 className="text-xs font-black text-teal-400 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
+            <h3 className="text-xs font-black text-emerald-900 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Representative</p>
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Primary Representative</p>
                 <p className="text-lg font-black">Jane Thompson</p>
-                <p className="text-xs font-medium text-slate-400">555-0123 • Daughter</p>
+                <p className="text-xs font-medium text-emerald-900">555-0123 • Daughter</p>
               </div>
               <button className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
                 View All Contacts
@@ -1518,13 +1518,13 @@ export default function PatientChartPage() {
       <div className="print-only hidden mt-20 pt-10 border-t border-slate-200">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Document Certification</p>
-            <p className="text-xs font-bold text-slate-900">Generated via Quro Clinical Platform on {new Date().toLocaleString()}</p>
-            <p className="text-xs text-slate-500 italic mt-1">Official Clinical Record — Platinum Health Hub</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900 mb-2">Document Certification</p>
+            <p className="text-xs font-bold text-emerald-900">Generated via Quro Clinical Platform on {new Date().toLocaleString()}</p>
+            <p className="text-xs text-emerald-900 italic mt-1">Official Clinical Record — Platinum Health Hub</p>
           </div>
           <div className="text-right">
             <div className="w-48 h-px bg-slate-300 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nurse / Physician Signature</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Nurse / Physician Signature</p>
           </div>
         </div>
       </div>
@@ -1538,13 +1538,13 @@ export default function PatientChartPage() {
               <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Assessment Record</h1>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Shift Certification (Side A)</p>
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Platinum Health Hub • Shift Certification (Side A)</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
-              <p className="text-xs font-black text-quro-teal uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+              <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
+              <p className="text-xs font-black text-emerald-900 uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
             </div>
           </div>
 
@@ -1556,22 +1556,22 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">A&O Level</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">A&O X {assessments.neuro.orientation.length}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">A&O Level</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">A&O X {assessments.neuro.orientation.length}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">LOC</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.loc}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">LOC</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.neuro.loc}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Orientation To</p>
-                  <p className="text-[9px] font-black uppercase text-slate-500 italic">
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Orientation To</p>
+                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
                     {assessments.neuro.orientation.join(', ') || 'No orientation markers noted'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pupils</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.pupils}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pupils</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.neuro.pupils}</p>
                 </div>
               </div>
             </div>
@@ -1583,16 +1583,16 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Short-Term Memory</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.short_term_memory}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Short-Term Memory</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.short_term_memory}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Long-Term Memory</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.long_term_memory}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Long-Term Memory</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.long_term_memory}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Daily Decision Making</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.decision_making}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Daily Decision Making</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.decision_making}</p>
                 </div>
               </div>
             </div>
@@ -1604,16 +1604,16 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hearing</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.hearing}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Hearing</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.hearing}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vision</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.vision}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Vision</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.vision}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Speech Pattern</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.speech}</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Speech Pattern</p>
+                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.speech}</p>
                 </div>
               </div>
             </div>
@@ -1625,14 +1625,14 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 border-b border-slate-100 pb-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Mood Indicators (PHQ)</p>
-                  <p className="text-[9px] font-black uppercase text-slate-900 italic">
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-1">Mood Indicators (PHQ)</p>
+                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
                     {assessments.mood.indicators.join(', ') || 'No mood distress noted'}
                   </p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Behavioral Expressions</p>
-                  <p className="text-[9px] font-black uppercase text-slate-900 italic">
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-1">Behavioral Expressions</p>
+                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
                     {assessments.behavior.types.join(', ') || 'No behavioral issues noted'}
                   </p>
                 </div>
@@ -1645,14 +1645,14 @@ export default function PatientChartPage() {
                 VI. Functional Status (MDS)
               </h3>
               <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase">
-                <div className="text-slate-400">Eating:</div>
-                <div className="text-slate-900">{assessments.functional.self_perf.eating} / {assessments.functional.support.eating}</div>
-                <div className="text-slate-400">Hygiene:</div>
-                <div className="text-slate-900">{assessments.functional.self_perf.hygiene} / {assessments.functional.support.hygiene}</div>
-                <div className="text-slate-400">Toileting:</div>
-                <div className="text-slate-900">{assessments.functional.self_perf.toileting} / {assessments.functional.support.toileting}</div>
-                <div className="text-slate-400">Mobility:</div>
-                <div className="text-slate-900">{assessments.functional.self_perf.mobility} / {assessments.functional.support.mobility}</div>
+                <div className="text-emerald-900">Eating:</div>
+                <div className="text-emerald-900">{assessments.functional.self_perf.eating} / {assessments.functional.support.eating}</div>
+                <div className="text-emerald-900">Hygiene:</div>
+                <div className="text-emerald-900">{assessments.functional.self_perf.hygiene} / {assessments.functional.support.hygiene}</div>
+                <div className="text-emerald-900">Toileting:</div>
+                <div className="text-emerald-900">{assessments.functional.self_perf.toileting} / {assessments.functional.support.toileting}</div>
+                <div className="text-emerald-900">Mobility:</div>
+                <div className="text-emerald-900">{assessments.functional.self_perf.mobility} / {assessments.functional.support.mobility}</div>
               </div>
             </div>
 
@@ -1663,19 +1663,19 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Breathing Pattern</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Breathing Pattern</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.pattern}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Breath Sounds</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Breath Sounds</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.sounds}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">O2 Delivery</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">O2 Delivery</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.oxygen}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cough</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Cough</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.cough}</p>
                 </div>
               </div>
@@ -1688,11 +1688,11 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Rhythm</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Rhythm</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.rhythm}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Edema</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Edema</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.edema} ({assessments.cardio.edema_location})</p>
                 </div>
               </div>
@@ -1705,15 +1705,15 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">BM Status</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BM Status</p>
                   <p className="text-[10px] font-black uppercase text-slate-900">Bristol Type {assessments.gi.stool_bristol}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Voiding Status</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Voiding Status</p>
                   <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gu.voiding}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Shift Intake</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Shift Intake</p>
                   <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gi.fluids_in_ml} mL / Appetite: {assessments.gi.appetite}</p>
                 </div>
               </div>
@@ -1726,11 +1726,11 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Skin Condition</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Skin Condition</p>
                   <p className="text-[10px] font-black uppercase text-slate-900">{assessments.skin.condition}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pressure Ulcer</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pressure Ulcer</p>
                   <p className="text-[10px] font-black uppercase text-rose-600">
                     {assessments.pressure_ulcers.present ? `YES: STAGE ${assessments.pressure_ulcers.stage} @ ${assessments.pressure_ulcers.site}` : 'NONE NOTED'}
                   </p>
@@ -1745,11 +1745,11 @@ export default function PatientChartPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Level</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Level</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.level} / 10</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Type/Site</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Type/Site</p>
                   <p className="text-[10px] font-black uppercase text-slate-900">{assessments.pain.type} ({assessments.pain.location || 'N/A'})</p>
                 </div>
               </div>
@@ -1771,14 +1771,14 @@ export default function PatientChartPage() {
           </div>
 
           <div className="mt-8 pt-8 flex justify-between items-end border-t-4 border-slate-900">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-tight">
+            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">
               Quro Clinical Intelligence Platform • v4.5 Platinum<br />
               Generated Official Record • Page 1 of 2 (Side A)
             </div>
             <div className="text-right">
               <div className="w-64 h-0.5 bg-slate-900 mb-2" />
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-900 mb-1">Licensed Clinical Professional Signature</p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})</p>
+              <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest">{staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})</p>
             </div>
           </div>
         </div>
@@ -1790,19 +1790,19 @@ export default function PatientChartPage() {
               <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Narrative Log</h1>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Narrative Progress Notes (Side B)</p>
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Platinum Health Hub • Narrative Progress Notes (Side B)</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
+              <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
             </div>
           </div>
 
           <div className="border-4 border-slate-900 p-10 rounded-[2.5rem] flex-grow relative bg-slate-50/30">
             <div className="absolute top-6 left-6 flex items-center gap-2">
               <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Official Clinical Narrative (DAR/SOAP)</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Official Clinical Narrative (DAR/SOAP)</p>
             </div>
             
             <div className="mt-12 text-sm font-medium leading-[2.2] text-slate-900 whitespace-pre-wrap">
@@ -1822,35 +1822,35 @@ export default function PatientChartPage() {
 
           <div className="mt-8 grid grid-cols-3 gap-10">
             <div className="col-span-2 border-2 border-slate-200 p-6 rounded-[2rem] bg-slate-50">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 border-b border-slate-200 pb-2">Shift Intervention Summary Checklist</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900 mb-4 border-b border-slate-200 pb-2">Shift Intervention Summary Checklist</p>
               <div className="grid grid-cols-2 gap-y-4">
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
                   <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
                   Medications Administered
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
                   <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
                   Treatments Completed
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
                   <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
                   Physician Notified
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
                   <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
                   Family Notified
                 </div>
               </div>
             </div>
             <div className="text-right flex flex-col justify-end">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Authenticated By</p>
-              <p className="text-sm font-black uppercase text-slate-900 tracking-tight">{staff?.first_name} {staff?.last_name}, RN</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900 mb-2">Authenticated By</p>
+              <p className="text-sm font-black uppercase text-emerald-900 tracking-tight">{staff?.first_name} {staff?.last_name}, RN</p>
               <div className="w-full h-1 bg-slate-900 mt-2 shadow-sm" />
-              <p className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">Electronic Hash: {patient?.id?.slice(0, 16)}</p>
+              <p className="text-[9px] font-black text-emerald-900 mt-2 uppercase tracking-widest">Electronic Hash: {patient?.id?.slice(0, 16)}</p>
             </div>
           </div>
 
-          <div className="mt-8 pt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 text-center border-t border-slate-100">
+          <div className="mt-8 pt-8 text-[10px] font-black uppercase tracking-[0.4em] text-emerald-900 text-center border-t border-slate-100">
             Official Clinical Record • Platinum Health Hub • Side B
           </div>
         </div>
