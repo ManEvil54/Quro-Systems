@@ -6,8 +6,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { 
   initializeFirestore, 
-  persistentLocalCache, 
-  persistentSingleTabManager 
+  persistentLocalCache 
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -30,9 +29,7 @@ const app = getApps().length
 // Safely export services (will be undefined during build if config is missing)
 export const auth = app ? getAuth(app) : ({} as any);
 export const db = app ? initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager()
-  }),
+  localCache: persistentLocalCache({}),
   experimentalForceLongPolling: true,
 }) : ({} as any);
 
