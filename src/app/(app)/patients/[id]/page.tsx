@@ -59,7 +59,7 @@ export default function PatientChartPage() {
   const id = params.id as string;
   const { activeFacility } = useAuth();
   const { patient, loading: patientLoading, error } = usePatient(id);
-  const { medications, loading: medsLoading } = useMedications(id);
+  const { medications, loading: medsLoading, addMedication } = useMedications(id);
   const { entries: marEntries, loading: marLoading, bulkLogAdministrations } = useMAR(id);
   const { createNote } = useHandover();
   const { notes, saveNote, updateNote } = useNotes(id);
@@ -305,7 +305,7 @@ export default function PatientChartPage() {
   };
 
   const handleAddOrder = async () => {
-    if (!newOrder.order_text.trim()) return;
+    if (!newOrder.order_text.trim() || !patient) return;
     try {
       const orderRef = await addOrder({
         order_text: newOrder.order_text,
