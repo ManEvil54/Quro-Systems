@@ -171,6 +171,26 @@ export interface HandoverNote {
   created_at: string;
 }
 
+export interface ProgressNote {
+  id: string;
+  org_id: string;
+  patient_id: string;
+  authored_by: string;
+  type: 'shift_assessment' | 'narrative' | 'clinical' | 'social';
+  content: string;
+  assessments?: {
+    safety_check: boolean;
+    adl_care: boolean;
+    skin_intact: boolean;
+    bm_shift: boolean;
+    pain_managed: boolean;
+    bed_rails_up: boolean;
+    call_light_reach: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Incident {
   id: string;
   org_id: string;

@@ -28,6 +28,7 @@ import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
 import { useHandover } from '@/hooks/useHandover';
+import { useNotes } from '@/hooks/useNotes';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function PatientChartPage() {
@@ -39,10 +40,24 @@ export default function PatientChartPage() {
   const { medications, loading: medsLoading } = useMedications(id);
   const { entries: marEntries, loading: marLoading, bulkLogAdministrations } = useMAR(id);
   const { createNote } = useHandover();
+  const { notes, saveNote } = useNotes(id);
   
-  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders'>('facesheet');
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders' | 'charting'>('facesheet');
   const [signOffActions, setSignOffActions] = useState<Record<string, 'given' | 'held'>>({});
   const [isSigningOff, setIsSigningOff] = useState(false);
+
+  // Charting State
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [narrativeNote, setNarrativeNote] = useState('');
+  const [assessments, setAssessments] = useState({
+    safety_check: true,
+    adl_care: true,
+    skin_intact: true,
+    bm_shift: false,
+    pain_managed: true,
+    bed_rails_up: true,
+    call_light_reach: true,
+  });
 
   // Initialize sign-off actions when meds load
   React.useEffect(() => {
@@ -87,6 +102,25 @@ export default function PatientChartPage() {
       alert('Failed to record medication pass.');
     } finally {
       setIsSigningOff(false);
+    }
+  };
+
+  const handleSaveCharting = async () => {
+    if (isSavingNote) return;
+    setIsSavingNote(true);
+    try {
+      await saveNote({
+        type: 'shift_assessment',
+        content: narrativeNote,
+        assessments: assessments
+      });
+      setNarrativeNote('');
+      alert('Shift charting saved to permanent record.');
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Failed to save shift charting.');
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
@@ -189,6 +223,7 @@ export default function PatientChartPage() {
           { id: 'mar', icon: ClipboardList, label: 'MAR Grid' },
           { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
           { id: 'orders', icon: Stethoscope, label: 'Orders' },
+          { id: 'charting', icon: FileText, label: 'Shift Charting' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -454,6 +489,101 @@ export default function PatientChartPage() {
               </div>
             </div>
           )}
+
+          {activeTab === 'charting' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Check-off List */}
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem]">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                      <ShieldCheck size={18} className="text-quro-teal" />
+                      Shift Check-Offs
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      {Object.entries(assessments).map(([key, value]) => (
+                        <label key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all">
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-left">
+                            {key.replace(/_/g, ' ')}
+                          </span>
+                          <input 
+                            type="checkbox" 
+                            checked={value}
+                            onChange={(e) => setAssessments(prev => ({ ...prev, [key]: e.target.checked }))}
+                            className="w-5 h-5 rounded border-slate-300 text-quro-teal focus:ring-quro-teal"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Narrative Note */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                      <FileText size={18} className="text-quro-teal" />
+                      Narrative Progress Note
+                    </h3>
+
+                    <textarea 
+                      value={narrativeNote}
+                      onChange={(e) => setNarrativeNote(e.target.value)}
+                      placeholder="Enter shift summary, clinical observations, and patient response to care..."
+                      className="w-full h-64 p-8 bg-slate-50 border border-slate-100 rounded-3xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-quro-teal/20 transition-all mb-6"
+                    />
+
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={handleSaveCharting}
+                        disabled={isSavingNote || !narrativeNote.trim()}
+                        className="px-10 py-5 bg-quro-forest text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-quro-forest/20 disabled:opacity-50"
+                      >
+                        {isSavingNote ? 'Saving...' : 'Finalize Charting'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Note History */}
+                  <div className="glass-card p-10 bg-slate-50/50 border border-slate-100 rounded-[2.5rem]">
+                    <h3 className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                      <Clock size={18} />
+                      Recent Progress Notes
+                    </h3>
+
+                    <div className="space-y-6">
+                      {notes.length > 0 ? notes.map((note) => (
+                        <div key={note.id} className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="px-4 py-2 bg-slate-100 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                              {note.type.replace(/_/g, ' ')}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">
+                              {note.created_at ? (typeof note.created_at === 'string' ? new Date(note.created_at).toLocaleString() : new Date((note.created_at as any).seconds * 1000).toLocaleString()) : 'Just now'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 leading-relaxed font-medium">{note.content}</p>
+                          {note.assessments && (
+                            <div className="mt-4 pt-4 border-t border-slate-50 flex flex-wrap gap-2">
+                              {Object.entries(note.assessments).map(([k, v]) => v && (
+                                <span key={k} className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-tighter">
+                                  ✓ {k.replace(/_/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )) : (
+                        <div className="py-20 text-center">
+                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No previous notes found.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
         </div>
 
         {/* Sidebar Status */}
