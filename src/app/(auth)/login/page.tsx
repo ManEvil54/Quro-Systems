@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadEmail, setLeadEmail] = useState('');
   const [leadCaptured, setLeadCaptured] = useState(false);
 
@@ -30,7 +29,7 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
-      // 1. Capture Lead
+      // Lead capture logic...
       const firebaseConfig = {
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -51,11 +50,8 @@ export default function LoginPage() {
       });
 
       setLeadCaptured(true);
-      
-      // Small delay for UX
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // 2. Proceed to Login
       setEmail('demo@qurosystems.com');
       setPassword('QuroDemo2026!');
       clearError();
@@ -63,7 +59,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error('Lead capture error:', err);
-      // Fallback: still try to sign in if lead capture fails (don't block the demo)
       try {
         await signIn('demo@qurosystems.com', 'QuroDemo2026!');
         router.push('/dashboard');
@@ -81,197 +76,170 @@ export default function LoginPage() {
       await signIn(email, password);
       router.push('/dashboard');
     } catch {
-      // Error is handled by context
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel — Branding */}
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center"
-        style={{
-          background: 'linear-gradient(135deg, #0c1322 0%, #0f172a 40%, #115e59 100%)',
-        }}
-      >
-        {/* Ambient glow */}
-        <div className="absolute top-1/4 left-1/3 w-80 h-80 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #14b8a6 0%, transparent 70%)', filter: 'blur(60px)' }}
-        />
-        <div className="absolute bottom-1/4 right-1/4 w-60 h-60 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #5eead4 0%, transparent 70%)', filter: 'blur(40px)' }}
-        />
+    <div className="min-h-screen flex bg-[#fcfdfe]">
+      {/* Left Panel — Branding (Medical Spa Aesthetic) */}
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center bg-slate-900">
+        {/* Deep clinical ambient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-900/30" />
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-teal-500/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]" />
+        </div>
 
-        <div className="relative z-10 px-16 max-w-lg">
-          <QuroLogo size={56} showText variant="full" />
-          <h2 className="text-3xl font-bold text-white mt-10 leading-tight">
-            Precision care,<br />
-            <span className="text-teal-300">synchronized.</span>
-          </h2>
-          <p className="text-slate-400 mt-4 text-sm leading-relaxed">
-            The closed-loop sub-acute care platform for Congregate Living Health Facilities.
-            Medication administration, clinical handovers, and compliance — all in one system.
-          </p>
+        <div className="relative z-10 px-20 max-w-2xl">
+          <QuroLogo size={64} showText variant="full" />
+          
+          <div className="mt-16 space-y-8">
+            <h2 className="text-5xl font-medium text-white tracking-tight leading-[1.1]">
+              <span className="font-serif italic text-teal-400/80 font-light block mb-2">Precision care,</span>
+              synchronized.
+            </h2>
+            
+            <p className="text-xl text-slate-400 font-light leading-relaxed">
+              The closed-loop clinical platform designed to reduce cognitive load and eliminate handover errors.
+            </p>
 
-          <div className="mt-12 flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03]">
-            <Shield size={18} className="text-teal-400" />
-            <span className="text-xs text-slate-400">HIPAA-compliant · 256-bit encryption · SOC 2 Type II</span>
+            <div className="flex flex-col gap-6 pt-8">
+              {[
+                { icon: Shield, text: 'HIPAA compliant infrastructure' },
+                { icon: Activity, text: 'Real-time multi-facility synchronization' },
+                { icon: CheckCircle2, text: 'Fax-ready MAR generation' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 text-slate-300">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-teal-400">
+                    <item.icon size={20} />
+                  </div>
+                  <span className="text-sm font-medium tracking-wide">{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Right Panel — Login Form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12"
-        style={{
-          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-          backgroundImage: 'radial-gradient(ellipse at 70% 0%, rgba(13,148,136,0.03) 0%, transparent 50%)',
-        }}
-      >
+      {/* Right Panel — Forms */}
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-20 py-12 relative">
+        {/* Subtle top light source */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-teal-500/20 to-transparent" />
+        
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-10">
-            <QuroLogo size={48} showText variant="full" />
+          <div className="lg:hidden flex justify-center mb-12">
+            <QuroLogo size={52} showText variant="full" />
           </div>
 
-          <div className="glass-card p-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
-              <p className="text-sm text-slate-500 mt-1">Sign in to your care portal</p>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="mb-10 text-center lg:text-left">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Portal Access</h1>
+              <p className="text-slate-500 mt-2 font-light">Secure clinical gateway for Quro healthcare providers.</p>
             </div>
 
-            {/* Error Display */}
             {error && (
-              <div className="mb-6 p-3 rounded-xl bg-red-50/80 border border-red-100 text-sm text-red-700 flex items-center gap-2 animate-in">
-                <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+              <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700 flex items-center gap-3 animate-pulse">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
-              <div>
-                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Email address
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input"
-                  placeholder="info@qurosystems.com"
-                  required
-                  autoComplete="email"
-                />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Institutional Email</label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:bg-white focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all outline-none"
+                    placeholder="name@facility.com"
+                    required
+                  />
+                </div>
               </div>
 
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">
-                    Password
-                  </label>
-                  <button type="button" className="text-xs text-teal-600 hover:text-teal-700 font-medium">
-                    Forgot password?
-                  </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
+                  <button type="button" className="text-[10px] font-black uppercase tracking-widest text-teal-600 hover:text-teal-700">Reset</button>
                 </div>
-                <div className="relative">
+                <div className="relative group">
+                  <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
                   <input
-                    id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input pr-10"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 py-4 text-sm focus:bg-white focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all outline-none"
                     placeholder="••••••••"
                     required
-                    autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={submitting || loading}
-                className="btn-primary shimmer-btn w-full flex items-center justify-center gap-2 py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-teal-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {submitting ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight size={16} />
-                  </>
-                )}
+                {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Enter Workspace'}
               </button>
             </form>
 
-            <div className="mt-8 pt-8 border-t border-slate-100">
-              <div className="text-center mb-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Prospect / Investor Access</p>
-                <p className="text-[10px] text-slate-500 italic">No account needed — Instant explore</p>
+            {/* Quick Demo Access (High Conversion Lead Capture) */}
+            <div className="mt-12 pt-10 border-t border-slate-100 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
+                Prospect Access
               </div>
               
-              <div className="p-1 rounded-2xl bg-teal-50/50 border border-teal-100 flex items-center gap-1">
+              <div className="text-center mb-6">
+                <p className="text-xs text-slate-500 font-light">Explore the <b>Platinum Health Hub</b> demo instantly.</p>
+              </div>
+
+              <div className="group relative bg-white border border-slate-200 p-1.5 rounded-2xl focus-within:border-teal-500/30 focus-within:ring-4 focus-within:ring-teal-500/5 transition-all flex items-center gap-2 shadow-sm">
                 <div className="relative flex-1">
-                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600/50" />
+                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600/30" />
                   <input
                     type="email"
                     required
                     value={leadEmail}
                     onChange={(e) => setLeadEmail(e.target.value)}
-                    placeholder="Enter your professional email"
-                    className="w-full bg-transparent border-none focus:ring-0 text-xs text-teal-900 placeholder:text-teal-600/30 pl-9 py-2.5"
+                    placeholder="Professional email for access"
+                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-900 placeholder:text-slate-400 pl-11 py-3"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => handleDemoAccess()}
                   disabled={submitting || !leadEmail}
-                  className="bg-teal-600 text-white rounded-xl px-4 py-2 text-[11px] font-bold hover:bg-teal-700 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-teal-200"
+                  className="bg-teal-600 text-white rounded-xl px-6 py-3 text-xs font-bold hover:bg-teal-700 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
                 >
-                  {submitting ? (
-                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      Explore Demo
-                      <ArrowRight size={14} />
-                    </>
-                  )}
+                  {submitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Explore Live Demo'}
                 </button>
               </div>
               
               {leadCaptured && (
-                <div className="mt-2 text-center animate-in fade-in slide-in-from-top-1">
-                  <p className="text-[10px] text-teal-600 font-bold flex items-center justify-center gap-1">
-                    <CheckCircle2 size={12} />
-                    Redirecting to Secure Environment...
-                  </p>
-                </div>
+                <p className="mt-4 text-center text-[11px] font-bold text-teal-600 animate-pulse flex items-center justify-center gap-2">
+                  <Activity size={14} /> Provisioning Secure Instance...
+                </p>
               )}
             </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-500">
-                New to Quro?{' '}
-                <Link href="/register" className="text-teal-600 hover:text-teal-700 font-semibold transition-colors">
-                  Create an account
-                </Link>
-              </p>
-            </div>
+            <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-10">
+              ModernQure LLC · HIPAA Audited 2026
+            </p>
           </div>
-
-          <p className="text-center text-xs text-slate-400 mt-6">
-            © {new Date().getFullYear()} Quro Systems by ModernQure LLC · HIPAA Compliant
-          </p>
         </div>
       </div>
     </div>

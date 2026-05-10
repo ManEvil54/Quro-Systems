@@ -14,9 +14,9 @@ interface QuroLogoProps {
 
 export default function QuroLogo({ size = 40, showText = true, variant = 'full' }: QuroLogoProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <div
-        className="relative flex items-center justify-center overflow-hidden"
+        className="relative flex items-center justify-center rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm border border-white/40 shadow-sm"
         style={{ width: size, height: size }}
       >
         <Image 
@@ -24,24 +24,17 @@ export default function QuroLogo({ size = 40, showText = true, variant = 'full' 
           alt="Quro Logo" 
           width={size * 2} 
           height={size * 2} 
-          className="object-cover w-full h-full scale-[1.3]"
+          className="object-cover w-full h-full scale-110"
           priority
         />
       </div>
 
       {showText && variant === 'full' && (
-        <div className="flex items-center gap-1.5">
-          <span
-            className="text-xl font-bold tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+        <div className="flex flex-col -gap-1">
+          <span className="text-xl font-bold tracking-[-0.03em] text-slate-900 leading-none">
             Quro
           </span>
-          <span className="text-xl font-bold tracking-tight text-teal-500">
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-teal-600/80 leading-none mt-1">
             Systems
           </span>
         </div>
