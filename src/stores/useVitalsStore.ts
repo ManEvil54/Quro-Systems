@@ -83,6 +83,6 @@ export function checkVitalThresholds(vital: Partial<VitalSign>): { isAlert: bool
 
   return {
     isAlert: alerts.length > 0,
-    message: alerts.length > 0 ? alerts.join('; ') : null,
+    message: alerts.length > 0 ? alerts?.join('; ') : null,
   };
 }

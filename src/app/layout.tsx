@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   keywords: ["CLHF", "healthcare", "medication management", "MAR", "sub-acute care", "HIPAA"],
   icons: {
     icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
   },
 };
 

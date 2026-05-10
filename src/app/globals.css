@@ -155,13 +155,14 @@ body {
 .glow-warning { animation: pulse-glow-amber 3s ease-in-out infinite; }
 .glow-critical { animation: pulse-glow-red 2.5s ease-in-out infinite; }
 
-/* High-End Glassmorphism */
+/* High-End Glassmorphism — Dark Mode Edition */
 .glass-card-quro {
-  background: linear-gradient(135deg, rgba(240, 253, 250, 0.95) 0%, rgba(204, 251, 241, 0.85) 100%);
-  backdrop-filter: blur(12px) saturate(1.5);
-  -webkit-backdrop-filter: blur(12px) saturate(1.5);
-  border: 1px solid rgba(13, 148, 136, 0.1);
-  box-shadow: var(--shadow-inner-glass), var(--shadow-card);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.92) 100%);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-inner-glass), var(--shadow-card), 0 20px 50px rgba(0,0,0,0.2);
+  color: white;
 }
 
 .critical-glow-quro {

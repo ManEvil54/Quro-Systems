@@ -22,7 +22,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           {bed.status === 'maintenance' ? <ShieldAlert size={20} className="text-amber-500" /> : <UserPlus size={20} className="text-slate-400" />}
         </div>
         <p className="font-black text-[8px] tracking-[0.2em] text-slate-400 uppercase mb-1">{bed.room_name}</p>
-        <p className="font-black text-lg text-quro-charcoal opacity-40 mb-3">{bed.bed_name}</p>
+        <p className="font-black text-lg text-white opacity-40 mb-3">{bed.bed_name}</p>
         <div className={`px-4 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase border ${
           bed.status === 'maintenance' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600' : 'bg-slate-50 border-slate-200 text-slate-400'
         }`}>
@@ -51,7 +51,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
             <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isCritical ? 'text-red-400' : 'text-quro-teal'}`}>
               {bed.room_name} • {bed.bed_name}
             </p>
-            <p className={`font-black truncate ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-white' : 'text-quro-charcoal'}`}>
+            <p className={`font-black truncate ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-white' : 'text-white'}`}>
               Patient {patient.initials}
             </p>
           </div>
@@ -66,7 +66,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
 
       {/* Vitals Bento Grid */}
       <div className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl ${
-        isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-quro-50/40 border-white/30'
+        isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'
       } ${isBoutique ? 'mt-4' : ''}`}>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5 mb-2">
@@ -74,31 +74,31 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
             <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-400'}`}>Pulse</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className={`font-black tracking-tighter ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-quro-charcoal' : 'text-quro-charcoal'}`}>
+            <span className={`font-black tracking-tighter ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
               {patient.hr || '--'}
             </span>
             <span className="text-[10px] font-bold text-slate-400 uppercase">bpm</span>
           </div>
         </div>
         
-        <div className="flex flex-col border-l border-white/40 pl-4">
+        <div className="flex flex-col border-l border-white/10 pl-4">
           <div className="flex items-center gap-1.5 mb-2">
             <Activity size={12} className={isCritical ? 'text-red-500' : 'text-quro-teal'} />
             <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-400'}`}>BP</span>
           </div>
-          <span className={`font-black tracking-tighter ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-quro-charcoal' : 'text-quro-charcoal'}`}>
+          <span className={`font-black tracking-tighter ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
             {patient.bp || '--'}
           </span>
         </div>
 
         <div className="flex flex-col mt-2 pt-4 border-t border-white/40">
           <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">Temp</span>
-          <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-600' : 'text-slate-600'}`}>
+          <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
             {patient.temp ? `${patient.temp}°F` : '--'}
           </span>
         </div>
 
-        <div className="flex flex-col mt-2 pt-4 border-t border-white/40 border-l pl-4">
+        <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
           <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">SpO2</span>
           <span className={`font-bold text-quro-teal ${isBoutique ? 'text-lg' : 'text-sm'}`}>
             98%
@@ -107,12 +107,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
       </div>
 
       {/* Footer Actions */}
-      <div className={`mt-4 pt-4 border-t border-slate-100 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity`}>
+      <div className={`mt-4 pt-4 border-t border-white/10 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity`}>
         <div className="flex gap-3">
-          <Pill size={14} className="text-slate-300 hover:text-quro-teal cursor-pointer transition-colors" />
-          <FileText size={14} className="text-slate-300 hover:text-quro-teal cursor-pointer transition-colors" />
+          <Pill size={14} className="text-slate-400 hover:text-quro-teal cursor-pointer transition-colors" />
+          <FileText size={14} className="text-slate-400 hover:text-quro-teal cursor-pointer transition-colors" />
         </div>
-        <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">CENSUS READY</span>
+        <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">CENSUS READY</span>
       </div>
 
       {/* Diagnostic Overlay */}

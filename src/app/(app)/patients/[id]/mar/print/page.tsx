@@ -304,7 +304,7 @@ export default function MARPrintPage() {
           </div>
           <div className="text-[9px] text-right">
             <p>MRN: {patient.mrn} | Room: {patient.room_number || 'N/A'}</p>
-            <p>Allergies: {patient.allergies.join(', ') || 'NKA'}</p>
+            <p>Allergies: {patient.allergies?.join(', ') || 'NKA'}</p>
           </div>
         </div>
 

@@ -93,7 +93,7 @@ export default function MedicationList({ patientId }: Props) {
                   <div className="flex flex-wrap gap-3 mt-2">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       <Clock size={12} />
-                      <span>{med.frequency_times.join(' / ')}</span>
+                      <span>{med.frequency_times?.join(' / ')}</span>
                     </div>
                     {med.requires_vitals && (
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 uppercase tracking-widest">

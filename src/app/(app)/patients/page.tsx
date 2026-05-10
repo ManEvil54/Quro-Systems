@@ -146,7 +146,7 @@ export default function PatientsPage() {
                   </td>
                   <td className="px-8 py-5">
                     <p className="text-xs text-slate-600 line-clamp-1 max-w-xs font-medium italic">
-                      {patient.diagnoses.join(' • ') || 'No diagnoses listed'}
+                      {patient.diagnoses?.join(' • ') || 'No diagnoses listed'}
                     </p>
                   </td>
                   <td className="px-8 py-5 text-right">
