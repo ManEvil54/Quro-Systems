@@ -51,7 +51,7 @@ import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
-import { MedRoute, MedFrequency, ProviderOrder } from '@/lib/firebase/types';
+import { MedRoute, MedFrequency, ProviderOrder, Medication, Patient } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
   const params = useParams();
@@ -60,7 +60,7 @@ export default function PatientChartPage() {
   const { activeFacility } = useAuth();
   const { patient, loading: patientLoading, error } = usePatient(id);
   const { medications, loading: medsLoading, addMedication } = useMedications(id);
-  const { entries: marEntries, loading: marLoading, bulkLogAdministrations } = useMAR(id);
+  const { entries: marEntries, loading: marLoading, logAdministration, bulkLogAdministrations } = useMAR(id);
   const { createNote } = useHandover();
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
@@ -211,16 +211,6 @@ export default function PatientChartPage() {
     setNarrativeNote(prev => prev ? `${prev}\n${text}` : text);
   };
 
-  // Initialize sign-off actions when meds load
-  React.useEffect(() => {
-    if (medications.length > 0) {
-      const initialActions: Record<string, 'given' | 'held'> = {};
-      medications.forEach(m => {
-        initialActions[m.id] = 'given';
-      });
-      setSignOffActions(initialActions);
-    }
-  }, [medications]);
 
   // Load Draft if it exists
   React.useEffect(() => {
@@ -275,52 +265,6 @@ export default function PatientChartPage() {
       }
     } catch (err) {
       console.error('Sign-off error:', err);
-    } finally {
-      setIsSigningOff(false);
-    }
-  };
-
-  const handleMarkAllGiven = () => {
-    const allGiven: Record<string, 'given' | 'held'> = {};
-    medications.forEach(m => {
-      allGiven[m.id] = 'given';
-    });
-    setSignOffActions(allGiven);
-  };
-
-  const handleBulkSignOff = async () => {
-    if (!patient || isSigningOff) return;
-    setIsSigningOff(true);
-
-    try {
-      const entries = medications.map(m => ({
-        medication_id: m.id,
-        scheduled_time: m.frequency || 'Shift Pass',
-        action: signOffActions[m.id] || 'given'
-      }));
-
-      await bulkLogAdministrations(entries);
-
-      // Identify held meds for handover
-      const heldMeds = medications.filter(m => signOffActions[m.id] === 'held');
-      if (heldMeds.length > 0) {
-        const medNames = heldMeds.map(m => m.generic_name).join(', ');
-        await createNote({
-          facility_id: activeFacility?.id || '',
-          patient_id: patient.id,
-          general_notes: `MEDICATION ALERT: The following medications were HELD during this shift pass: ${medNames}. Please review chart for clinical rationale.`,
-          priority: 'high',
-          status: 'active',
-          shift: 'day', // Defaulting for auto-notes
-          shift_date: new Date().toISOString(),
-          is_urgent: true
-        } as any);
-      }
-
-      alert('Shift Medication Pass recorded successfully. Any HELD medications have been flagged for Handoff.');
-    } catch (err) {
-      console.error('Sign off failed:', err);
-      alert('Failed to record medication pass.');
     } finally {
       setIsSigningOff(false);
     }
@@ -2667,5 +2611,6 @@ export default function PatientChartPage() {
         </div>
       </div>
     )}
+    </div>
   );
 }

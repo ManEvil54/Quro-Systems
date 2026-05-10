@@ -78,6 +78,9 @@ export interface Patient {
   code_status: 'full' | 'dnr' | 'dnr_dni' | 'comfort';
   diet?: string;
   physician_id?: string;
+  attending_physician?: string;
+  room_number?: string;
+  photo_url?: string;
   is_active: boolean;
   is_active_monitoring: boolean;
   created_at: string;
