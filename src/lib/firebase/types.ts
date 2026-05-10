@@ -179,29 +179,53 @@ export interface ProgressNote {
   type: 'shift_assessment' | 'narrative' | 'clinical' | 'social';
   content: string;
   assessments?: {
-    // Safety & Environment
-    safety_check: boolean;
-    bed_rails_up: boolean;
-    call_light_reach: boolean;
-    alarm_functional?: boolean;
-    
-    // Clinical Systems
-    resp_normal: boolean;
-    cv_stable: boolean;
-    neuro_oriented: boolean;
-    gi_gu_normal: boolean;
-    skin_intact: boolean;
-    
-    // SNF Specifics
-    pain_managed: boolean;
-    adl_care: boolean;
-    bm_shift: boolean;
-    meal_intake?: '0-25' | '26-50' | '51-75' | '76-100';
-    fluids_intake?: number; // mL
-    behaviors_exhibited?: boolean;
-    falls_incident?: boolean;
-    skin_new_lesion?: boolean;
+    // I. Vitals & I&O
+    vitals?: {
+      temp?: number;
+      pulse?: number;
+      resp?: number;
+      bp_systolic?: number;
+      bp_diastolic?: number;
+      bp_site?: 'L-Arm' | 'R-Arm' | 'Thigh';
+      bp_position?: 'Sitting' | 'Standing' | 'Lying';
+      spo2?: number;
+    };
+    io?: {
+      fluids_in_ml?: number;
+      voiding_count?: number;
+      bm_count?: number;
+      bristol_scale?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    };
+
+    // II. ADL & Care
+    care?: {
+      oral_care: boolean;
+      peri_care: boolean;
+      bathing: 'Completed' | 'Refused' | 'N/A';
+      meal_percent?: 0 | 25 | 50 | 75 | 100;
+    };
+
+    // III. Physical Assessment
+    systems?: {
+      resp_sounds?: 'Clear' | 'Wheezing' | 'Crackles' | 'Diminished';
+      o2_method?: 'Room Air' | 'NC' | 'Mask';
+      o2_flow?: number;
+      edema?: 'None' | '1+' | '2+' | '3+' | '4+';
+      pulses_present: boolean;
+      pain_level?: number; // 0-10
+      pain_location?: string;
+      skin_intact: boolean;
+    };
+
+    // IV. Safety
+    safety?: {
+      safety_check: boolean;
+      bed_rails_up: boolean;
+      call_light_reach: boolean;
+      alarm_active: boolean;
+    };
   };
+  status: 'DRAFT' | 'SIGNED';
   created_at: string;
   updated_at: string;
 }

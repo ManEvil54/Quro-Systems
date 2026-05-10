@@ -12,6 +12,7 @@ import {
   onSnapshot, 
   doc, 
   addDoc, 
+  updateDoc,
   serverTimestamp,
   orderBy,
   limit
@@ -65,5 +66,15 @@ export function useNotes(patientId: string) {
     });
   };
 
-  return { notes, loading, error, saveNote };
+  const updateNote = async (noteId: string, data: Partial<ProgressNote>) => {
+    if (!staff?.org_id || !patientId) throw new Error('Context missing');
+    
+    const noteRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'progress_notes', noteId);
+    return await updateDoc(noteRef, {
+      ...data,
+      updated_at: serverTimestamp(),
+    });
+  };
+
+  return { notes, loading, error, saveNote, updateNote };
 }

@@ -16,7 +16,7 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDashboard } from '@/hooks/useDashboard';
+import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
 
 export default function DashboardPage() {
@@ -38,21 +38,125 @@ export default function DashboardPage() {
   };
 
   const { beds: facilityBeds, alerts, loading } = useDashboard(activeFacility);
+  
+  // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
+  const mockPatients: DashboardBed[] = [
+    {
+      id: 'bed-1',
+      bed_name: 'Bed 1',
+      room_name: 'Room 101',
+      room_id: '101',
+      status: 'occupied',
+      patient: {
+        id: 'manny-evil',
+        initials: 'ME',
+        mrn: '666-GHOST',
+        status: 'Critical',
+        hr: 112,
+        bp: '148/92',
+        temp: 99.1,
+        is_active_monitoring: true,
+        code_status: 'DNR',
+        diagnoses: ['Hypertension', 'Tachycardia']
+      }
+    },
+    {
+      id: 'bed-2',
+      bed_name: 'Bed 2',
+      room_name: 'Room 102',
+      room_id: '102',
+      status: 'occupied',
+      patient: {
+        id: 'sarah-miller',
+        initials: 'SM',
+        mrn: 'MRN-8821',
+        status: 'Stable',
+        hr: 72,
+        bp: '120/80',
+        temp: 98.6,
+        is_active_monitoring: false,
+        code_status: 'Full Code',
+        diagnoses: ['Post-Op Hip', 'PT Recovery']
+      }
+    },
+    {
+      id: 'bed-3',
+      bed_name: 'Bed 3',
+      room_name: 'Room 103',
+      room_id: '103',
+      status: 'occupied',
+      patient: {
+        id: 'james-wilson',
+        initials: 'JW',
+        mrn: 'MRN-4492',
+        status: 'Critical',
+        hr: 94,
+        bp: '162/98',
+        temp: 98.9,
+        is_active_monitoring: true,
+        code_status: 'DNR/DNI',
+        diagnoses: ['CHF', 'Diabetes Type II']
+      }
+    },
+    {
+      id: 'bed-4',
+      bed_name: 'Bed 4',
+      room_name: 'Room 104',
+      room_id: '104',
+      status: 'occupied',
+      patient: {
+        id: 'elena-rod',
+        initials: 'ER',
+        mrn: 'MRN-1102',
+        status: 'Stable',
+        hr: 68,
+        bp: '118/74',
+        temp: 98.4,
+        is_active_monitoring: false,
+        code_status: 'Full Code',
+        diagnoses: ['Early Onset Dementia']
+      }
+    },
+    {
+      id: 'bed-5',
+      bed_name: 'Bed 5',
+      room_name: 'Room 105',
+      room_id: '105',
+      status: 'occupied',
+      patient: {
+        id: 'david-chen',
+        initials: 'DC',
+        mrn: 'MRN-9938',
+        status: 'Critical',
+        hr: 105,
+        bp: '140/90',
+        temp: 100.2,
+        is_active_monitoring: true,
+        code_status: 'Full Code',
+        diagnoses: ['Post-Stroke Rehab', 'Aphasia']
+      }
+    },
+    {
+      id: 'bed-6',
+      bed_name: 'Bed 6',
+      room_name: 'Room 106',
+      room_id: '106',
+      status: 'available',
+    }
+  ];
 
   // Fill empty slots if needed, or just use the beds from the hook
-  // The hook already returns beds from the database. 
-  // We'll use the hook's beds and ensure they are sorted or padded as desired.
-  // Strictly limit to 6 beds for Platinum Health Hub
-  const rawBeds = facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
-    id: `empty-${i}`,
-    bed_name: `Bed ${i + 1}`,
-    room_name: 'Unassigned',
-    room_id: 'none',
-    status: 'available' as const,
-    patient: undefined
-  }));
-
-  const beds = activeFacility === 'platinum-health-hub' ? rawBeds.slice(0, 6) : rawBeds;
+  // Strictly limit to 6 beds for Platinum Health Hub demo
+  const beds = activeFacility === 'platinum-health-hub' 
+    ? (facilityBeds.length > 1 ? facilityBeds : mockPatients)
+    : (facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
+        id: `empty-${i}`,
+        bed_name: `Bed ${i + 1}`,
+        room_name: 'Unassigned',
+        room_id: 'none',
+        status: 'available' as const,
+        patient: undefined
+      })));
 
   const { isImpersonating } = useAuth();
 
