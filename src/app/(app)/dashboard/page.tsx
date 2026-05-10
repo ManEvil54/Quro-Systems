@@ -29,7 +29,8 @@ export default function DashboardPage() {
       setActiveFacility(authActiveFacility.id);
     }
   }, [authActiveFacility?.id]);
-  const [viewType, setViewType] = useState<'boutique' | 'enterprise'>('boutique');
+  // Constant view type for simplified demo
+  const viewType = 'boutique';
   
   const facilityNames: Record<string, string> = {
     'platinum-health-hub': 'Platinum Health Hub',
@@ -147,7 +148,7 @@ export default function DashboardPage() {
 
   // Fill empty slots if needed, or just use the beds from the hook
   // Strictly limit to 6 beds for Platinum Health Hub demo
-  const beds = activeFacility === 'platinum-health-hub' 
+  const rawBeds = activeFacility === 'platinum-health-hub' 
     ? (facilityBeds.length > 1 ? facilityBeds : mockPatients)
     : (facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
@@ -157,6 +158,8 @@ export default function DashboardPage() {
         status: 'available' as const,
         patient: undefined
       })));
+
+  const beds = rawBeds.slice(0, 6);
 
   const { isImpersonating } = useAuth();
 
@@ -215,7 +218,7 @@ export default function DashboardPage() {
             {viewType === 'enterprise' ? 'Enterprise Facility Cluster' : 'Boutique Care Facility'}
           </h1>
           <p className="text-slate-500 text-xs font-black tracking-widest uppercase opacity-70">
-            {facilityNames[activeFacility]} — {viewType === 'enterprise' ? '25' : '6'} Beds Managed
+            {facilityNames[activeFacility]} — 6 Patients Active
           </p>
         </div>
         
@@ -229,18 +232,6 @@ export default function DashboardPage() {
               <p className="text-[10px] text-slate-500 font-medium">{alerts.length} priority alerts</p>
             </div>
           </div>
-          
-          <button 
-            onClick={() => setViewType(viewType === 'boutique' ? 'enterprise' : 'boutique')}
-            className={`px-4 py-2 rounded-lg border flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter transition-all ${
-              viewType === 'enterprise'
-                ? 'bg-teal-500 border-teal-400 text-white shadow-lg shadow-teal-500/20'
-                : 'bg-white/10 border-white/10 text-slate-300 hover:bg-white/20'
-            }`}
-          >
-            <LayoutDashboard size={14} />
-            {viewType === 'enterprise' ? 'Mndashboard (Active)' : 'Switch to Mndashboard'}
-          </button>
         </div>
       </div>
 
