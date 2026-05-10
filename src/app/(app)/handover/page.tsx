@@ -263,7 +263,7 @@ export default function HandoverPage() {
               <div className="h-px flex-1 bg-slate-100 mx-6" />
             </div>
 
-            {beds.filter(bed => bed.patient).map((bed) => {
+            {beds.filter(bed => bed.patient).slice(0, 6).map((bed) => {
               const patient = bed.patient!;
               const patientNotes = notes.filter(n => n.patient_id === patient.id);
               const latestNote = patientNotes[0];
