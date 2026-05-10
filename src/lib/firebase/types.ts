@@ -17,6 +17,7 @@ export interface Staff {
   credential?: string;
   email: string;
   phone?: string | null;
+  assigned_facility_ids?: string[];
   is_active: boolean;
   is_onboarded: boolean;
   must_change_password?: boolean;
@@ -55,6 +56,8 @@ export interface Patient {
   id: string;
   org_id: string;
   facility_id: string;
+  room_id?: string;
+  bed_id?: string;
   mrn: string;
   first_name: string;
   last_name: string;
@@ -72,6 +75,26 @@ export interface Patient {
   is_active_monitoring: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface VitalSign {
+  id: string;
+  org_id: string;
+  patient_id: string;
+  recorded_by: string;
+  temperature?: number;
+  pulse?: number;
+  resp?: number;
+  systolic?: number;
+  diastolic?: number;
+  o2sat?: number;
+  weight?: number;
+  glucose?: number;
+  pain_level?: number;
+  notes?: string;
+  is_alert: boolean;
+  recorded_at: string;
+  created_at: string;
 }
 
 export interface Medication {
@@ -145,5 +168,44 @@ export interface HandoverNote {
   plan?: string;
   general_notes?: string;
   is_urgent: boolean;
+  created_at: string;
+}
+
+export interface Incident {
+  id: string;
+  org_id: string;
+  facility_id: string;
+  patient_id?: string;
+  patient_name?: string; // Cache for performance
+  type: 'fall' | 'injury' | 'med_error' | 'skin_breakdown' | 'behavioral' | 'other';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  location?: string;
+  witnesses?: string[];
+  reported_by: string;
+  occurred_at: string;
+  created_at: string;
+  updated_at: string;
+  status: 'reported' | 'investigating' | 'resolved';
+}
+
+export interface Room {
+  id: string;
+  facility_id: string;
+  org_id: string;
+  name: string; // e.g. "Room 101"
+  type: 'private' | 'semi-private' | 'ward';
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Bed {
+  id: string;
+  room_id: string;
+  facility_id: string;
+  org_id: string;
+  name: string; // e.g. "Bed A"
+  patient_id?: string | null;
+  status: 'available' | 'occupied' | 'maintenance' | 'reserved';
   created_at: string;
 }

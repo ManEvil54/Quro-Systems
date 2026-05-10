@@ -9,7 +9,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QuroLogo from '@/components/brand/QuroLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, Activity, Mail, CheckCircle2 } from 'lucide-react';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeApp, getApps } from 'firebase/app';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +20,58 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadCaptured, setLeadCaptured] = useState(false);
+
+  const handleDemoAccess = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!leadEmail) return;
+
+    setSubmitting(true);
+    try {
+      // 1. Capture Lead
+      const firebaseConfig = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      };
+      
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+      const db = getFirestore(app);
+      
+      await addDoc(collection(db, 'leads'), {
+        email: leadEmail,
+        source: 'demo_access_button',
+        captured_at: serverTimestamp(),
+        intent: 'explore_demo'
+      });
+
+      setLeadCaptured(true);
+      
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // 2. Proceed to Login
+      setEmail('demo@qurosystems.com');
+      setPassword('QuroDemo2026!');
+      clearError();
+      await signIn('demo@qurosystems.com', 'QuroDemo2026!');
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Lead capture error:', err);
+      // Fallback: still try to sign in if lead capture fails (don't block the demo)
+      try {
+        await signIn('demo@qurosystems.com', 'QuroDemo2026!');
+        router.push('/dashboard');
+      } catch {}
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +213,51 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            <div className="mt-8 pt-8 border-t border-slate-100">
+              <div className="text-center mb-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Prospect / Investor Access</p>
+                <p className="text-[10px] text-slate-500 italic">No account needed — Instant explore</p>
+              </div>
+              
+              <div className="p-1 rounded-2xl bg-teal-50/50 border border-teal-100 flex items-center gap-1">
+                <div className="relative flex-1">
+                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600/50" />
+                  <input
+                    type="email"
+                    required
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    placeholder="Enter your professional email"
+                    className="w-full bg-transparent border-none focus:ring-0 text-xs text-teal-900 placeholder:text-teal-600/30 pl-9 py-2.5"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDemoAccess()}
+                  disabled={submitting || !leadEmail}
+                  className="bg-teal-600 text-white rounded-xl px-4 py-2 text-[11px] font-bold hover:bg-teal-700 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-teal-200"
+                >
+                  {submitting ? (
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      Explore Demo
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {leadCaptured && (
+                <div className="mt-2 text-center animate-in fade-in slide-in-from-top-1">
+                  <p className="text-[10px] text-teal-600 font-bold flex items-center justify-center gap-1">
+                    <CheckCircle2 size={12} />
+                    Redirecting to Secure Environment...
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-500">

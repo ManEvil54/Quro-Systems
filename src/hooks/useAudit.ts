@@ -3,7 +3,8 @@
 // HIPAA-compliant PII access tracking (Firebase/Firestore)
 // ============================================================
 import { db, auth } from '@/lib/firebase/client';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 type AuditAction = 'view' | 'create' | 'update' | 'delete' | 'print' | 'export' | 'fax';
 type ResourceType = 'patient' | 'medication' | 'mar' | 'order' | 'vital' | 'fall_report' | 'handover' | 'family_log';
@@ -13,6 +14,7 @@ interface AuditEntry {
   resource_type: ResourceType;
   resource_id?: string;
   description?: string;
+  facility_id?: string | null;
   old_values?: Record<string, unknown>;
   new_values?: Record<string, unknown>;
 }
@@ -29,6 +31,7 @@ export async function logAudit(orgId: string, entry: AuditEntry): Promise<void> 
     const auditRef = collection(db, 'organizations', orgId, 'audit_log');
     await addDoc(auditRef, {
       user_id: user.uid,
+      facility_id: entry.facility_id ?? null,
       action: entry.action,
       resource_type: entry.resource_type,
       resource_id: entry.resource_id ?? null,
@@ -48,20 +51,23 @@ export async function logAudit(orgId: string, entry: AuditEntry): Promise<void> 
  * Hook wrapper for React components
  */
 export function useAudit(orgId: string) {
+  const { activeFacility } = useAuth();
+  const facilityId = activeFacility?.id;
+
   return {
     logView: (resourceType: ResourceType, resourceId: string, description?: string) =>
-      logAudit(orgId, { action: 'view', resource_type: resourceType, resource_id: resourceId, description }),
+      logAudit(orgId, { action: 'view', resource_type: resourceType, resource_id: resourceId, description, facility_id: facilityId }),
     logCreate: (resourceType: ResourceType, resourceId: string, newValues?: Record<string, unknown>) =>
-      logAudit(orgId, { action: 'create', resource_type: resourceType, resource_id: resourceId, new_values: newValues }),
+      logAudit(orgId, { action: 'create', resource_type: resourceType, resource_id: resourceId, new_values: newValues, facility_id: facilityId }),
     logUpdate: (resourceType: ResourceType, resourceId: string, oldValues?: Record<string, unknown>, newValues?: Record<string, unknown>) =>
-      logAudit(orgId, { action: 'update', resource_type: resourceType, resource_id: resourceId, old_values: oldValues, new_values: newValues }),
+      logAudit(orgId, { action: 'update', resource_type: resourceType, resource_id: resourceId, old_values: oldValues, new_values: newValues, facility_id: facilityId }),
     logDelete: (resourceType: ResourceType, resourceId: string) =>
-      logAudit(orgId, { action: 'delete', resource_type: resourceType, resource_id: resourceId }),
+      logAudit(orgId, { action: 'delete', resource_type: resourceType, resource_id: resourceId, facility_id: facilityId }),
     logPrint: (resourceType: ResourceType, resourceId: string, description?: string) =>
-      logAudit(orgId, { action: 'print', resource_type: resourceType, resource_id: resourceId, description }),
+      logAudit(orgId, { action: 'print', resource_type: resourceType, resource_id: resourceId, description, facility_id: facilityId }),
     logExport: (resourceType: ResourceType, resourceId: string) =>
-      logAudit(orgId, { action: 'export', resource_type: resourceType, resource_id: resourceId }),
+      logAudit(orgId, { action: 'export', resource_type: resourceType, resource_id: resourceId, facility_id: facilityId }),
     logFax: (resourceType: ResourceType, resourceId: string, faxNumber?: string) =>
-      logAudit(orgId, { action: 'fax', resource_type: resourceType, resource_id: resourceId, description: `Faxed to ${faxNumber}` }),
+      logAudit(orgId, { action: 'fax', resource_type: resourceType, resource_id: resourceId, description: `Faxed to ${faxNumber}`, facility_id: facilityId }),
   };
 }

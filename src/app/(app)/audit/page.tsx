@@ -17,7 +17,7 @@ import {
   Clock,
   ExternalLink
 } from 'lucide-react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -25,13 +25,29 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 export default function AuditTrailPage() {
   const { staff } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [selectedFacility, setSelectedFacility] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
+  // Fetch Facilities for filtering
+  useEffect(() => {
+    if (!staff?.org_id) return;
+    const fetchFacilities = async () => {
+      const facRef = collection(db, 'organizations', staff.org_id, 'facilities');
+      const snap = await getDocs(facRef);
+      setFacilities(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    };
+    fetchFacilities();
+  }, [staff?.org_id]);
   useEffect(() => {
     if (!staff?.org_id) return;
 
     const auditRef = collection(db, 'organizations', staff.org_id, 'audit_log');
-    const q = query(auditRef, orderBy('created_at', 'desc'), limit(100));
+    let q = query(auditRef, orderBy('created_at', 'desc'), limit(100));
+    
+    if (selectedFacility !== 'all') {
+      q = query(auditRef, where('facility_id', '==', selectedFacility), orderBy('created_at', 'desc'), limit(100));
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({
@@ -43,7 +59,7 @@ export default function AuditTrailPage() {
     });
 
     return () => unsubscribe();
-  }, [staff?.org_id]);
+  }, [staff?.org_id, selectedFacility]);
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
@@ -65,10 +81,20 @@ export default function AuditTrailPage() {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input type="text" placeholder="Search by User ID or Resource..." className="input pl-10 py-2 text-sm" />
           </div>
-          <button className="btn-secondary flex items-center gap-2 py-2 px-4 text-sm">
-            <Filter size={16} />
-            <span>Filters</span>
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-slate-400" />
+            <select 
+              value={selectedFacility} 
+              onChange={(e) => setSelectedFacility(e.target.value)}
+              className="bg-transparent border-none text-sm font-bold text-slate-600 focus:ring-0 cursor-pointer"
+            >
+              <option value="all">All Facilities</option>
+              {facilities.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-400 bg-slate-50 px-3 py-2 rounded-lg">
             <Calendar size={14} />
             <span>Last 30 Days</span>

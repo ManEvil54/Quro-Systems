@@ -44,11 +44,12 @@ type Tab = 'overview' | 'medications' | 'mar' | 'vitals' | 'orders' | 'handoff' 
 
 export default function PatientDetailPage() {
   const { id } = useParams();
-  const { staff } = useAuth();
+  const { staff, activeFacility, switchFacility } = useAuth();
   const { logView } = useAudit(staff?.org_id || '');
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     async function fetchPatient() {
@@ -56,7 +57,21 @@ export default function PatientDetailPage() {
       try {
         const patientDoc = await getDoc(doc(db, 'organizations', staff.org_id, 'patients', id as string));
         if (patientDoc.exists()) {
-          setPatient({ id: patientDoc.id, ...patientDoc.data() } as Patient);
+          const data = patientDoc.data() as Patient;
+          
+          // STRICT ACCESS CONTROL
+          const isAssigned = staff.role === 'SUPER_ADMIN' || staff.role === 'FACILITY_ADMIN' || staff.role === 'admin' 
+            ? true 
+            : staff.assigned_facility_ids?.includes(data.facility_id) || staff.facility_id === data.facility_id;
+            
+          if (!isAssigned) {
+            setUnauthorized(true);
+          } else if (data.facility_id !== activeFacility?.id) {
+            // Patient belongs to a different house than active context
+            setUnauthorized(true);
+          } else {
+            setPatient({ id: patientDoc.id, ...data } as Patient);
+          }
         }
       } catch (err) {
         console.error('Error fetching patient:', err);
@@ -65,7 +80,7 @@ export default function PatientDetailPage() {
       }
     }
     fetchPatient();
-  }, [id, staff?.org_id]);
+  }, [id, staff?.org_id, activeFacility?.id]);
 
   useEffect(() => {
     if (patient && staff?.org_id) {
@@ -78,6 +93,25 @@ export default function PatientDetailPage() {
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-slate-500 font-medium">Loading clinical record...</p>
+      </div>
+    );
+  }
+
+  if (unauthorized) {
+    return (
+      <div className="glass-card p-20 text-center max-w-2xl mx-auto">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <ShieldAlert size={32} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Access Restricted</h3>
+        <p className="text-slate-500 mb-8">
+          This patient record is scoped to another facility. To maintain strict data isolation, 
+          you must switch to the patient's assigned facility in the sidebar to view their clinical chart.
+        </p>
+        <Link href="/patients" className="btn-primary inline-flex items-center gap-2">
+          <ArrowLeft size={16} />
+          <span>Back to Directory</span>
+        </Link>
       </div>
     );
   }

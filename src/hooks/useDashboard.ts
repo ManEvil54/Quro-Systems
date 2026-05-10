@@ -8,108 +8,114 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Patient, VitalSign, HandoverNote } from '@/lib/firebase/types';
 
-export interface DashboardPatient {
+export interface DashboardBed {
   id: string;
-  room_number: string | null;
-  initials: string;
-  mrn: string;
-  status: 'Critical' | 'Stable';
-  hr: number | null;
-  bp: string | null;
-  temp: number | null;
-  is_active_monitoring: boolean;
+  bed_name: string;
+  room_name: string;
+  room_id: string;
+  status: 'available' | 'occupied' | 'maintenance' | 'reserved';
+  patient?: {
+    id: string;
+    initials: string;
+    mrn: string;
+    status: 'Critical' | 'Stable';
+    hr: number | null;
+    bp: string | null;
+    temp: number | null;
+    is_active_monitoring: boolean;
+  };
 }
 
 export function useDashboard(facilityId: string) {
   const { organization } = useAuth();
-  const [patients, setPatients] = useState<DashboardPatient[]>([]);
+  const [beds, setBeds] = useState<DashboardBed[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const MOCK_DASHBOARD_PATIENTS: DashboardPatient[] = [
-    { id: '1', room_number: '101A', initials: 'JD', mrn: 'MRN001', status: 'Stable', hr: 72, bp: '120/80', temp: 98.6, is_active_monitoring: false },
-    { id: '2', room_number: '102B', initials: 'AS', mrn: 'MRN002', status: 'Critical', hr: 110, bp: '145/95', temp: 101.2, is_active_monitoring: true },
-    { id: '3', room_number: '103C', initials: 'MJ', mrn: 'MRN003', status: 'Stable', hr: 68, bp: '115/75', temp: 98.4, is_active_monitoring: false },
-  ];
-
-  const MOCK_ALERTS = [
-    { id: 'a1', subjective: 'Patient reported feeling dizzy', is_urgent: true, created_at: new Date().toISOString() },
-    { id: 'a2', subjective: 'Pending lab results for MRN002', is_urgent: true, created_at: new Date().toISOString() }
-  ];
-
   useEffect(() => {
-    if (!organization || !facilityId) {
-      if (!organization && !facilityId) return; // Still waiting for init
+    if (!organization?.id || !facilityId) {
       setLoading(false);
       return;
     }
 
-    // Use Mock Data
-    setPatients(MOCK_DASHBOARD_PATIENTS);
-    setAlerts(MOCK_ALERTS);
-    setLoading(false);
+    // 1. Listen to Rooms (to get room names)
+    const roomsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms');
+    const roomsUnsubscribe = onSnapshot(roomsRef, (roomsSnap) => {
+      const roomMap = new Map();
+      roomsSnap.docs.forEach(doc => roomMap.set(doc.id, doc.data().name));
 
-    // Real fetching logic below is commented out
-    /*
-    // 1. Listen to Patients in this facility
-    const patientsRef = collection(db, 'organizations', organization.id, 'patients');
-    const patientsQuery = query(
-      patientsRef, 
-      where('facility_id', '==', facilityId),
-      where('is_active', '==', true)
-    );
+      // 2. Listen to Beds
+      const bedsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'beds');
+      const bedsUnsubscribe = onSnapshot(bedsRef, (bedsSnap) => {
+        const bedList = bedsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Bed[];
 
-    const unsubscribePatients = onSnapshot(patientsQuery, (snapshot) => {
-      const patientList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Patient[];
-
-      // 2. For each patient, we need their latest vitals
-      // To keep it efficient, we'll map them and then update as vitals come in
-      const mappedPatients: DashboardPatient[] = patientList.map(p => ({
-        id: p.id,
-        room_number: p.room_number,
-        initials: `${p.first_name[0]}${p.last_name[0]}`,
-        mrn: p.mrn,
-        status: p.is_active_monitoring ? 'Critical' : 'Stable',
-        hr: null,
-        bp: null,
-        temp: null,
-        is_active_monitoring: p.is_active_monitoring
-      }));
-
-      setPatients(mappedPatients);
-      setLoading(false);
-
-      // 3. Listen to latest vitals for all patients in this org (efficiently)
-      // Note: In a real large app, we might use a collectionGroup or individual listeners
-      patientList.forEach(patient => {
-        const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patient.id, 'vital_signs');
-        const vitalsQuery = query(vitalsRef, orderBy('recorded_at', 'desc'), limit(1));
+        // 3. Listen to Patients
+        const patientsRef = collection(db, 'organizations', organization.id, 'patients');
+        const patientsQuery = query(patientsRef, where('facility_id', '==', facilityId), where('is_active', '==', true));
         
-        onSnapshot(vitalsQuery, (vSnapshot) => {
-          if (!vSnapshot.empty) {
-            const latest = vSnapshot.docs[0].data() as VitalSign;
-            setPatients(prev => prev.map(dp => {
-              if (dp.id === patient.id) {
-                const isCritical = latest.is_alert || patient.is_active_monitoring;
-                return {
-                  ...dp,
-                  hr: latest.pulse,
-                  bp: latest.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
-                  temp: latest.temperature,
-                  status: isCritical ? 'Critical' : 'Stable'
-                };
+        onSnapshot(patientsQuery, (patientsSnap) => {
+          const patientList = patientsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Patient[];
+          
+          // Construct initial beds state
+          const initialBeds: DashboardBed[] = bedList.map(bed => {
+            const patient = patientList.find(p => p.bed_id === bed.id);
+            return {
+              id: bed.id,
+              bed_name: bed.name,
+              room_id: bed.room_id,
+              room_name: roomMap.get(bed.room_id) || 'Unknown Room',
+              status: bed.status,
+              patient: patient ? {
+                id: patient.id,
+                initials: `${patient.first_name[0]}${patient.last_name[0]}`,
+                mrn: patient.mrn,
+                status: patient.is_active_monitoring ? 'Critical' : 'Stable',
+                hr: null,
+                bp: null,
+                temp: null,
+                is_active_monitoring: patient.is_active_monitoring
+              } : undefined
+            };
+          });
+
+          setBeds(initialBeds);
+          setLoading(false);
+
+          // 4. Listen to Vitals for each patient
+          patientList.forEach(patient => {
+            const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patient.id, 'vital_signs');
+            const vitalsQuery = query(vitalsRef, orderBy('recorded_at', 'desc'), limit(1));
+            
+            onSnapshot(vitalsQuery, (vSnapshot) => {
+              if (!vSnapshot.empty) {
+                const latest = vSnapshot.docs[0].data() as VitalSign;
+                setBeds(prev => prev.map(dbed => {
+                  if (dbed.patient?.id === patient.id) {
+                    const isCritical = latest.is_alert || patient.is_active_monitoring;
+                    return {
+                      ...dbed,
+                      patient: {
+                        ...dbed.patient,
+                        hr: latest.pulse || null,
+                        bp: latest.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
+                        temp: latest.temperature || null,
+                        status: isCritical ? 'Critical' : 'Stable'
+                      }
+                    } as DashboardBed;
+                  }
+                  return dbed;
+                }));
               }
-              return dp;
-            }));
-          }
+            });
+          });
         });
       });
     });
 
-    // 4. Listen to Alerts (Provider Orders pending or urgent Handover notes)
+    // 4. Listen to Alerts (Urgent Handover notes)
     const handoverRef = collection(db, 'organizations', organization.id, 'handover_notes');
     const handoverQuery = query(handoverRef, where('facility_id', '==', facilityId), where('is_urgent', '==', true), limit(5));
     
@@ -122,11 +128,11 @@ export function useDashboard(facilityId: string) {
     });
 
     return () => {
-      unsubscribePatients();
+      roomsUnsubscribe();
+      bedsUnsubscribe();
       unsubscribeAlerts();
     };
-    */
-  }, [organization, facilityId]);
+  }, [organization?.id, facilityId]);
 
-  return { patients, alerts, loading };
+  return { beds, alerts, loading };
 }

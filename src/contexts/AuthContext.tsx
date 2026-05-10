@@ -24,12 +24,14 @@ interface AuthContextType {
   loading: boolean;
   isImpersonating: boolean;
   impersonatedDonName: string | null;
+  activeFacility: { id: string; name: string } | null;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (data: any) => Promise<void>;
   signOut: () => Promise<void>;
   impersonate: (orgId: string, staffId?: string) => Promise<void>;
   stopImpersonating: () => void;
+  switchFacility: (facilityId: string) => void;
   clearError: () => void;
 }
 
@@ -50,9 +52,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     organization: null,
     isImpersonating: false,
     impersonatedDonName: null,
+    activeFacility: null,
     loading: true,
     error: null,
   });
+
+  const switchFacility = async (facilityId: string) => {
+    if (!state.organization?.id) return;
+    
+    try {
+      const facilityDoc = await getDoc(doc(db, 'organizations', state.organization.id, 'facilities', facilityId));
+      if (facilityDoc.exists()) {
+        const data = facilityDoc.data();
+        setState(prev => ({ 
+          ...prev, 
+          activeFacility: { id: facilityId, name: data.name } 
+        }));
+        localStorage.setItem(`quro_active_facility_${state.organization.id}`, facilityId);
+      }
+    } catch (err) {
+      console.error("Failed to switch facility:", err);
+    }
+  };
 
   // Helper: Load standard user data
   const loadUserData = async (user: User, orgId: string) => {
@@ -66,15 +87,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ? { id: orgDoc.id, name: orgDoc.data().name } 
       : { id: orgId, name: 'Quro Facility' };
 
+    // Handle Active Facility initialization
+    let activeFacility = null;
+    const storedFacilityId = localStorage.getItem(`quro_active_facility_${orgId}`);
+    
+    if (storedFacilityId) {
+      const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', storedFacilityId));
+      if (facDoc.exists()) {
+        activeFacility = { id: facDoc.id, name: facDoc.data().name };
+      }
+    }
+
+    if (!activeFacility && staffData) {
+      // Fallback: Use staff default or first assigned
+      const facId = staffData.facility_id || staffData.assigned_facility_ids?.[0];
+      if (facId) {
+        const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', facId));
+        if (facDoc.exists()) {
+          activeFacility = { id: facDoc.id, name: facDoc.data().name };
+        }
+      }
+    }
+
     const isExpired = staffData?.access_expires_at && new Date() > new Date(staffData.access_expires_at);
     if (staffData && (!staffData.is_active || isExpired)) {
       await firebaseSignOut(auth);
       const reason = isExpired ? 'Your shift access has expired.' : 'Access revoked. Contact your DON.';
-      setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, loading: false, error: reason });
+      setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, activeFacility: null, loading: false, error: reason });
       return;
     }
 
-    setState({ user, staff: staffData, organization: orgData, isImpersonating: false, impersonatedDonName: null, loading: false, error: null });
+    setState({ user, staff: staffData, organization: orgData, isImpersonating: false, impersonatedDonName: null, activeFacility, loading: false, error: null });
   };
 
   // Helper: Perform Impersonation
@@ -108,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization: orgData,
         isImpersonating: true,
         impersonatedDonName: staffData ? `${staffData.first_name} ${staffData.last_name}` : orgData.name,
+        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...' } : null, // Will be refined on first switch
         loading: false,
         error: null
       });
@@ -255,7 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearError = () => setState((s) => ({ ...s, error: null }));
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, impersonate, stopImpersonating, clearError }}>
+    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, impersonate, stopImpersonating, switchFacility, clearError }}>
       {children}
     </AuthContext.Provider>
   );

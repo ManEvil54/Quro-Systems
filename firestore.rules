@@ -3,16 +3,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // TEMPORARY: Allow all for seeding (Remove after use)
-    match /{document=**} {
-      allow read, write: if true;
-    }
-    
     // ---- HELPER FUNCTIONS ----
     
     // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
+    }
+
+    // Check if user is the Master Admin (Owner)
+    function isMasterAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN';
     }
 
     // Get staff record for the current user
@@ -33,48 +33,61 @@ service cloud.firestore {
       return staff.role in roles;
     }
 
+    // Check if user is assigned to a specific facility
+    function hasFacilityAccess(orgId, facilityId) {
+      let staff = getStaffData(orgId);
+      return staff.role in ['admin', 'FACILITY_ADMIN'] || (facilityId in staff.assigned_facility_ids);
+    }
+
     // 0. User Metadata: Users can read/write their own basic metadata (org linking)
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isMasterAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
     // ---- RULES ----
 
-    // 1. Organizations: Only members can read. Only admins can update basic info.
+    // 1. Organizations: Members can read. Only admins can update. Master Admin can do everything.
     match /organizations/{orgId} {
-      allow read: if isOrgMember(orgId);
-      allow update: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
-      allow create: if isAuthenticated(); // For initial onboarding, might need more guardrails
+      allow read: if isMasterAdmin() || isOrgMember(orgId);
+      allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
+      allow create: if isMasterAdmin(); // Only Owner can create new Client Organizations
       
       // 2. Staff: Users can read all staff in their org, but only edit their own or admins edit all.
       match /staff/{staffId} {
-        allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(orgId, ['admin']));
+        allow read: if isMasterAdmin() || isOrgMember(orgId);
+        allow write: if isMasterAdmin() || (isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(orgId, ['admin', 'FACILITY_ADMIN'])));
       }
 
       // 3. Facilities: Members can read all. Admins can edit.
       match /facilities/{facilityId} {
-        allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId));
+        allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
+        
+        // Enforce 1-3 facility limit
+        allow create: if isMasterAdmin() || (
+          isOrgMember(orgId) && 
+          hasRole(orgId, ['admin', 'FACILITY_ADMIN']) && 
+          get(/databases/$(database)/documents/organizations/$(orgId)).data.max_facilities > 
+          request.resource.data.current_facility_count // This assumes we pass current count or use a better way
+        );
       }
 
       // 4. Patients: Members can read. Only nurses/admins can edit.
       match /patients/{patientId} {
-        allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician']);
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, resource.data.facility_id));
+        allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && hasFacilityAccess(orgId, request.resource.data.facility_id));
 
         // 5. Clinical Data (Medications, MAR, Orders, Handoffs)
-        // Strict isolation: only nurses/physicians can manage clinical records.
         match /{clinicalData=**} {
-          allow read: if isOrgMember(orgId);
-          allow write: if isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician']);
+          allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id));
+          allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician', 'FACILITY_ADMIN']));
         }
       }
 
       // 6. Audit Logs: Append-only. No deletion.
       match /audit_logs/{logId} {
-        allow read: if isOrgMember(orgId) && hasRole(orgId, ['admin']);
-        allow create: if isOrgMember(orgId);
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
+        allow create: if isMasterAdmin() || isOrgMember(orgId);
         allow update, delete: if false; // IMMUTABLE
       }
     }

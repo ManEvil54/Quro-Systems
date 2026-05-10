@@ -20,13 +20,21 @@ import { useDashboard } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
 
 export default function DashboardPage() {
-  const [activeFacility, setActiveFacility] = useState('house-a');
+  const { organization, staff, activeFacility: authActiveFacility } = useAuth();
+  const [activeFacility, setActiveFacility] = useState(authActiveFacility?.id || 'platinum-health-hub');
+  
+  // Update local state when auth state changes
+  useEffect(() => {
+    if (authActiveFacility?.id) {
+      setActiveFacility(authActiveFacility.id);
+    }
+  }, [authActiveFacility?.id]);
   const [viewType, setViewType] = useState<'boutique' | 'enterprise'>('boutique');
   
   const facilityNames: Record<string, string> = {
-    'house-a': 'Maple House',
-    'house-b': 'Pine House',
-    'house-c': 'Oak House'
+    'platinum-health-hub': 'Platinum Health Hub',
+    'oak-ridge': 'Oak Ridge Memory Care',
+    'cedar-haven': 'Cedar Haven Assisted Living'
   };
 
   const { patients, alerts, loading } = useDashboard(activeFacility);
@@ -75,18 +83,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="flex gap-4 mb-8">
-        {['house-a', 'house-b', 'house-c'].map((facId) => (
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+        {Object.keys(facilityNames).map((facId) => (
           <button
             key={facId}
             onClick={() => setActiveFacility(facId)}
-            className={`flex-1 py-4 rounded-xl font-bold text-xs tracking-widest transition-all ${
+            className={`flex-none px-8 py-4 rounded-2xl font-black text-[10px] tracking-[0.2em] transition-all duration-300 ${
               activeFacility === facId 
-                ? 'bg-slate-100 text-teal-600 border border-teal-500/10 shadow-sm' 
-                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                ? 'bg-quro-charcoal text-white shadow-2xl shadow-quro-charcoal/20' 
+                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
             }`}
           >
-            {facilityNames[facId].toUpperCase()} {activeFacility === facId && <span className="text-[10px] text-teal-400/60 ml-2">(Active)</span>}
+            {facilityNames[facId].toUpperCase()}
+            {activeFacility === facId && <span className="ml-3 text-quro-teal">●</span>}
           </button>
         ))}
       </div>
@@ -128,16 +137,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Bed Grid */}
-      <div className={`grid gap-6 mb-12 ${
-        viewType === 'enterprise' 
-          ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-      }`}>
-        {beds.map((bed: any, i) => (
+      <div className={`grid gap-6 ${viewType === 'boutique' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'}`}>
+        {beds.map((bed) => (
           <PatientCard 
             key={bed.id} 
-            patient={bed} 
-            isCritical={bed.status === 'Critical'} 
+            bed={bed}
+            isCritical={bed.patient?.status === 'Critical'}
             viewType={viewType}
             showDiagnostics={isImpersonating}
           />
