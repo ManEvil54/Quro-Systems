@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Quro — CLHF Care Synchronization",
   description: "HIPAA-compliant sub-acute care management for Congregate Living Health Facilities. Quro Systems by ModernQure LLC.",
   keywords: ["CLHF", "healthcare", "medication management", "MAR", "sub-acute care", "HIPAA"],
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

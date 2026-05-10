@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:demo": "npx tsx src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",

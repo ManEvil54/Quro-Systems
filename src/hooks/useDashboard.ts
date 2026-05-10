@@ -38,27 +38,37 @@ export function useDashboard(facilityId: string) {
       return;
     }
 
+    let roomsUnsubscribe = () => {};
+    let bedsUnsubscribe = () => {};
+    let patientsUnsubscribe = () => {};
+    let vitalsUnsubscribes: (() => void)[] = [];
+    let alertsUnsubscribe = () => {};
+
     // 1. Listen to Rooms (to get room names)
     const roomsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms');
-    const roomsUnsubscribe = onSnapshot(roomsRef, (roomsSnap) => {
+    roomsUnsubscribe = onSnapshot(roomsRef, (roomsSnap) => {
       const roomMap = new Map();
       roomsSnap.docs.forEach(doc => roomMap.set(doc.id, doc.data().name));
 
       // 2. Listen to Beds
       const bedsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'beds');
-      const bedsUnsubscribe = onSnapshot(bedsRef, (bedsSnap) => {
+      bedsUnsubscribe = onSnapshot(bedsRef, (bedsSnap) => {
         const bedList = bedsSnap.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as Bed[];
+        })) as any[];
 
         // 3. Listen to Patients
         const patientsRef = collection(db, 'organizations', organization.id, 'patients');
         const patientsQuery = query(patientsRef, where('facility_id', '==', facilityId), where('is_active', '==', true));
         
-        onSnapshot(patientsQuery, (patientsSnap) => {
+        patientsUnsubscribe = onSnapshot(patientsQuery, (patientsSnap) => {
           const patientList = patientsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Patient[];
           
+          // Clear old vitals listeners when patient list changes
+          vitalsUnsubscribes.forEach(unsub => unsub());
+          vitalsUnsubscribes = [];
+
           // Construct initial beds state
           const initialBeds: DashboardBed[] = bedList.map(bed => {
             const patient = patientList.find(p => p.bed_id === bed.id);
@@ -89,7 +99,7 @@ export function useDashboard(facilityId: string) {
             const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patient.id, 'vital_signs');
             const vitalsQuery = query(vitalsRef, orderBy('recorded_at', 'desc'), limit(1));
             
-            onSnapshot(vitalsQuery, (vSnapshot) => {
+            const vUnsub = onSnapshot(vitalsQuery, (vSnapshot) => {
               if (!vSnapshot.empty) {
                 const latest = vSnapshot.docs[0].data() as VitalSign;
                 setBeds(prev => prev.map(dbed => {
@@ -110,16 +120,17 @@ export function useDashboard(facilityId: string) {
                 }));
               }
             });
+            vitalsUnsubscribes.push(vUnsub);
           });
         });
       });
     });
 
-    // 4. Listen to Alerts (Urgent Handover notes)
+    // 5. Listen to Alerts (Urgent Handover notes)
     const handoverRef = collection(db, 'organizations', organization.id, 'handover_notes');
     const handoverQuery = query(handoverRef, where('facility_id', '==', facilityId), where('is_urgent', '==', true), limit(5));
     
-    const unsubscribeAlerts = onSnapshot(handoverQuery, (snapshot) => {
+    alertsUnsubscribe = onSnapshot(handoverQuery, (snapshot) => {
       const urgentNotes = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -130,7 +141,9 @@ export function useDashboard(facilityId: string) {
     return () => {
       roomsUnsubscribe();
       bedsUnsubscribe();
-      unsubscribeAlerts();
+      patientsUnsubscribe();
+      vitalsUnsubscribes.forEach(unsub => unsub());
+      alertsUnsubscribe();
     };
   }, [organization?.id, facilityId]);
 

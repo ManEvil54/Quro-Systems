@@ -81,47 +81,44 @@ async function seed() {
     });
     console.log('✅ Facility created.');
 
-    // 2. Create Rooms & Beds
-    const wings = [
-      { name: 'North Wing', rooms: 2, bedsPerRoom: 2 },
-      { name: 'South Wing', rooms: 2, bedsPerRoom: 2 },
-      { name: 'Memory Suite', rooms: 2, bedsPerRoom: 1 }
+    // 2. Create Rooms & Beds (Exactly 6 beds for the Boutique experience)
+    const setup = [
+      { room: '101', beds: ['A', 'B'] }, // 2
+      { room: '102', beds: ['A', 'B'] }, // 2
+      { room: '103', beds: ['A'] },      // 1
+      { room: '104', beds: ['A'] }       // 1
     ];
 
     const beds: any[] = [];
     const rooms: any[] = [];
 
-    for (const wing of wings) {
-      for (let i = 1; i <= wing.rooms; i++) {
-        const roomName = `${wing.name} - Room ${100 + i}`;
-        const roomRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms'));
-        const roomData = {
-          id: roomRef.id,
-          org_id: ORG_ID,
+    for (const item of setup) {
+      const roomRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms'));
+      const roomData = {
+        id: roomRef.id,
+        org_id: ORG_ID,
+        facility_id: FACILITY_ID,
+        name: `Room ${item.room}`,
+        type: item.beds.length > 1 ? 'semi-private' : 'private',
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      await setDoc(roomRef, roomData);
+      rooms.push(roomData);
+
+      for (const b of item.beds) {
+        const bedRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds'));
+        const bedData = {
+          id: bedRef.id,
+          room_id: roomRef.id,
           facility_id: FACILITY_ID,
-          name: roomName,
-          type: wing.bedsPerRoom > 1 ? 'semi-private' : 'private',
-          is_active: true,
+          org_id: ORG_ID,
+          name: `Bed ${b}`,
+          status: 'available',
           created_at: new Date().toISOString()
         };
-        await setDoc(roomRef, roomData);
-        rooms.push(roomData);
-
-        for (let j = 1; j <= wing.bedsPerRoom; j++) {
-          const bedName = `Bed ${String.fromCharCode(64 + j)}`;
-          const bedRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds'));
-          const bedData = {
-            id: bedRef.id,
-            room_id: roomRef.id,
-            facility_id: FACILITY_ID,
-            org_id: ORG_ID,
-            name: bedName,
-            status: 'available',
-            created_at: new Date().toISOString()
-          };
-          await setDoc(bedRef, bedData);
-          beds.push(bedData);
-        }
+        await setDoc(bedRef, bedData);
+        beds.push(bedData);
       }
     }
 
@@ -136,6 +133,8 @@ async function seed() {
       { first_name: 'Sarah', last_name: 'Jenkins', mrn: 'MRN-005', code: 'full', status: 'Stable', monitoring: false },
       { first_name: 'Victor', last_name: 'Dumont', mrn: 'MRN-006', code: 'comfort', status: 'Stable', monitoring: false },
     ];
+
+    const seededPatients: any[] = [];
 
     for (let i = 0; i < demoPatients.length; i++) {
       const p = demoPatients[i];
@@ -163,6 +162,7 @@ async function seed() {
       };
 
       await setDoc(patientRef, patientData);
+      seededPatients.push(patientData);
       
       // Update Bed status
       await setDoc(doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds', bed.id), {
@@ -175,11 +175,9 @@ async function seed() {
       console.log(`🫀 Generating vitals for ${p.first_name}...`);
       const vitalsRef = collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'vital_signs');
       
-      // Add 5 history records
       for (let h = 0; h < 5; h++) {
-        const timeOffset = h * 4 * 60 * 60 * 1000; // every 4 hours
+        const timeOffset = h * 4 * 60 * 60 * 1000;
         const recorded_at = new Date(Date.now() - timeOffset).toISOString();
-        
         const isLatest = h === 0;
         let vitalData: any = {
           org_id: ORG_ID,
@@ -194,22 +192,80 @@ async function seed() {
           created_at: recorded_at
         };
 
-        // Inject alert for critical patients
         if (isLatest && p.status === 'Critical') {
           if (p.first_name === 'Margaret') {
-            vitalData.pulse = 115; // Tachycardia
+            vitalData.pulse = 115;
             vitalData.is_alert = true;
           } else if (p.first_name === 'Arthur') {
-            vitalData.systolic = 175; // Hypertension
+            vitalData.systolic = 175;
             vitalData.is_alert = true;
           }
         }
-
         const vDoc = doc(vitalsRef);
         await setDoc(vDoc, { id: vDoc.id, ...vitalData });
       }
 
-      console.log(`✅ Added Patient: ${p.first_name} ${p.last_name}`);
+      // 5. Seed Medications & MAR for each patient
+      console.log(`💊 Seeding medications for ${p.first_name}...`);
+      const meds = [
+        { name: 'Lisinopril', dose: '10mg', route: 'PO', frequency: 'Daily', time: '09:00' },
+        { name: 'Metformin', dose: '500mg', route: 'PO', frequency: 'BID', time: '09:00, 18:00' },
+        { name: 'Amlodipine', dose: '5mg', route: 'PO', frequency: 'Daily', time: '09:00' }
+      ];
+
+      for (const med of meds) {
+        const medRef = doc(collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'medications'));
+        const medData = {
+          id: medRef.id,
+          org_id: ORG_ID,
+          patient_id: patientRef.id,
+          name: med.name,
+          dosage: med.dose,
+          route: med.route,
+          frequency: med.frequency,
+          scheduled_times: med.time.split(', '),
+          start_date: '2024-01-01',
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+        await setDoc(medRef, medData);
+
+        // Seed some administrations for today
+        const adminRef = doc(collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'medication_administrations'));
+        await setDoc(adminRef, {
+          id: adminRef.id,
+          org_id: ORG_ID,
+          patient_id: patientRef.id,
+          medication_id: medRef.id,
+          administered_at: new Date().toISOString(),
+          administered_by: 'staff-demo-1',
+          status: 'administered',
+          notes: 'Routine dose'
+        });
+      }
+
+      // 6. Seed Clinical Orders
+      console.log(`📋 Seeding orders for ${p.first_name}...`);
+      const orders = [
+        { type: 'Medication', detail: `Increase ${meds[0].name} to 20mg daily` },
+        { type: 'Lab', detail: 'CBC, BMP tomorrow morning' },
+        { type: 'Treatment', detail: 'Wound care to left lower extremity daily' }
+      ];
+
+      for (const order of orders) {
+        const orderRef = doc(collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'clinical_orders'));
+        await setDoc(orderRef, {
+          id: orderRef.id,
+          org_id: ORG_ID,
+          patient_id: patientRef.id,
+          type: order.type,
+          description: order.detail,
+          ordered_by: 'Dr. Demo physician',
+          status: 'active',
+          order_date: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        });
+      }
     }
 
     console.log('📝 Creating handover notes...');
@@ -236,8 +292,7 @@ async function seed() {
       });
     }
 
-    // 6. Seed Demo Staff (Placeholder for easy linking)
-    console.log('Seeding demo staff templates...');
+    // 7. Seed Demo Staff
     const demoStaffId = 'demo-staff-member'; 
     await setDoc(doc(db, 'organizations', ORG_ID, 'staff', demoStaffId), {
       auth_id: demoStaffId,
@@ -260,7 +315,7 @@ async function seed() {
       role: 'FACILITY_ADMIN'
     });
 
-    console.log('🚀 DEMO SEEDING COMPLETE!');
+    console.log('🚀 FULL DEMO SEEDING COMPLETE!');
   } catch (err) {
     console.error('❌ Seeding failed:', err);
   }
