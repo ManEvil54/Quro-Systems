@@ -37,18 +37,18 @@ export default function DashboardPage() {
     'cedar-haven': 'Cedar Haven Assisted Living'
   };
 
-  const { patients, alerts, loading } = useDashboard(activeFacility);
+  const { beds: facilityBeds, alerts, loading } = useDashboard(activeFacility);
 
-  // Fill empty beds up to 6 or 25
-  const maxBeds = viewType === 'enterprise' ? 25 : 6;
-  const beds = Array.from({ length: maxBeds }, (_, i) => {
-    // Try to find a patient for this specific bed index (1-based)
-    const patient = patients.find(p => p.room_number === `${i + 1}` || p.room_number === `Bed ${i + 1}`);
-    // If no specific room match, fill sequentially for now
-    const seqPatient = !patient && i < patients.length ? patients[i] : patient;
-    
-    return seqPatient || { id: `empty-${i}`, empty: true, id_num: i + 1 };
-  });
+  // Fill empty slots if needed, or just use the beds from the hook
+  // The hook already returns beds from the database. 
+  // We'll use the hook's beds and ensure they are sorted or padded as desired.
+  const beds = facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
+    id: `empty-${i}`,
+    bed_name: `Bed ${i + 1}`,
+    room_name: 'Unassigned',
+    room_id: 'none',
+    status: 'available' as const
+  }));
 
   const { isImpersonating } = useAuth();
 
