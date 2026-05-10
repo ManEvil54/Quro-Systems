@@ -16,14 +16,24 @@ import {
   Plus,
   ChevronRight,
   Clock,
+  TrendingUp,
+  Brain,
+  Wind,
+  Apple,
+  Eye,
+  Zap,
+  Move,
+  Thermometer,
+  Volume2,
+  Ear,
+  EyeOff,
   Heart,
   Droplets,
   Stethoscope,
-  Phone,
   Check,
   X,
   AlertCircle,
-  TrendingUp
+  Phone
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
@@ -58,11 +68,65 @@ export default function PatientChartPage() {
   const [narrativeNote, setNarrativeNote] = useState('');
   const [noteFocus, setNoteFocus] = useState('Routine Shift Note');
   const [assessments, setAssessments] = useState({
-    vitals: { temp: 98.6, pulse: 72, resp: 18, bp_systolic: 120, bp_diastolic: 80, bp_site: 'L-Arm', bp_position: 'Sitting', spo2: 98, weight: 165 },
-    io: { fluids_in_ml: 240, voiding_count: 1, bm_count: 0, bristol_scale: 4 },
-    care: { oral_care: true, peri_care: true, bathing: 'N/A', meal_percent: 75 },
-    systems: { resp_sounds: 'Clear', o2_method: 'Room Air', o2_flow: 0, edema: 'None', pulses_present: true, pain_level: 0, pain_location: '', skin_intact: true, neuro_mood: 'Alert & Oriented', skin_status: 'Intact' },
-    safety: { safety_check: true, bed_rails_up: true, call_light_reach: true, alarm_active: true }
+    vitals: { 
+      temp: 98.6, pulse: 72, resp: 18, bp_systolic: 120, bp_diastolic: 80, 
+      bp_site: 'L-Arm' as "L-Arm" | "R-Arm" | "Thigh", 
+      bp_position: 'Sitting' as "Sitting" | "Standing" | "Supine", 
+      spo2: 98, weight: 165 
+    },
+    neuro: { 
+      orientation: 'A&O x 4',
+      loc: 'Alert',
+      speech: 'Clear',
+      pupils: 'PERRLA' 
+    },
+    resp: { 
+      pattern: 'Even/Unlabored',
+      sounds: 'Clear',
+      sounds_location: 'Bilateral',
+      cough: 'None',
+      oxygen: 'Room Air',
+      o2_flow: 0
+    },
+    cardio: { 
+      rhythm: 'Regular',
+      edema: 'None',
+      edema_location: 'Pedal',
+      pulses: 'Strong',
+      cap_refill: '< 3s'
+    },
+    gi: { 
+      appetite: 'Good (75-100%)',
+      abdomen: 'Soft',
+      bowel_sounds: 'Present',
+      last_bm: new Date().toISOString().split('T')[0],
+      stool_bristol: 4,
+      diet_type: 'Regular',
+      fluids_in_ml: 240
+    },
+    gu: { 
+      voiding: 'Continent',
+      catheter: 'None',
+      urine_appearance: 'Clear',
+      voiding_count: 1
+    },
+    skin: { 
+      condition: 'Intact',
+      integrity: 'No Redness',
+      devices: [] as string[],
+      pressure_ulcers: false
+    },
+    pain: { 
+      level: 0, 
+      location: '', 
+      type: 'None',
+      non_verbal: [] as string[]
+    },
+    adl: { 
+      mobility: 'Independent',
+      transfer: 'Independent',
+      safety_checks: ['Bed Lowest', 'Call Light']
+    }
   });
 
   const macros = [
@@ -159,7 +223,7 @@ export default function PatientChartPage() {
       };
 
       if (currentDraftId) {
-        await updateNote(currentDraftId, noteData);
+        await updateNote(currentDraftId, noteData as any);
       } else {
         const newNote = await saveNote(noteData as any);
         if (isDraft) setCurrentDraftId(newNote.id);
@@ -589,163 +653,488 @@ export default function PatientChartPage() {
               </div>
 
               {chartingSide === 'front' ? (
-                /* SIDE 1: THE CLICK PAGE */
-                <div className="no-print grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in slide-in-from-right-4">
-                  <div className="lg:col-span-8 space-y-8">
-                    {/* Vitals Grid */}
-                    <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                        <Activity size={18} className="text-rose-500" />
-                        I. Vitals & I/O Tracking
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Temp (°F)</p>
-                          <input type="number" value={assessments.vitals.temp} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, temp: parseFloat(e.target.value)}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Pulse</p>
-                          <input type="number" value={assessments.vitals.pulse} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value)}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Resp</p>
-                          <input type="number" value={assessments.vitals.resp} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value)}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">SpO2 (%)</p>
-                          <input type="number" value={assessments.vitals.spo2} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, spo2: parseInt(e.target.value)}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Blood Pressure (Sys/Dia)</p>
-                          <div className="flex gap-2">
-                            <input type="number" placeholder="120" value={assessments.vitals.bp_systolic} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value)}})} className="w-1/2 bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                            <span className="text-2xl text-slate-300">/</span>
-                            <input type="number" placeholder="80" value={assessments.vitals.bp_diastolic} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value)}})} className="w-1/2 bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                          </div>
-                        </div>
-                        <div className="col-span-2 grid grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Site</p>
-                            <select value={assessments.vitals.bp_site} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-xs text-slate-900 outline-none">
-                              <option value="L-Arm">L-Arm</option>
-                              <option value="R-Arm">R-Arm</option>
-                              <option value="Thigh">Thigh</option>
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Position</p>
-                            <select value={assessments.vitals.bp_position} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-xs text-slate-900 outline-none">
-                              <option value="Sitting">Sitting</option>
-                              <option value="Standing">Standing</option>
-                              <option value="Lying">Lying</option>
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Weight (Lbs)</p>
-                            <input type="number" value={assessments.vitals.weight} onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, weight: parseFloat(e.target.value)}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-lg text-slate-900 outline-none" />
-                          </div>
-                        </div>
+                /* SIDE 1: THE CLICK PAGE (SNF GOLD STANDARD) */
+                  <div className="no-print space-y-10 animate-in slide-in-from-right-4">
+                    {/* Vitals Summary Strip (Interactive Charting) */}
+                  <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl shadow-slate-900/40 border border-white/5">
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center text-rose-400">
+                        <Activity size={28} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Vital Signs Charting</p>
+                        <h2 className="text-lg font-black uppercase tracking-tighter">Current Shift Assessment</h2>
                       </div>
                     </div>
 
-                    {/* ADL & Care Tracking */}
-                    <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                        <Heart size={18} className="text-teal-500" />
-                        II. ADL & Hygiene Care
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-4">
-                          {['oral_care', 'peri_care'].map(key => (
-                            <label key={key} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all border border-slate-100">
-                              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{key.replace(/_/g, ' ')} Completed</span>
-                              <input type="checkbox" checked={(assessments.care as any)[key]} onChange={e => setAssessments({...assessments, care: {...assessments.care, [key]: e.target.checked}})} className="w-5 h-5 rounded border-slate-300 text-quro-teal" />
-                            </label>
-                          ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Temperature</p>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            value={assessments.vitals.temp} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, temp: parseFloat(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
+                          <span className="text-slate-500 font-black">°F</span>
                         </div>
-                        <div className="space-y-6">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Meal Intake %</p>
-                            <div className="flex gap-2">
-                              {[0, 25, 50, 75, 100].map(val => (
-                                <button key={val} onClick={() => setAssessments({...assessments, care: {...assessments.care, meal_percent: val as any}})} className={`flex-1 py-3 rounded-xl font-black text-[10px] border transition-all ${assessments.care.meal_percent === val ? 'bg-quro-teal text-white border-quro-teal' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
-                                  {val}%
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Bathing/Shower</p>
-                            <select value={assessments.care.bathing} onChange={e => setAssessments({...assessments, care: {...assessments.care, bathing: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-xs text-slate-900 outline-none">
-                              <option value="N/A">Not Scheduled</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Refused">Refused</option>
-                            </select>
-                          </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">B/P (Sys/Dia)</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            type="number" 
+                            value={assessments.vitals.bp_systolic} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
+                          <span className="text-slate-500 font-black">/</span>
+                          <input 
+                            type="number" 
+                            value={assessments.vitals.bp_diastolic} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pulse / Resp</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            type="number" 
+                            value={assessments.vitals.pulse} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
+                          <span className="text-slate-500 font-black">/</span>
+                          <input 
+                            type="number" 
+                            value={assessments.vitals.resp} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">SpO2</p>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number" 
+                            value={assessments.vitals.spo2} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, spo2: parseInt(e.target.value)}})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                          />
+                          <span className="text-slate-500 font-black">%</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Site</p>
+                        <select 
+                          value={assessments.vitals.bp_site} 
+                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as any}})}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-rose-500/50 transition-all"
+                        >
+                          <option className="bg-slate-900">L-Arm</option>
+                          <option className="bg-slate-900">R-Arm</option>
+                          <option className="bg-slate-900">Thigh</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Position</p>
+                        <select 
+                          value={assessments.vitals.bp_position} 
+                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as any}})}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-rose-500/50 transition-all"
+                        >
+                          <option className="bg-slate-900">Sitting</option>
+                          <option className="bg-slate-900">Standing</option>
+                          <option className="bg-slate-900">Supine</option>
+                        </select>
                       </div>
                     </div>
                   </div>
 
-                  <div className="lg:col-span-4 space-y-8">
-                    {/* Safety Checklist */}
-                    <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/20">
-                      <h3 className="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-6 border-b border-white/10 pb-4">III. Safety Rounds</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    {/* 1. Neurological & Mental Status */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                          <Brain size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">I. Neurological</h3>
+                      </div>
                       <div className="space-y-4">
-                        {['safety_check', 'bed_rails_up', 'call_light_reach', 'alarm_active'].map(key => (
-                          <label key={key} className="flex items-center justify-between p-4 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
-                            <span className="text-[9px] font-black uppercase tracking-tight text-slate-400">{key.replace(/_/g, ' ')}</span>
-                            <input type="checkbox" checked={(assessments.safety as any)[key]} onChange={e => setAssessments({...assessments, safety: {...assessments.safety, [key]: e.target.checked}})} className="w-4 h-4 rounded border-white/20 text-teal-400 bg-transparent" />
-                          </label>
-                        ))}
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Orientation (A&O)</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['A&O x 1', 'A&O x 2', 'A&O x 3', 'A&O x 4'].map(val => (
+                              <button key={val} onClick={() => setAssessments({...assessments, neuro: {...assessments.neuro, orientation: val}})} className={`py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.neuro.orientation === val ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">LOC</p>
+                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Alert</option>
+                              <option>Lethargic</option>
+                              <option>Obtunded</option>
+                              <option>Comatose</option>
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Speech</p>
+                            <select value={assessments.neuro.speech} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, speech: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Clear</option>
+                              <option>Slurred</option>
+                              <option>Aphasic</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Quick Physical Sync */}
-                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem]">
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6">IV. Physical Sync</h3>
-                      <div className="space-y-6">
+                    {/* 2. Respiratory System */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                          <Wind size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">II. Respiratory</h3>
+                      </div>
+                      <div className="space-y-4">
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Lung Sounds</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Breathing Pattern</p>
+                          <select value={assessments.resp.pattern} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, pattern: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <option>Even/Unlabored</option>
+                            <option>Labored</option>
+                            <option>Shallow</option>
+                            <option>SOB at rest</option>
+                            <option>SOB on exertion</option>
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Breath Sounds</p>
                           <div className="grid grid-cols-2 gap-2">
                             {['Clear', 'Wheezing', 'Crackles', 'Diminished'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, systems: {...assessments.systems, resp_sounds: val as any}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.systems.resp_sounds === val ? 'bg-blue-500 text-white border-blue-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, resp: {...assessments.resp, sounds: val}})} className={`py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.resp.sounds === val ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-200'}`}>
                                 {val}
                               </button>
                             ))}
                           </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-4 pt-2">
+                           <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                              <p className="text-[8px] font-black text-blue-600 uppercase mb-1">Oxygen</p>
+                              <select value={assessments.resp.oxygen} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, oxygen: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
+                                <option>Room Air</option>
+                                <option>NC</option>
+                                <option>CPAP/BiPAP</option>
+                              </select>
+                           </div>
+                           <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                              <p className="text-[8px] font-black text-blue-600 uppercase mb-1">Flow (LPM)</p>
+                              <input type="number" value={assessments.resp.o2_flow} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, o2_flow: parseInt(e.target.value)}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none" />
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Cardiovascular System */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                          <Heart size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">III. Cardiovascular</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Rhythm</p>
+                            <button onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, rhythm: assessments.cardio.rhythm === 'Regular' ? 'Irregular' : 'Regular'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cardio.rhythm === 'Regular' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                              {assessments.cardio.rhythm}
+                            </button>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Cap Refill</p>
+                            <button onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, cap_refill: assessments.cardio.cap_refill === '< 3s' ? '> 3s' : '< 3s'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cardio.cap_refill === '< 3s' ? 'bg-slate-50 text-slate-600 border-slate-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                              {assessments.cardio.cap_refill}
+                            </button>
+                          </div>
+                        </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Edema (Lower Ext)</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Edema Tracking</p>
                           <div className="flex gap-1">
                             {['None', '1+', '2+', '3+', '4+'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, systems: {...assessments.systems, edema: val as any}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.systems.edema === val ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, cardio: {...assessments.cardio, edema: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.cardio.edema === val ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-rose-50/50 rounded-xl border border-rose-100">
-                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Skin Status</span>
-                           <select value={assessments.systems.skin_status} onChange={e => setAssessments({...assessments, systems: {...assessments.systems, skin_status: e.target.value}})} className="bg-transparent font-black text-[9px] uppercase outline-none text-rose-700">
-                              <option>Intact</option>
-                              <option>Redness</option>
-                              <option>Stage I</option>
-                              <option>Stage II</option>
-                              <option>Bruising</option>
-                              <option>Laceration</option>
-                           </select>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Neuro / Mood</p>
-                          <select value={assessments.systems.neuro_mood} onChange={e => setAssessments({...assessments, systems: {...assessments.systems, neuro_mood: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest outline-none text-slate-900">
-                            <option>Alert & Oriented</option>
-                            <option>Confused/Disoriented</option>
-                            <option>Lethargic/Somnolent</option>
-                            <option>Agitated/Restless</option>
-                            <option>Combative</option>
-                            <option>Depressed/Withdrawn</option>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                          <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Pulses (Radial/Pedal)</p>
+                          <select value={assessments.cardio.pulses} onChange={e => setAssessments({...assessments, cardio: {...assessments.cardio, pulses: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
+                            <option>Strong</option>
+                            <option>Weak</option>
+                            <option>Absent</option>
                           </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Gastrointestinal (GI) & Nutrition */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                          <Apple size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IV. GI & Nutrition</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Appetite / Intake</p>
+                          <div className="flex gap-2">
+                            {['Poor', 'Fair', 'Good'].map(val => (
+                              <button key={val} onClick={() => setAssessments({...assessments, gi: {...assessments.gi, appetite: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.appetite.includes(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Abdomen</p>
+                            <select value={assessments.gi.abdomen} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, abdomen: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Soft</option>
+                              <option>Firm</option>
+                              <option>Distended</option>
+                              <option>Tender</option>
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Bowel Sounds</p>
+                            <select value={assessments.gi.bowel_sounds} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, bowel_sounds: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Present</option>
+                              <option>Hyperactive</option>
+                              <option>Hypoactive</option>
+                              <option>Absent</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100">
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-[8px] font-black text-orange-600 uppercase">Bristol Stool Scale</p>
+                            <span className="text-[10px] font-black text-orange-700">Type {assessments.gi.stool_bristol}</span>
+                          </div>
+                          <input type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fluid Intake (mL)</p>
+                          <input 
+                            type="number" 
+                            value={assessments.gi.fluids_in_ml} 
+                            onChange={e => setAssessments({...assessments, gi: {...assessments.gi, fluids_in_ml: parseInt(e.target.value)}})}
+                            className="w-24 bg-white border border-slate-200 rounded-lg p-2 font-black text-xs text-right outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5. Genitourinary (GU) */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600">
+                          <Droplets size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">V. Genitourinary</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Voiding Status</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['Continent', 'Incontinent', 'Occasional'].map(val => (
+                              <button key={val} onClick={() => setAssessments({...assessments, gu: {...assessments.gu, voiding: val}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gu.voiding === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Device</p>
+                            <select value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>None</option>
+                              <option>Foley</option>
+                              <option>Texas</option>
+                              <option>Suprapubic</option>
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Urine</p>
+                            <select value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Clear</option>
+                              <option>Cloudy</option>
+                              <option>Sediment</option>
+                              <option>Hematuria</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-100 flex justify-between items-center">
+                          <p className="text-[9px] font-black text-cyan-600 uppercase">Void Count (Shift)</p>
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => setAssessments({...assessments, gu: {...assessments.gu, voiding_count: Math.max(0, assessments.gu.voiding_count - 1)}})} className="w-6 h-6 rounded-full bg-white border border-cyan-200 flex items-center justify-center font-black">-</button>
+                            <span className="font-black text-xs">{assessments.gu.voiding_count}</span>
+                            <button onClick={() => setAssessments({...assessments, gu: {...assessments.gu, voiding_count: assessments.gu.voiding_count + 1}})} className="w-6 h-6 rounded-full bg-white border border-cyan-200 flex items-center justify-center font-black">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 6. Integumentary (Skin) */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                          <Stethoscope size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VI. Integumentary</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Condition</p>
+                          <select value={assessments.skin.condition} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, condition: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <option>Intact</option>
+                            <option>Dry</option>
+                            <option>Diaphoretic</option>
+                            <option>Clammy</option>
+                          </select>
+                        </div>
+                        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                          <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-3">Integrity Check</p>
+                          <div className="space-y-2">
+                            {['No Redness', 'Redness noted', 'Wound/Ulcer'].map(val => (
+                              <button key={val} onClick={() => setAssessments({...assessments, skin: {...assessments.skin, integrity: val}})} className={`w-full py-2 px-4 rounded-lg text-left text-[9px] font-black border transition-all flex items-center justify-between ${assessments.skin.integrity === val ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-rose-500/5 text-rose-400 border-transparent'}`}>
+                                {val}
+                                {assessments.skin.integrity === val && <Check size={12} />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pressure Ulcers Present</p>
+                          <button 
+                            onClick={() => setAssessments({...assessments, skin: {...assessments.skin, pressure_ulcers: !assessments.skin.pressure_ulcers}})}
+                            className={`w-12 h-6 rounded-full transition-all relative ${assessments.skin.pressure_ulcers ? 'bg-rose-500' : 'bg-slate-200'}`}
+                          >
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${assessments.skin.pressure_ulcers ? 'left-7' : 'left-1'}`} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 7. Pain Assessment */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                          <Volume2 size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VII. Pain Assessment</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pain Level (0-10)</p>
+                          <span className={`px-3 py-1 rounded-full text-xs font-black ${assessments.pain.level > 5 ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{assessments.pain.level}</span>
+                        </div>
+                        <input type="range" min="0" max="10" step="1" value={assessments.pain.level} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, level: parseInt(e.target.value)}})} className="w-full accent-rose-500 mb-4" />
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</p>
+                            <input type="text" placeholder="e.g. Back" value={assessments.pain.location} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, location: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] outline-none" />
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Type</p>
+                            <select value={assessments.pain.type} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, type: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>None</option>
+                              <option>Aching</option>
+                              <option>Sharp</option>
+                              <option>Burning</option>
+                              <option>Throbbing</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Non-Verbal Cues</p>
+                          <div className="flex flex-wrap gap-2">
+                            {['Grimacing', 'Moaning', 'Guarding'].map(cue => (
+                              <button key={cue} onClick={() => {
+                                const newCues = assessments.pain.non_verbal.includes(cue) 
+                                  ? assessments.pain.non_verbal.filter(c => c !== cue)
+                                  : [...assessments.pain.non_verbal, cue];
+                                setAssessments({...assessments, pain: {...assessments.pain, non_verbal: newCues}});
+                              }} className={`px-3 py-1 rounded-full text-[8px] font-black border transition-all ${assessments.pain.non_verbal.includes(cue) ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                {cue}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 8. ADL & Safety */}
+                    <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/40 border border-white/5">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-teal-400">
+                          <ShieldCheck size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">VIII. ADL & Safety</h3>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Mobility</p>
+                            <select value={assessments.adl.mobility} onChange={e => setAssessments({...assessments, adl: {...assessments.adl, mobility: e.target.value}})} className="w-full bg-white/5 border border-white/10 p-2 rounded-lg font-black text-[9px] uppercase outline-none text-white">
+                              <option className="bg-slate-900">Independent</option>
+                              <option className="bg-slate-900">Bedrest</option>
+                              <option className="bg-slate-900">Assist of 1</option>
+                              <option className="bg-slate-900">Assist of 2</option>
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Transfer</p>
+                            <select value={assessments.adl.transfer} onChange={e => setAssessments({...assessments, adl: {...assessments.adl, transfer: e.target.value}})} className="w-full bg-white/5 border border-white/10 p-2 rounded-lg font-black text-[9px] uppercase outline-none text-white">
+                              <option className="bg-slate-900">Independent</option>
+                              <option className="bg-slate-900">Pivot</option>
+                              <option className="bg-slate-900">Hoyer</option>
+                              <option className="bg-slate-900">Sit-to-Stand</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Safety Rounds</p>
+                           {['Bed Lowest', 'Call Light', 'Side Rails Up', 'Non-skid socks'].map(check => (
+                             <label key={check} className="flex items-center justify-between p-3 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                               <span className="text-[9px] font-black uppercase text-slate-300">{check}</span>
+                               <input type="checkbox" checked={assessments.adl.safety_checks.includes(check)} onChange={e => {
+                                 const newChecks = e.target.checked 
+                                   ? [...assessments.adl.safety_checks, check]
+                                   : assessments.adl.safety_checks.filter(c => c !== check);
+                                 setAssessments({...assessments, adl: {...assessments.adl, safety_checks: newChecks}});
+                               }} className="w-4 h-4 rounded border-white/20 text-teal-400 bg-transparent" />
+                             </label>
+                           ))}
                         </div>
                       </div>
                     </div>
@@ -900,196 +1289,309 @@ export default function PatientChartPage() {
       {/* DEDICATED PRINT VIEW (FOR 2-SIDED SIFF/SNF) */}
       <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0">
         {/* Page 1: Assessment (Front Side) */}
-        <div className="p-10 min-h-screen border-b-8 border-slate-900 bg-white">
+        <div className="p-12 min-h-screen border-b-8 border-slate-900 bg-white flex flex-col">
           <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black">Q</div>
+              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
               <div>
-                <h1 className="text-2xl font-black uppercase tracking-tighter">Shift Assessment Record (SIFF-1)</h1>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platinum Health Hub • Clinical Record</p>
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Assessment Record</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Shift Certification (Side A)</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-black uppercase">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-[10px] font-bold text-slate-500">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
-              <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mt-1">Shift Start: {new Date().toLocaleDateString()}</p>
+              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
+              <p className="text-xs font-black text-quro-teal uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-10 gap-y-8">
-            {/* Vitals & I/O */}
-            <div className="border-2 border-slate-200 p-6 rounded-xl">
-              <h3 className="text-[10px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between">
-                I. Vitals & I/O Tracking <span>Shift Pass: {new Date().toLocaleDateString()}</span>
+          <div className="grid grid-cols-2 gap-x-12 gap-y-6 flex-grow">
+            {/* System I: Neuro */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                I. Neurological & Mental Status
               </h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Temperature</p>
-                  <p className="text-xs font-black">{assessments.vitals.temp}°F</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Pulse / Resp</p>
-                  <p className="text-xs font-black">{assessments.vitals.pulse} bpm / {assessments.vitals.resp} rr</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Blood Pressure</p>
-                  <p className="text-xs font-black">{assessments.vitals.bp_systolic}/{assessments.vitals.bp_diastolic} <span className="text-[8px] text-slate-400">({assessments.vitals.bp_position[0]}/{assessments.vitals.bp_site})</span></p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">SpO2 / Weight</p>
-                  <p className="text-xs font-black">{assessments.vitals.spo2}% / {assessments.vitals.weight} Lbs</p>
-                </div>
-              </div>
-              <div className="mt-6 pt-4 border-t-2 border-slate-100 flex justify-between bg-slate-50 p-3 rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Fluids In (mL)</p>
-                  <p className="text-xs font-black">{assessments.io.fluids_in_ml} mL</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Orientation</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">A&O X {assessments.neuro.orientation}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Bowel / Void</p>
-                  <p className="text-xs font-black">{assessments.io.bm_count} BM <span className="text-[8px] font-medium">(B{assessments.io.bristol_scale})</span> / {assessments.io.voiding_count} Void</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Level of Consciousness</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.loc}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Speech Pattern</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.speech}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pupils (PERRLA)</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.pupils}</p>
                 </div>
               </div>
             </div>
 
-            {/* Care & Nutrition */}
-            <div className="border-2 border-slate-200 p-6 rounded-xl">
-              <h3 className="text-[10px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2">II. ADL & Hygiene Care</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between text-[10px] font-bold">
-                  <span>Oral Care Completed</span>
-                  <span className="font-black">{assessments.care.oral_care ? '✓ COMPLETED' : '—'}</span>
+            {/* System II: Respiratory */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                II. Respiratory System
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Breathing Pattern</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.pattern}</p>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold">
-                  <span>Peri-Care Completed</span>
-                  <span className="font-black">{assessments.care.peri_care ? '✓ COMPLETED' : '—'}</span>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Breath Sounds</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.sounds}</p>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold">
-                  <span>Bathing / Shower</span>
-                  <span className="font-black uppercase">{assessments.care.bathing}</span>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Oxygen Delivery</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.oxygen}</p>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold pt-4 border-t border-slate-100">
-                  <span>Meal Consumption</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-slate-900" style={{ width: `${assessments.care.meal_percent}%` }} />
-                    </div>
-                    <span className="font-black text-xs">{assessments.care.meal_percent}%</span>
-                  </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cough Type</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.cough}</p>
                 </div>
               </div>
             </div>
 
-            {/* System Assessment */}
-            <div className="border-2 border-slate-200 p-6 rounded-xl">
-              <h3 className="text-[10px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2">III. Physical Assessment</h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Respiratory Sounds</p>
-                  <p className="text-xs font-black uppercase">{assessments.systems.resp_sounds}</p>
+            {/* System III: Cardiovascular */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                III. Cardiovascular System
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Heart Rhythm</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.rhythm}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Neuro / Mood</p>
-                  <p className="text-xs font-black uppercase">{assessments.systems.neuro_mood}</p>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pulses (Radial/Pedal)</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.pulses}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Skin Status</p>
-                  <p className="text-xs font-black uppercase">{assessments.systems.skin_status}</p>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Edema (Location/Grade)</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.edema} {assessments.cardio.edema_location}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Pain Level (0-10)</p>
-                  <p className="text-xs font-black">{assessments.systems.pain_level} / 10 <span className="text-[8px] font-medium text-slate-400">{assessments.systems.pain_location}</span></p>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <div className="flex justify-between text-[9px] font-bold">
-                  <span>Edema (Lower Ext)</span>
-                  <span className="font-black">{assessments.systems.edema}</span>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Capillary Refill</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.cap_refill}</p>
                 </div>
               </div>
             </div>
 
-            {/* Safety Verification */}
-            <div className="border-2 border-slate-900 p-6 rounded-xl bg-slate-50">
-              <h3 className="text-[10px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2">IV. Safety & Monitoring</h3>
-              <div className="space-y-3">
-                {Object.entries(assessments.safety).map(([k, v]) => (
-                  <div key={k} className="flex justify-between text-[9px] font-black uppercase tracking-tight">
-                    <span>{k.replace(/_/g, ' ')} verified</span>
-                    <span className="px-2 py-0.5 border-2 border-slate-900 font-black">{v ? '✓' : ' '}</span>
-                  </div>
-                ))}
+            {/* System IV: GI & Nutrition */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                IV. GI & Nutritional Status
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appetite</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.appetite}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Bowel Sounds</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.bowel_sounds}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Abdomen Assessment</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.abdomen}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Latest Stool (Bristol)</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">Bristol Type {assessments.gi.stool_bristol}</p>
+                </div>
+                <div className="col-span-2 mt-2 pt-2 border-t border-slate-200">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Shift Fluid Intake</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.fluids_in_ml} mL</p>
+                </div>
+              </div>
+            </div>
+
+            {/* System V: Genitourinary */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                V. Genitourinary
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Voiding Status</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.voiding}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Catheter / Device</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.catheter}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Urine Characteristics</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.urine_appearance}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* System VI: Integumentary */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                VI. Integumentary (Skin)
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Skin Condition</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.condition}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Skin Integrity</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.integrity}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Presence of Pressure Ulcers</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.pressure_ulcers ? 'YES - SEE TREATMENT FLOWSHEET' : 'NONE NOTED'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* System VII: Pain */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
+                VII. Pain Assessment
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Level (0-10)</p>
+                  <p className="text-[11px] font-black text-slate-900">{assessments.pain.level} / 10</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Type</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.type}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Location</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.location || 'NONE'}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Non-Verbal Cues</p>
+                  <p className="text-[9px] font-black uppercase text-slate-500">{assessments.pain.non_verbal.join(', ') || 'NONE'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* System VIII: ADL & Safety */}
+            <div className="border-2 border-slate-900 p-4 rounded-2xl bg-slate-900 text-white">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-white/20 pb-2 flex justify-between items-center text-teal-400">
+                VIII. ADL & Safety Rounds
+              </h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Mobility</p>
+                  <p className="text-[11px] font-black uppercase text-white">{assessments.adl.mobility}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Transfer</p>
+                  <p className="text-[11px] font-black uppercase text-white">{assessments.adl.transfer}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Safety Checks Completed</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {assessments.adl.safety_checks.map(check => (
+                    <span key={check} className="text-[9px] font-black uppercase flex items-center gap-1">
+                      <span className="text-teal-400">✓</span> {check}
+                    </span>
+                  ))}
+                  {assessments.adl.safety_checks.length === 0 && <span className="text-[9px] text-white/20 italic font-black">NO CHECKS RECORDED</span>}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-20 pt-10 flex justify-between items-end border-t-2 border-slate-200">
-            <div className="text-[9px] font-bold uppercase text-slate-400">
-              Quro Clinical Engine v4.2 • Platinum Edition • Page 1 of 2 (Front)
+          <div className="mt-8 pt-8 flex justify-between items-end border-t-4 border-slate-900">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-tight">
+              Quro Clinical Intelligence Platform • v4.5 Platinum<br />
+              Generated Official Record • Page 1 of 2 (Side A)
             </div>
             <div className="text-right">
-              <div className="w-64 h-px bg-slate-900 mb-2" />
-              <p className="text-[8px] font-black uppercase tracking-widest">Licensed Nurse Signature & Credentials</p>
+              <div className="w-64 h-0.5 bg-slate-900 mb-2" />
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-900 mb-1">Licensed Clinical Professional Signature</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})</p>
             </div>
           </div>
         </div>
 
         {/* Page 2: Narrative (Back Side) */}
-        <div className="p-10 min-h-screen page-break-before-always bg-white">
+        <div className="p-12 min-h-screen page-break-before-always bg-white flex flex-col">
           <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black">Q</div>
+              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
               <div>
-                <h1 className="text-2xl font-black uppercase tracking-tighter">Shift Narrative Record (SIFF-2)</h1>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platinum Health Hub • Narrative Progress Notes</p>
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Narrative Log</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Narrative Progress Notes (Side B)</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-black uppercase">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-[10px] font-bold text-slate-500">Date: {new Date().toLocaleDateString()} • Shift Pass: {new Date().toLocaleTimeString()}</p>
+              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
             </div>
           </div>
 
-          <div className="border-4 border-slate-900 p-10 rounded-2xl min-h-[800px] relative">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 absolute top-4 left-4">Clinical Narrative Log (DAR/SOAP)</p>
-            <div className="text-sm font-medium leading-[2] text-slate-900 whitespace-pre-wrap mt-8">
-              <span className="font-black uppercase text-[10px] bg-slate-100 px-2 py-1 rounded mr-2">{noteFocus}:</span>
-              {narrativeNote || 'No narrative documentation provided for this shift. Resident was monitored per care plan with no acute changes noted.'}
+          <div className="border-4 border-slate-900 p-10 rounded-[2.5rem] flex-grow relative bg-slate-50/30">
+            <div className="absolute top-6 left-6 flex items-center gap-2">
+              <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Official Clinical Narrative (DAR/SOAP)</p>
             </div>
             
-            {/* Lined paper effect for handwritten notes/backup */}
-            {!narrativeNote && (
-              <div className="mt-8 space-y-8 opacity-10">
-                {[...Array(15)].map((_, i) => (
-                  <div key={i} className="h-px bg-slate-900 w-full" />
+            <div className="mt-12 text-sm font-medium leading-[2.2] text-slate-900 whitespace-pre-wrap">
+              <span className="font-black uppercase text-[10px] bg-slate-900 text-white px-3 py-1.5 rounded-lg mr-3 shadow-md tracking-widest">{noteFocus}</span>
+              {narrativeNote || 'No narrative documentation provided for this shift. Resident was monitored per care plan with no acute changes noted.'}
+            </div>
+
+            {/* Lined paper effect for handwritten notes/backup - Only shows if note is short */}
+            {(!narrativeNote || narrativeNote.length < 500) && (
+              <div className="mt-12 space-y-10 opacity-[0.05]">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="h-[2px] bg-slate-900 w-full" />
                 ))}
               </div>
             )}
           </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-8">
-            <div className="col-span-2 border-2 border-slate-200 p-6 rounded-xl bg-slate-50">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 border-b border-slate-200 pb-2">Shift Intervention Summary</p>
-              <div className="grid grid-cols-2 gap-y-3">
-                <div className="flex items-center gap-3 text-[9px] font-black uppercase"><div className="w-4 h-4 border-2 border-slate-900" /> Medications Administered</div>
-                <div className="flex items-center gap-3 text-[9px] font-black uppercase"><div className="w-4 h-4 border-2 border-slate-900" /> Treatments Completed</div>
-                <div className="flex items-center gap-3 text-[9px] font-black uppercase"><div className="w-4 h-4 border-2 border-slate-900" /> Physician Notified</div>
-                <div className="flex items-center gap-3 text-[9px] font-black uppercase"><div className="w-4 h-4 border-2 border-slate-900" /> Family Notified</div>
+          <div className="mt-8 grid grid-cols-3 gap-10">
+            <div className="col-span-2 border-2 border-slate-200 p-6 rounded-[2rem] bg-slate-50">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 border-b border-slate-200 pb-2">Shift Intervention Summary Checklist</p>
+              <div className="grid grid-cols-2 gap-y-4">
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                  <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
+                  Medications Administered
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                  <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
+                  Treatments Completed
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                  <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
+                  Physician Notified
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-slate-600">
+                  <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
+                  Family Notified
+                </div>
               </div>
             </div>
             <div className="text-right flex flex-col justify-end">
-              <p className="text-[9px] font-bold uppercase text-slate-400 mb-2">Authenticated By</p>
-              <p className="text-xs font-black uppercase">{staff?.first_name} {staff?.last_name}, RN</p>
-              <div className="w-full h-0.5 bg-slate-900 mt-2" />
-              <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Electronic Record ID: {patient?.id.slice(0, 8)}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Authenticated By</p>
+              <p className="text-sm font-black uppercase text-slate-900 tracking-tight">{staff?.first_name} {staff?.last_name}, RN</p>
+              <div className="w-full h-1 bg-slate-900 mt-2 shadow-sm" />
+              <p className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">Electronic Hash: {patient?.id?.slice(0, 16)}</p>
             </div>
           </div>
 
-          <div className="mt-auto pt-10 text-[9px] font-bold uppercase text-slate-400 text-center">
-            Platinum Health Hub • Clinical Record • Side 2 of 2 (Back)
+          <div className="mt-8 pt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 text-center border-t border-slate-100">
+            Official Clinical Record • Platinum Health Hub • Side B
           </div>
         </div>
       </div>
+
     </div>
   );
 }
