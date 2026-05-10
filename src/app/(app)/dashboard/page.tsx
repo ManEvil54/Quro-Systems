@@ -47,7 +47,8 @@ export default function DashboardPage() {
     bed_name: `Bed ${i + 1}`,
     room_name: 'Unassigned',
     room_id: 'none',
-    status: 'available' as const
+    status: 'available' as const,
+    patient: undefined
   }));
 
   const { isImpersonating } = useAuth();
