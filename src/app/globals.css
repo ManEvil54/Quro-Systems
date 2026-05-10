@@ -559,3 +559,41 @@ body {
 .animate-spin {
   animation: spin 0.7s linear infinite;
 }
+
+/* ============================================================ */
+/* Print Styles — Clinical Documentation */
+/* ============================================================ */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  nav, .no-print, button, aside, header:not(.print-header) {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .glass-card-quro, .glass-card {
+    border: 1px solid #eee !important;
+    background: white !important;
+    box-shadow: none !important;
+    color: black !important;
+  }
+
+  .text-quro-teal, .text-teal-600 {
+    color: #0d9488 !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+}

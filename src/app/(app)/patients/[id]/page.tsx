@@ -1,224 +1,149 @@
-// ============================================================
-// Quro — Patient Hub (Face Sheet)
-// Central command for a single resident's clinical care
-// ============================================================
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, 
   User, 
+  ArrowLeft, 
+  Printer, 
   Pill, 
-  Activity, 
   FileText, 
-  Clock, 
-  ShieldAlert,
-  Edit3,
-  Calendar,
-  Stethoscope,
+  ClipboardList, 
+  Activity, 
+  Calendar, 
+  MapPin, 
+  ShieldCheck,
+  Plus,
+  ChevronRight,
+  Clock,
   Heart,
   Droplets,
-  AlertCircle,
-  MoreVertical,
-  ChevronRight,
-  Plus,
-  Printer,
-  ClipboardList,
-  Phone,
-  MessageSquare
+  Stethoscope,
+  Phone
 } from 'lucide-react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { usePatient } from '@/hooks/usePatient';
+import { useMedications } from '@/hooks/useMedications';
+import { useMAR } from '@/hooks/useMAR';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient } from '@/lib/firebase/types';
-import MedicationList from '@/components/clinical/MedicationList';
-import MARGrid from '@/components/clinical/MARGrid';
-import OrderList from '@/components/clinical/OrderList';
-import VitalHistory from '@/components/clinical/VitalHistory';
-import { useAudit } from '@/hooks/useAudit';
-import ShiftHandoff from '@/components/clinical/ShiftHandoff';
 
-type Tab = 'overview' | 'medications' | 'mar' | 'vitals' | 'orders' | 'handoff' | 'logs';
+export default function PatientChartPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
+  const { activeFacility } = useAuth();
+  const { patient, loading: patientLoading, error } = usePatient(id);
+  const { medications, loading: medsLoading } = useMedications(id);
+  const { entries: marEntries, loading: marLoading } = useMAR(id);
+  
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders'>('facesheet');
 
-export default function PatientDetailPage() {
-  const { id } = useParams();
-  const { staff, activeFacility, switchFacility } = useAuth();
-  const { logView } = useAudit(staff?.org_id || '');
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [unauthorized, setUnauthorized] = useState(false);
-
-  useEffect(() => {
-    async function fetchPatient() {
-      if (!staff?.org_id || !id) return;
-      try {
-        const patientDoc = await getDoc(doc(db, 'organizations', staff.org_id, 'patients', id as string));
-        if (patientDoc.exists()) {
-          const data = patientDoc.data() as Patient;
-          
-          // STRICT ACCESS CONTROL
-          const isAssigned = staff.role === 'SUPER_ADMIN' || staff.role === 'FACILITY_ADMIN' || staff.role === 'admin' 
-            ? true 
-            : staff.assigned_facility_ids?.includes(data.facility_id) || staff.facility_id === data.facility_id;
-            
-          if (!isAssigned) {
-            setUnauthorized(true);
-          } else if (data.facility_id !== activeFacility?.id) {
-            // Patient belongs to a different house than active context
-            setUnauthorized(true);
-          } else {
-            setPatient({ id: patientDoc.id, ...data } as Patient);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching patient:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPatient();
-  }, [id, staff?.org_id, activeFacility?.id]);
-
-  useEffect(() => {
-    if (patient && staff?.org_id) {
-      logView('patient', patient.id, `Viewed Face Sheet for ${patient.last_name}, ${patient.first_name}`);
-    }
-  }, [patient, staff?.org_id]);
-
-  if (loading) {
+  if (patientLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-500 font-medium">Loading clinical record...</p>
+      <div className="py-20 flex flex-col items-center justify-center animate-in fade-in">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-quro-teal rounded-full animate-spin mb-4" />
+        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Accessing Clinical Record...</p>
       </div>
     );
   }
 
-  if (unauthorized) {
+  if (error || !patient) {
     return (
-      <div className="glass-card p-20 text-center max-w-2xl mx-auto">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <ShieldAlert size={32} />
-        </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Access Restricted</h3>
-        <p className="text-slate-500 mb-8">
-          This patient record is scoped to another facility. To maintain strict data isolation, 
-          you must switch to the patient's assigned facility in the sidebar to view their clinical chart.
-        </p>
-        <Link href="/patients" className="btn-primary inline-flex items-center gap-2">
-          <ArrowLeft size={16} />
-          <span>Back to Directory</span>
-        </Link>
+      <div className="py-20 flex flex-col items-center justify-center">
+        <p className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-4">{error || 'Patient Not Found'}</p>
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-quro-teal font-black uppercase text-xs tracking-widest">
+          <ArrowLeft size={16} /> Back to Dashboard
+        </button>
       </div>
     );
   }
 
-  if (!patient) {
-    return (
-      <div className="glass-card p-20 text-center">
-        <h3 className="text-lg font-semibold text-slate-900">Patient not found</h3>
-        <Link href="/patients" className="btn-secondary mt-4 inline-flex items-center gap-2">
-          <ArrowLeft size={16} />
-          <span>Back to Directory</span>
-        </Link>
-      </div>
-    );
-  }
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <div className="animate-in">
-      {/* Patient Header Card */}
-      <div className="glass-card p-6 mb-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 flex gap-2">
-          <Link 
-            href={`/patients/${patient.id}/mar/print`} 
-            target="_blank"
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header Actions - Hidden on Print */}
+      <div className="no-print flex items-center justify-between mb-8">
+        <button 
+          onClick={() => router.back()} 
+          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-500 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-50 transition-all"
+        >
+          <ArrowLeft size={16} />
+          Back to House
+        </button>
+
+        <div className="flex gap-4">
+          <button 
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
           >
-            <Printer size={14} />
-            <span>Print 31-Day MAR</span>
-          </Link>
-          <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
-            <MoreVertical size={20} />
+            <Printer size={16} />
+            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : 'Medication List'}
           </button>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div className="w-24 h-24 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-300 relative group">
-            {patient.photo_url ? (
-              <img src={patient.photo_url} alt="" className="w-full h-full rounded-2xl object-cover" />
-            ) : (
-              <User size={48} />
-            )}
-            <button className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Edit3 size={20} className="text-white" />
-            </button>
-          </div>
-
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-slate-900">{patient.last_name}, {patient.first_name}</h1>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                patient.code_status === 'full' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {patient.code_status}
-              </span>
-              {patient.is_active_monitoring && (
-                <span className="badge badge-critical animate-pulse">ACTIVE MONITORING</span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-3 gap-x-8">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">MRN</p>
-                <p className="text-sm font-mono font-medium text-slate-700">{patient.mrn}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">DOB</p>
-                <p className="text-sm font-medium text-slate-700">
-                  {new Date(patient.date_of_birth).toLocaleDateString()} ({new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()}y)
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Admitted</p>
-                <p className="text-sm font-medium text-slate-700">{new Date(patient.admission_date).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gender</p>
-                <p className="text-sm font-medium text-slate-700 capitalize">{patient.gender}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Facility / Bed</p>
-                <p className="text-sm font-medium text-slate-900 capitalize">
-                  {patient.facility_id?.replace('-', ' ') || 'House A'} — <span className="font-bold text-teal-600">Bed {patient.room_number || 'TBD'}</span>
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-slate-100/50 p-1 rounded-xl w-fit">
+      {/* Patient Identity Bar */}
+      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/20 mb-8 relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex items-center gap-8">
+            <div className="w-24 h-24 rounded-[2rem] bg-white text-slate-900 flex items-center justify-center text-3xl font-black">
+              {patient.first_name[0]}{patient.last_name[0]}
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="px-3 py-1 bg-teal-500/20 text-teal-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-teal-500/30">Active Resident</span>
+                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">MRN: {patient.mrn}</span>
+              </div>
+              <h1 className="text-4xl font-black uppercase tracking-tighter mb-1">{patient.first_name} {patient.last_name}</h1>
+              <p className="text-slate-400 font-medium italic opacity-80">
+                {activeFacility?.name} — Room {patient.room_id || 'TBD'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6 md:gap-12 border-l border-white/10 pl-12">
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
+              <p className={`text-xl font-black ${patient.is_active_monitoring ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {patient.is_active_monitoring ? 'Critical' : 'Stable'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Code</p>
+              <p className="text-xl font-black uppercase text-amber-400">{patient.code_status}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Age</p>
+              <p className="text-xl font-black">
+                {new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()}y
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Ambient background elements */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-teal-500/10 rounded-full blur-[80px]" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" />
+      </div>
+
+      {/* Tabs Navigation - Hidden on Print */}
+      <div className="no-print flex gap-2 mb-8 p-1.5 bg-slate-100 rounded-3xl w-fit">
         {[
-          { id: 'overview', label: 'Overview', icon: Heart },
-          { id: 'medications', label: 'Medications', icon: Pill },
-          { id: 'mar', label: 'MAR Grid', icon: ClipboardList },
-          { id: 'vitals', label: 'Vitals', icon: Activity },
-          { id: 'orders', label: 'Orders', icon: FileText },
-          { id: 'handoff', label: 'Shift Handoff', icon: MessageSquare },
-          { id: 'logs', label: 'Family Log', icon: Clock },
+          { id: 'facesheet', icon: FileText, label: 'Facesheet' },
+          { id: 'medications', icon: Pill, label: 'Medications' },
+          { id: 'mar', icon: ClipboardList, label: 'MAR Grid' },
+          { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
+          { id: 'orders', icon: Stethoscope, label: 'Orders' },
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as Tab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
               activeTab === tab.id 
-                ? 'bg-white text-teal-600 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50' 
+                : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             <tab.icon size={16} />
@@ -227,132 +152,256 @@ export default function PatientDetailPage() {
         ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {activeTab === 'overview' && (
-            <>
-              {/* Clinical Summary */}
-              <div className="glass-card p-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <ClipboardList size={20} className="text-teal-600" />
-                  Clinical Summary
-                </h2>
-                
-                <div className="space-y-6">
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="xl:col-span-8">
+          {activeTab === 'facesheet' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              {/* Demographics */}
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                  <User size={18} className="text-quro-teal" />
+                  Resident Demographics
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Diagnoses</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {patient.diagnoses.map((d, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg border border-blue-100">
-                          {d}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                    <p className="text-lg font-black text-slate-900">{patient.first_name} {patient.last_name}</p>
                   </div>
-
                   <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Allergies</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {patient.allergies.map((a, i) => (
-                        <span key={i} className="px-3 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-lg border border-red-100">
-                          {a}
-                        </span>
-                      ))}
-                      {patient.allergies.length === 0 && <span className="text-sm text-slate-500 italic">No allergies listed</span>}
-                    </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Date of Birth</p>
+                    <p className="text-lg font-black text-slate-900">{new Date(patient.date_of_birth).toLocaleDateString()}</p>
                   </div>
-
                   <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Dietary Orders</h3>
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-700">
-                      {patient.diet || 'Standard diet — as tolerated'}
-                    </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Gender</p>
+                    <p className="text-lg font-black text-slate-900 capitalize">{patient.gender}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">SSN (Last 4)</p>
+                    <p className="text-lg font-black text-slate-900">{patient.ssn_last_four || '****'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Admission Date</p>
+                    <p className="text-lg font-black text-slate-900">{new Date(patient.admission_date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Physician</p>
+                    <p className="text-lg font-black text-quro-teal">Dr. Demo Physician (Attending)</p>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-2 gap-4">
-                <button className="glass-card p-4 flex flex-col items-center justify-center gap-2 hover:bg-teal-50 transition-colors border-dashed">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">
-                    <Droplets size={20} />
+              {/* Clinical History */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-rose-500" />
+                    Allergies & Alerts
+                  </h3>
+                  <div className="space-y-4">
+                    {patient.allergies?.length ? patient.allergies.map((allergy, i) => (
+                      <div key={i} className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-100 text-rose-700 text-sm font-black uppercase tracking-tight">
+                        <ArrowLeft size={12} className="rotate-180" />
+                        {allergy}
+                      </div>
+                    )) : (
+                      <p className="text-slate-400 italic text-sm font-medium">No known drug allergies reported (NKDA).</p>
+                    )}
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">Record Vitals</span>
-                </button>
-                <button className="glass-card p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 transition-colors border-dashed">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                    <FileText size={20} />
+                </div>
+
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                    <ClipboardList size={18} className="text-blue-500" />
+                    Primary Diagnoses
+                  </h3>
+                  <div className="space-y-3">
+                    {patient.diagnoses?.length ? patient.diagnoses.map((dx, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-sm font-bold text-slate-900">{dx}</span>
+                        <ChevronRight size={14} className="text-slate-300" />
+                      </div>
+                    )) : (
+                      <p className="text-slate-400 italic text-sm font-medium">No active diagnoses documented.</p>
+                    )}
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">New Order</span>
-                </button>
+                </div>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'medications' && (
-            <MedicationList patientId={id as string} />
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <div className="flex items-center justify-between mb-12">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <Pill size={18} className="text-quro-teal" />
+                    Active Medication Profile
+                  </h3>
+                  <span className="px-4 py-2 bg-slate-900 text-white text-[9px] font-black rounded-xl uppercase tracking-widest">
+                    {medications.length} Active Prescriptions
+                  </span>
+                </div>
+
+                <div className="space-y-6">
+                  {medsLoading ? (
+                    <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">Loading Meds...</div>
+                  ) : medications.length > 0 ? medications.map((med) => (
+                    <div key={med.id} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:border-quro-teal/30 transition-all group">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] font-black text-quro-teal uppercase tracking-widest">{med.route} • {med.frequency}</span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Started {new Date(med.start_date).toLocaleDateString()}</span>
+                          </div>
+                          <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-2">{med.generic_name}</h4>
+                          <p className="text-sm font-bold text-slate-500 mb-4">
+                            {med.strength} — {med.dosage}
+                          </p>
+                          <div className="flex gap-6 pt-4 border-t border-slate-200/60">
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication</p>
+                              <p className="text-xs font-bold text-slate-700">{med.indication || 'Routine care'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Psychotropic</p>
+                              <p className={`text-xs font-black uppercase ${med.is_psychotropic ? 'text-rose-500' : 'text-slate-400'}`}>
+                                {med.is_psychotropic ? 'Yes' : 'No'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:shadow-md transition-all">
+                          <Pill size={24} className="text-quro-teal opacity-20 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="py-20 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                      <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No active medications found.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'mar' && (
-            <MARGrid patientId={id as string} />
-          )}
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                  <ClipboardList size={18} className="text-quro-teal" />
+                  Medication Administration Record (Last 24h)
+                </h3>
 
-          {activeTab === 'vitals' && (
-            <VitalHistory patientId={id as string} />
-          )}
-
-          {activeTab === 'orders' && (
-            <OrderList patientId={id as string} />
-          )}
-
-          {activeTab === 'handoff' && (
-            <ShiftHandoff patientId={patient.id} />
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication</th>
+                        <th className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
+                        <th className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                        <th className="py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {marLoading ? (
+                        <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">Loading MAR...</td></tr>
+                      ) : marEntries.length > 0 ? marEntries.map((entry) => {
+                        const med = medications.find(m => m.id === entry.medication_id);
+                        return (
+                          <tr key={entry.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-all">
+                            <td className="py-6">
+                              <p className="text-sm font-black text-slate-900">{med?.generic_name || 'Unknown Med'}</p>
+                              <p className="text-[10px] font-bold text-slate-400">{med?.dosage} • {med?.route}</p>
+                            </td>
+                            <td className="py-6 text-center">
+                              <span className="text-xs font-black text-slate-700">{entry.scheduled_time}</span>
+                            </td>
+                            <td className="py-6 text-center">
+                              <span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                entry.action === 'given' 
+                                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                  : 'bg-rose-50 text-rose-600 border-rose-100'
+                              }`}>
+                                {entry.action}
+                              </span>
+                            </td>
+                            <td className="py-6 text-right">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{entry.administered_by?.slice(-4) || 'SYSTEM'}</span>
+                            </td>
+                          </tr>
+                        );
+                      }) : (
+                        <tr><td colSpan={4} className="py-20 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No administrations recorded today.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Sidebar Column */}
-        <div className="space-y-6">
-          {/* Status Indicators */}
-          <div className="glass-card p-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Care Status</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Admission</span>
-                <span className="badge badge-muted">COMPLETED</span>
+        {/* Sidebar Status */}
+        <div className="xl:col-span-4 space-y-8 no-print">
+          <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <ShieldCheck size={18} className="text-teal-600" />
+              Clinical Summary
+            </h3>
+            <div className="space-y-6">
+              <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Dietary Order</p>
+                <div className="flex items-center gap-3">
+                  <Droplets size={20} className="text-blue-500" />
+                  <p className="text-lg font-black text-slate-900 capitalize">{patient.diet || 'Regular'}</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">MAR Verified</span>
-                <span className="flex items-center gap-1 text-xs text-emerald-600 font-bold">
-                  <Heart size={14} />
-                  SYNCED
-                </span>
+
+              <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Next Scheduled Vital</p>
+                <div className="flex items-center gap-3 text-slate-400">
+                  <Clock size={20} />
+                  <p className="text-sm font-bold">Today, 02:00 PM</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Monitoring</span>
-                <span className={`text-xs font-bold ${patient.is_active_monitoring ? 'text-amber-600' : 'text-slate-400'}`}>
-                  {patient.is_active_monitoring ? 'ACTIVE' : 'OFF'}
-                </span>
-              </div>
+
+              <button className="w-full py-5 bg-quro-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all shadow-xl shadow-teal-500/20">
+                Modify Treatment Plan
+              </button>
             </div>
           </div>
 
-          {/* Emergency Contacts */}
-          <div className="glass-card p-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Emergency Contact</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                <Phone size={18} />
-              </div>
+          <div className="glass-card p-10 bg-slate-900 text-white rounded-[2.5rem] relative overflow-hidden">
+            <Phone className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5" />
+            <h3 className="text-xs font-black text-teal-400 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
+            <div className="space-y-6">
               <div>
-                <p className="text-sm font-bold text-slate-900">Jane Doe (Daughter)</p>
-                <p className="text-xs text-slate-500">(555) 123-4567</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Representative</p>
+                <p className="text-lg font-black">Jane Thompson</p>
+                <p className="text-xs font-medium text-slate-400">555-0123 • Daughter</p>
               </div>
+              <button className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                View All Contacts
+              </button>
             </div>
-            <button className="w-full mt-4 py-2 text-xs font-semibold text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
-              View All Contacts
-            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Print-Only Footer */}
+      <div className="print-only hidden mt-20 pt-10 border-t border-slate-200">
+        <div className="flex justify-between items-end">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Document Certification</p>
+            <p className="text-xs font-bold text-slate-900">Generated via Quro Clinical Platform on {new Date().toLocaleString()}</p>
+            <p className="text-xs text-slate-500 italic mt-1">Official Clinical Record — Platinum Health Hub</p>
+          </div>
+          <div className="text-right">
+            <div className="w-48 h-px bg-slate-300 mb-2" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nurse / Physician Signature</p>
           </div>
         </div>
       </div>

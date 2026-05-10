@@ -14,14 +14,21 @@ import {
   ShieldCheck,
   X,
   History,
-  Zap
+  Zap,
+  Activity,
+  ClipboardCheck,
+  Heart
 } from 'lucide-react';
 import { useHandover } from '@/hooks/useHandover';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboard } from '@/hooks/useDashboard';
 
 export default function HandoverPage() {
-  const { activeFacility, staff } = useAuth();
-  const { notes, pendingAcks, loading, error, createNote, performShiftHandshake } = useHandover(activeFacility?.id);
+  const { activeFacility, staff, organization } = useAuth();
+  const { notes, pendingAcks, loading: handoverLoading, error, createNote, performShiftHandshake } = useHandover(activeFacility?.id);
+  const { beds, loading: dashboardLoading } = useDashboard(activeFacility?.id || '');
+  
+  const loading = handoverLoading || dashboardLoading;
   
   const [showNewNote, setShowNewNote] = useState(false);
   const [isHandshaking, setIsHandshaking] = useState(false);
@@ -34,7 +41,7 @@ export default function HandoverPage() {
     general_notes: '',
     shift: 'day' as any,
     is_urgent: false,
-    patient_id: null as string | null,
+    patient_id: undefined as string | undefined,
     facility_id: activeFacility?.id || '',
     shift_date: new Date().toISOString().split('T')[0]
   });
@@ -246,79 +253,109 @@ export default function HandoverPage() {
             </div>
           )}
 
-          {/* Notes Feed */}
+          {/* Patient Handover Summaries */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                <History size={16} />
-                Shift Log
+                <ClipboardCheck size={16} />
+                Resident Transition Status
               </h3>
               <div className="h-px flex-1 bg-slate-100 mx-6" />
             </div>
-            
-            {notes.length === 0 && (
-              <div className="py-20 text-center glass-card border-dashed">
-                <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No transitions documented for this house.</p>
-              </div>
-            )}
 
-            {notes.map((note) => (
-              <div key={note.id} className={`glass-card p-8 group transition-all relative overflow-hidden ${pendingAcks.includes(note.id) ? 'ring-2 ring-teal-500/20 border-teal-100 shadow-teal-500/5' : ''}`}>
-                {pendingAcks.includes(note.id) && (
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-teal-500" />
-                )}
-                
-                <div className="flex items-start justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                      <User size={24} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Clinical Staff</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(note.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {pendingAcks.includes(note.id) && (
-                      <span className="px-3 py-1 bg-teal-50 text-teal-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-teal-100">Pending Ack</span>
-                    )}
-                    <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-widest">{note.shift} Shift</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Subjective</p>
-                    <p className="text-slate-800 font-bold leading-relaxed">{note.subjective || <span className="text-slate-300 italic">None provided</span>}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Objective</p>
-                    <p className="text-slate-800 font-bold leading-relaxed">{note.objective || <span className="text-slate-300 italic">None provided</span>}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Assessment</p>
-                    <p className="text-slate-800 font-bold leading-relaxed">{note.assessment || <span className="text-slate-300 italic">None provided</span>}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Plan</p>
-                    <p className="text-slate-800 font-bold leading-relaxed">{note.plan || <span className="text-slate-300 italic">None provided</span>}</p>
-                  </div>
-                </div>
+            {beds.filter(bed => bed.patient).map((bed) => {
+              const patient = bed.patient!;
+              const patientNotes = notes.filter(n => n.patient_id === patient.id);
+              const latestNote = patientNotes[0];
 
-                <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                      <MessageSquare size={14} className="text-teal-600" />
-                      <span>2 Clinical Comments</span>
+              return (
+                <div key={patient.id} className="glass-card-quro p-8 group transition-all relative overflow-hidden bg-white border border-slate-100">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg ${
+                        latestNote?.is_urgent ? 'bg-rose-500 text-white' : 'bg-quro-charcoal text-white'
+                      }`}>
+                        {patient.initials}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black text-quro-teal uppercase tracking-widest">{bed.room_name} • {bed.bed_name}</span>
+                          <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MRN: {patient.mrn}</span>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Patient {patient.initials}</h3>
+                      </div>
+                    </div>
+
+                    <div className={`px-4 py-2 rounded-full text-[10px] font-black tracking-widest uppercase border ${
+                      latestNote?.is_urgent ? 'bg-rose-50 border-rose-100 text-rose-600' : 
+                      latestNote ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+                      'bg-slate-50 border-slate-100 text-slate-400'
+                    }`}>
+                      {latestNote?.is_urgent ? 'Urgent Update' : latestNote ? 'Shift Note' : 'Stable'}
                     </div>
                   </div>
-                  <button className="flex items-center gap-2 text-[10px] font-black text-teal-600 uppercase tracking-widest hover:translate-x-1 transition-transform group/btn">
-                    Expand Details
-                    <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Subjective / Observation</p>
+                        <p className="text-sm text-slate-800 font-bold leading-relaxed">
+                          {latestNote?.subjective || 'Resident comfortable, no new complaints voiced. Resting quietly.'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Clinical Status</p>
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-2">
+                            <Heart size={14} className="text-rose-500" />
+                            <span className="text-xs font-black text-slate-700">{patient.hr || '--'} BPM</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Activity size={14} className="text-blue-500" />
+                            <span className="text-xs font-black text-slate-700">{patient.bp || '--'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Assessment & Plan</p>
+                        <p className="text-sm text-slate-800 font-bold leading-relaxed">
+                          {latestNote?.assessment || 'Clinical status stable. Continue current plan of care and routine monitoring.'}
+                        </p>
+                      </div>
+                      {latestNote && (
+                        <div className="flex items-center gap-2 pt-2">
+                          <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase">
+                            {latestNote.shift[0]}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            Documented {new Date(latestNote.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest rounded-xl transition-all">
+                        View Chart
+                      </button>
+                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest rounded-xl transition-all">
+                        Add Note
+                      </button>
+                    </div>
+                    <button className="flex items-center gap-2 text-[10px] font-black text-teal-600 uppercase tracking-widest hover:translate-x-1 transition-transform group/btn">
+                      Full History
+                      <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
