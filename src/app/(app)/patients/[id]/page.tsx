@@ -808,7 +808,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
                           <Zap size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">I. Neurological</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">I. Neurological</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -858,7 +858,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                           <Brain size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">II. Cognitive Status</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">II. Cognitive Status</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
@@ -893,7 +893,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600">
                           <Eye size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">III. Sensory & Speech</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">III. Sensory & Speech</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -935,7 +935,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-600">
                           <Smile size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IV. Mood Indicators</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">IV. Mood Indicators</h3>
                       </div>
                       <div className="space-y-4">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">PHQ Indicators Observed</p>
@@ -973,7 +973,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                           <Activity size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">V. Behavior</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">V. Behavior</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
@@ -1069,7 +1069,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                           <Wind size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VII. Respiratory</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">VII. Respiratory</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -1115,7 +1115,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                           <Heart size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VIII. Cardiovascular</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">VIII. Cardiovascular</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -1159,7 +1159,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
                           <Apple size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IX. GI & Nutrition</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">IX. GI & Nutrition</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -1197,7 +1197,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600">
                           <Droplets size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">X. Genitourinary</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">X. Genitourinary</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -1237,7 +1237,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
                           <Stethoscope size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">XI. Skin Condition</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">XI. Skin Condition</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -1276,7 +1276,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm">
                           <Shield size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-rose-900 uppercase tracking-widest">XII. Pressure Ulcers</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">XII. Pressure Ulcers</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100 shadow-sm">
@@ -1322,7 +1322,7 @@ export default function PatientChartPage() {
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                           <Volume2 size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">XIII. Pain Assessment</h3>
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-widest">XIII. Pain Assessment</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -1390,7 +1390,7 @@ export default function PatientChartPage() {
                     <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
                       <div className="flex items-center justify-between mb-8">
                         <div>
-                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-2">Clinical Narrative Progress Note</h3>
+                          <h3 className="text-xs font-black text-emerald-900 uppercase tracking-[0.2em] mb-2">Clinical Narrative Progress Note</h3>
                           <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Document the clinical story of the shift (DAR/SOAP Format).</p>
                         </div>
                         <select 
@@ -1444,7 +1444,7 @@ export default function PatientChartPage() {
 
                   <div className="lg:col-span-4 space-y-8">
                      <div className="glass-card p-8 bg-slate-50 border border-slate-100 rounded-[2rem]">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Note Guidelines</h3>
+                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest mb-6">Note Guidelines</h3>
                         <div className="space-y-4">
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
                               <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mb-1">Data</p>
@@ -1551,7 +1551,7 @@ export default function PatientChartPage() {
           <div className="grid grid-cols-2 gap-x-12 gap-y-6 flex-grow">
             {/* 1. Neurological */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 I. Neurological Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1578,7 +1578,7 @@ export default function PatientChartPage() {
 
             {/* 2. Cognitive */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 II. Cognitive Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1599,7 +1599,7 @@ export default function PatientChartPage() {
 
             {/* 3. Sensory & Speech */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 III. Sensory & Communication
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1620,7 +1620,7 @@ export default function PatientChartPage() {
 
             {/* 4 & 5. Mood & Behavior */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 IV & V. Psycho-Social Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1641,7 +1641,7 @@ export default function PatientChartPage() {
 
             {/* 6. Functional Status */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 VI. Functional Status (MDS)
               </h3>
               <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase">
@@ -1658,7 +1658,7 @@ export default function PatientChartPage() {
 
             {/* 7. Respiratory */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 VII. Respiratory System
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1683,7 +1683,7 @@ export default function PatientChartPage() {
 
             {/* 8. Cardiovascular */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 VIII. Cardiovascular
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1700,7 +1700,7 @@ export default function PatientChartPage() {
 
             {/* 9 & 10. GI & GU */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 IX & X. Elimination & Nutrition
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1721,7 +1721,7 @@ export default function PatientChartPage() {
 
             {/* 11 & 12. Skin & Pressure Ulcers */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 XI & XII. Skin & Wound Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -1740,7 +1740,7 @@ export default function PatientChartPage() {
 
             {/* 13. Pain */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
                 XIII. Pain Assessment
               </h3>
               <div className="grid grid-cols-2 gap-4">
