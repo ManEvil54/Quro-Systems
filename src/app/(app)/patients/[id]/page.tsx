@@ -19,11 +19,15 @@ import {
   Heart,
   Droplets,
   Stethoscope,
-  Phone
+  Phone,
+  Check,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
+import { useHandover } from '@/hooks/useHandover';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function PatientChartPage() {
@@ -33,9 +37,58 @@ export default function PatientChartPage() {
   const { activeFacility } = useAuth();
   const { patient, loading: patientLoading, error } = usePatient(id);
   const { medications, loading: medsLoading } = useMedications(id);
-  const { entries: marEntries, loading: marLoading } = useMAR(id);
+  const { entries: marEntries, loading: marLoading, bulkLogAdministrations } = useMAR(id);
+  const { createNote } = useHandover();
   
   const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders'>('facesheet');
+  const [signOffActions, setSignOffActions] = useState<Record<string, 'given' | 'held'>>({});
+  const [isSigningOff, setIsSigningOff] = useState(false);
+
+  // Initialize sign-off actions when meds load
+  React.useEffect(() => {
+    if (medications.length > 0) {
+      const initial: Record<string, 'given' | 'held'> = {};
+      medications.forEach(m => {
+        initial[m.id] = 'given';
+      });
+      setSignOffActions(initial);
+    }
+  }, [medications]);
+
+  const handleBulkSignOff = async () => {
+    if (!patient || isSigningOff) return;
+    setIsSigningOff(true);
+
+    try {
+      const entries = medications.map(m => ({
+        medication_id: m.id,
+        scheduled_time: m.frequency || 'Shift Pass',
+        action: signOffActions[m.id] || 'given'
+      }));
+
+      await bulkLogAdministrations(entries);
+
+      // Identify held meds for handover
+      const heldMeds = medications.filter(m => signOffActions[m.id] === 'held');
+      if (heldMeds.length > 0) {
+        const medNames = heldMeds.map(m => m.generic_name).join(', ');
+        await createNote({
+          facility_id: activeFacility?.id || '',
+          patient_id: patient.id,
+          content: `MEDICATION ALERT: The following medications were HELD during this shift pass: ${medNames}. Please review chart for clinical rationale.`,
+          priority: 'high',
+          status: 'active'
+        });
+      }
+
+      alert('Shift Medication Pass recorded successfully.');
+    } catch (err) {
+      console.error('Sign off failed:', err);
+      alert('Failed to record medication pass.');
+    } finally {
+      setIsSigningOff(false);
+    }
+  };
 
   if (patientLoading) {
     return (
@@ -289,10 +342,69 @@ export default function PatientChartPage() {
 
           {activeTab === 'mar' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              {/* Shift Sign-off Section */}
+              <div className="glass-card p-10 bg-quro-forest/5 border border-quro-forest/10 rounded-[2.5rem]">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xs font-black text-quro-forest uppercase tracking-[0.2em] mb-2 flex items-center gap-3">
+                      <Clock size={18} className="text-quro-forest" />
+                      Shift Medication Pass
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      Sign off all medications administered or held during this shift.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleBulkSignOff}
+                    disabled={isSigningOff || medications.length === 0}
+                    className="px-8 py-4 bg-quro-forest text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-quro-forest/20 disabled:opacity-50"
+                  >
+                    {isSigningOff ? 'Recording...' : 'Commit Shift Sign-Off'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {medications.length > 0 ? medications.map((med) => (
+                    <div key={med.id} className="p-6 bg-white border border-slate-100 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-black text-slate-900">{med.generic_name}</p>
+                        <p className="text-[9px] font-bold text-slate-400">{med.dosage} • {med.frequency}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setSignOffActions(prev => ({ ...prev, [med.id]: 'given' }))}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${
+                            signOffActions[med.id] === 'given' 
+                              ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-200' 
+                              : 'bg-slate-50 text-slate-300 border-slate-100 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button 
+                          onClick={() => setSignOffActions(prev => ({ ...prev, [med.id]: 'held' }))}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${
+                            signOffActions[med.id] === 'held' 
+                              ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-200' 
+                              : 'bg-slate-50 text-slate-300 border-slate-100 hover:bg-slate-100'
+                          }`}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="col-span-2 py-10 text-center bg-white/50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No active medications to sign off.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
                   <ClipboardList size={18} className="text-quro-teal" />
-                  Medication Administration Record (Last 24h)
+                  Medication Administration Record (History)
                 </h3>
 
                 <div className="overflow-x-auto">
@@ -317,7 +429,7 @@ export default function PatientChartPage() {
                               <p className="text-[10px] font-bold text-slate-400">{med?.dosage} • {med?.route}</p>
                             </td>
                             <td className="py-6 text-center">
-                              <span className="text-xs font-black text-slate-700">{entry.scheduled_time}</span>
+                              <span className="text-xs font-black text-slate-700">{entry.actual_time}</span>
                             </td>
                             <td className="py-6 text-center">
                               <span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border ${

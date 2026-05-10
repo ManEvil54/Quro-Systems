@@ -15,7 +15,8 @@ import {
   updateDoc, 
   serverTimestamp,
   orderBy,
-  limit
+  limit,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,5 +70,29 @@ export function useMAR(patientId: string) {
     });
   };
 
-  return { entries, loading, error, logAdministration };
+  const bulkLogAdministrations = async (entries: { medication_id: string, scheduled_time: string, action: 'given' | 'held' }[]) => {
+    if (!staff?.org_id || !patientId) throw new Error('Context missing');
+    
+    const batch = writeBatch(db);
+    const marRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'mar_entries');
+    const today = new Date().toISOString().split('T')[0];
+
+    for (const entry of entries) {
+      const docRef = doc(marRef);
+      batch.set(docRef, {
+        ...entry,
+        org_id: staff.org_id,
+        patient_id: patientId,
+        administered_by: staff.id,
+        scheduled_date: today,
+        actual_time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+    }
+
+    return await batch.commit();
+  };
+
+  return { entries, loading, error, logAdministration, bulkLogAdministrations };
 }
