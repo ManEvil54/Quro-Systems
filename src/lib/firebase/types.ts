@@ -179,13 +179,28 @@ export interface ProgressNote {
   type: 'shift_assessment' | 'narrative' | 'clinical' | 'social';
   content: string;
   assessments?: {
+    // Safety & Environment
     safety_check: boolean;
-    adl_care: boolean;
-    skin_intact: boolean;
-    bm_shift: boolean;
-    pain_managed: boolean;
     bed_rails_up: boolean;
     call_light_reach: boolean;
+    alarm_functional?: boolean;
+    
+    // Clinical Systems
+    resp_normal: boolean;
+    cv_stable: boolean;
+    neuro_oriented: boolean;
+    gi_gu_normal: boolean;
+    skin_intact: boolean;
+    
+    // SNF Specifics
+    pain_managed: boolean;
+    adl_care: boolean;
+    bm_shift: boolean;
+    meal_intake?: '0-25' | '26-50' | '51-75' | '76-100';
+    fluids_intake?: number; // mL
+    behaviors_exhibited?: boolean;
+    falls_incident?: boolean;
+    skin_new_lesion?: boolean;
   };
   created_at: string;
   updated_at: string;
