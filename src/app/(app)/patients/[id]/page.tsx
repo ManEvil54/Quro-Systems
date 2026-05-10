@@ -33,7 +33,10 @@ import {
   Check,
   X,
   AlertCircle,
-  Phone
+  Phone,
+  Smile,
+  Accessibility,
+  Shield
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
@@ -74,11 +77,43 @@ export default function PatientChartPage() {
       bp_position: 'Sitting' as "Sitting" | "Standing" | "Supine", 
       spo2: 98, weight: 165 
     },
-    neuro: { 
-      orientation: 'A&O x 4',
-      loc: 'Alert',
-      speech: 'Clear',
-      pupils: 'PERRLA' 
+    neuro: {
+      orientation: [] as string[],
+      loc: 'Alert' as 'Alert' | 'Lethargic' | 'Obtunded' | 'Comatose',
+      pupils: 'PERRLA' as 'PERRLA' | 'Sluggish' | 'Non-reactive'
+    },
+    cognitive: {
+      short_term_memory: 'Intact' as 'Intact' | 'Impaired',
+      long_term_memory: 'Intact' as 'Intact' | 'Impaired',
+      decision_making: 'Independent' as 'Independent' | 'Modified Independence' | 'Moderately Impaired' | 'Severely Impaired'
+    },
+    sensory: {
+      hearing: 'Adequate' as 'Adequate' | 'Minimal Difficulty' | 'Highly Impaired' | 'Severely Impaired',
+      vision: 'Adequate' as 'Adequate' | 'Impaired' | 'Highly Impaired' | 'Severely Impaired',
+      speech: 'Clear' as 'Clear' | 'Slurred' | 'Aphasic'
+    },
+    mood: {
+      indicators: [] as string[],
+      frequency: 'Never' as 'Never' | '2-6 Days' | '7-11 Days' | '12-14 Days'
+    },
+    behavior: {
+      types: [] as string[],
+      frequency: 'None' as 'None' | '1-3 times' | '4-6 times' | 'Daily',
+      intervention: 'None'
+    },
+    functional: {
+      self_perf: {
+        eating: 'Independent',
+        hygiene: 'Independent',
+        toileting: 'Independent',
+        mobility: 'Independent'
+      },
+      support: {
+        eating: 'No Setup',
+        hygiene: 'No Setup',
+        toileting: 'No Setup',
+        mobility: 'No Setup'
+      }
     },
     resp: { 
       pattern: 'Even/Unlabored',
@@ -110,11 +145,16 @@ export default function PatientChartPage() {
       urine_appearance: 'Clear',
       voiding_count: 1
     },
+    pressure_ulcers: {
+      present: false,
+      stage: 'N/A' as 'N/A' | '1' | '2' | '3' | '4' | 'Unstageable' | 'DTI',
+      site: ''
+    },
     skin: { 
       condition: 'Intact',
-      integrity: 'No Redness',
-      devices: [] as string[],
-      pressure_ulcers: false
+      turgor: 'Elastic',
+      temp: 'Warm',
+      moisture: 'Dry'
     },
     pain: { 
       level: 0, 
@@ -762,29 +802,38 @@ export default function PatientChartPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                    {/* 1. Neurological & Mental Status */}
+                    {/* 1. Neurological Status */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                          <Brain size={20} />
+                          <Zap size={20} />
                         </div>
                         <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">I. Neurological</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Orientation (A&O)</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {['A&O x 1', 'A&O x 2', 'A&O x 3', 'A&O x 4'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, neuro: {...assessments.neuro, orientation: val}})} className={`py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.neuro.orientation === val ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-200'}`}>
-                                {val}
+                          <div className="flex flex-wrap gap-1">
+                            {['Person', 'Place', 'Time', 'Situation'].map(o => (
+                              <button 
+                                key={o} 
+                                onClick={() => {
+                                  const orientation = assessments.neuro.orientation.includes(o)
+                                    ? assessments.neuro.orientation.filter(item => item !== o)
+                                    : [...assessments.neuro.orientation, o];
+                                  setAssessments({...assessments, neuro: {...assessments.neuro, orientation}});
+                                }}
+                                className={`px-2 py-1 rounded-lg text-[8px] font-black border transition-all ${assessments.neuro.orientation.includes(o) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                              >
+                                {o}
                               </button>
                             ))}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">LOC</p>
-                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Level of Consciousness</p>
+                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Alert</option>
                               <option>Lethargic</option>
                               <option>Obtunded</option>
@@ -792,24 +841,235 @@ export default function PatientChartPage() {
                             </select>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Speech</p>
-                            <select value={assessments.neuro.speech} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, speech: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                              <option>Clear</option>
-                              <option>Slurred</option>
-                              <option>Aphasic</option>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Pupils</p>
+                            <select value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>PERRLA</option>
+                              <option>Sluggish</option>
+                              <option>Non-reactive</option>
                             </select>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* 2. Respiratory System */}
+                    {/* 2. Cognitive Status */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                          <Brain size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">II. Cognitive Status</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Short-Term Memory</p>
+                              <button onClick={() => setAssessments({...assessments, cognitive: {...assessments.cognitive, short_term_memory: assessments.cognitive.short_term_memory === 'Intact' ? 'Impaired' : 'Intact'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cognitive.short_term_memory === 'Intact' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                {assessments.cognitive.short_term_memory}
+                              </button>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Long-Term Memory</p>
+                              <button onClick={() => setAssessments({...assessments, cognitive: {...assessments.cognitive, long_term_memory: assessments.cognitive.long_term_memory === 'Intact' ? 'Impaired' : 'Intact'}})} className={`w-full py-2 rounded-lg text-[10px] font-black border transition-all ${assessments.cognitive.long_term_memory === 'Intact' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                {assessments.cognitive.long_term_memory}
+                              </button>
+                           </div>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Decision Making</p>
+                          <select value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <option>Independent</option>
+                            <option>Modified Independence</option>
+                            <option>Moderately Impaired</option>
+                            <option>Severely Impaired</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Sensory & Communication */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600">
+                          <Eye size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">III. Sensory & Speech</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Hearing</p>
+                              <select value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>Adequate</option>
+                                <option>Minimal Difficulty</option>
+                                <option>Highly Impaired</option>
+                                <option>Severely Impaired</option>
+                              </select>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Vision</p>
+                              <select value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>Adequate</option>
+                                <option>Impaired</option>
+                                <option>Highly Impaired</option>
+                                <option>Severely Impaired</option>
+                              </select>
+                           </div>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Speech Clarity</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {['Clear', 'Slurred', 'Aphasic'].map(val => (
+                              <button key={val} onClick={() => setAssessments({...assessments, sensory: {...assessments.sensory, speech: val as any}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.sensory.speech === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Mood Indicators */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-600">
+                          <Smile size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IV. Mood Indicators</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">PHQ Indicators Observed</p>
+                        <div className="flex flex-wrap gap-2">
+                           {['Little Interest', 'Feeling Down', 'Tired', 'Poor Appetite', 'Bad about Self'].map(ind => (
+                             <button 
+                               key={ind} 
+                               onClick={() => {
+                                 const indicators = assessments.mood.indicators.includes(ind)
+                                   ? assessments.mood.indicators.filter(i => i !== ind)
+                                   : [...assessments.mood.indicators, ind];
+                                 setAssessments({...assessments, mood: {...assessments.mood, indicators}});
+                               }}
+                               className={`px-3 py-1.5 rounded-full text-[8px] font-black border transition-all ${assessments.mood.indicators.includes(ind) ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                             >
+                               {ind}
+                             </button>
+                           ))}
+                        </div>
+                        <div className="pt-2 border-t border-slate-100">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Indicator Frequency</p>
+                           <select value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <option>Never</option>
+                              <option>2-6 Days</option>
+                              <option>7-11 Days</option>
+                              <option>12-14 Days</option>
+                           </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Behavior Tracking */}
+                    <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                          <Activity size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">V. Behavior</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                           {['Wandering', 'Verbal Aggression', 'Physical Aggression', 'Socially Inapprop.'].map(type => (
+                             <button 
+                               key={type} 
+                               onClick={() => {
+                                 const types = assessments.behavior.types.includes(type)
+                                   ? assessments.behavior.types.filter(t => t !== type)
+                                   : [...assessments.behavior.types, type];
+                                 setAssessments({...assessments, behavior: {...assessments.behavior, types}});
+                               }}
+                               className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.behavior.types.includes(type) ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                             >
+                               {type}
+                             </button>
+                           ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Frequency</p>
+                              <select value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>None</option>
+                                <option>1-3 times</option>
+                                <option>4-6 times</option>
+                                <option>Daily</option>
+                              </select>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Intervention</p>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. Redirected"
+                                value={assessments.behavior.intervention}
+                                onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, intervention: e.target.value}})}
+                                className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] outline-none"
+                              />
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5. Functional Status (ADLs) */}
+                    <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/40 border border-white/5 md:col-span-2 xl:col-span-1">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-teal-400">
+                          <Accessibility size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">VI. Functional Status</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
+                           <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Activity</p>
+                           <div className="grid grid-cols-2 gap-2">
+                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Self-Perf</p>
+                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Support</p>
+                           </div>
+                        </div>
+                        {['Eating', 'Hygiene', 'Toileting', 'Mobility'].map(adl => (
+                          <div key={adl} className="grid grid-cols-2 gap-4 items-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider">{adl}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                               <select 
+                                 value={assessments.functional.self_perf[adl.toLowerCase() as keyof typeof assessments.functional.self_perf]} 
+                                 onChange={e => setAssessments({...assessments, functional: {...assessments.functional, self_perf: {...assessments.functional.self_perf, [adl.toLowerCase()]: e.target.value}}})}
+                                 className="bg-white/5 border border-white/10 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-white text-center"
+                               >
+                                 <option className="bg-slate-900">Ind.</option>
+                                 <option className="bg-slate-900">Supv.</option>
+                                 <option className="bg-slate-900">Lim.</option>
+                                 <option className="bg-slate-900">Ext.</option>
+                                 <option className="bg-slate-900">Total</option>
+                               </select>
+                               <select 
+                                 value={assessments.functional.support[adl.toLowerCase() as keyof typeof assessments.functional.support]} 
+                                 onChange={e => setAssessments({...assessments, functional: {...assessments.functional, support: {...assessments.functional.support, [adl.toLowerCase()]: e.target.value}}})}
+                                 className="bg-white/5 border border-white/10 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-white text-center"
+                               >
+                                 <option className="bg-slate-900">0</option>
+                                 <option className="bg-slate-900">1</option>
+                                 <option className="bg-slate-900">2+</option>
+                                 <option className="bg-slate-900">Setup</option>
+                               </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 6. Respiratory System */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                           <Wind size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">II. Respiratory</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VII. Respiratory</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -849,13 +1109,13 @@ export default function PatientChartPage() {
                       </div>
                     </div>
 
-                    {/* 3. Cardiovascular System */}
+                    {/* 7. Cardiovascular System */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                           <Heart size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">III. Cardiovascular</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VIII. Cardiovascular</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -893,13 +1153,13 @@ export default function PatientChartPage() {
                       </div>
                     </div>
 
-                    {/* 4. Gastrointestinal (GI) & Nutrition */}
+                    {/* 8. GI & Nutrition */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
                           <Apple size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IV. GI & Nutrition</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">IX. GI & Nutrition</h3>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -910,26 +1170,6 @@ export default function PatientChartPage() {
                                 {val}
                               </button>
                             ))}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Abdomen</p>
-                            <select value={assessments.gi.abdomen} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, abdomen: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                              <option>Soft</option>
-                              <option>Firm</option>
-                              <option>Distended</option>
-                              <option>Tender</option>
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Bowel Sounds</p>
-                            <select value={assessments.gi.bowel_sounds} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, bowel_sounds: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                              <option>Present</option>
-                              <option>Hyperactive</option>
-                              <option>Hypoactive</option>
-                              <option>Absent</option>
-                            </select>
                           </div>
                         </div>
                         <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100">
@@ -951,44 +1191,34 @@ export default function PatientChartPage() {
                       </div>
                     </div>
 
-                    {/* 5. Genitourinary (GU) */}
+                    {/* 9. Genitourinary */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600">
                           <Droplets size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">V. Genitourinary</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">X. Genitourinary</h3>
                       </div>
                       <div className="space-y-4">
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Voiding Status</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {['Continent', 'Incontinent', 'Occasional'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, gu: {...assessments.gu, voiding: val}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gu.voiding === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                {val}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Device</p>
-                            <select value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                              <option>None</option>
-                              <option>Foley</option>
-                              <option>Texas</option>
-                              <option>Suprapubic</option>
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Urine</p>
-                            <select value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                              <option>Clear</option>
-                              <option>Cloudy</option>
-                              <option>Sediment</option>
-                              <option>Hematuria</option>
-                            </select>
-                          </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Device</p>
+                              <select value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>None</option>
+                                <option>Foley</option>
+                                <option>Texas</option>
+                                <option>Suprapubic</option>
+                              </select>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Urine</p>
+                              <select value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>Clear</option>
+                                <option>Cloudy</option>
+                                <option>Sediment</option>
+                                <option>Hematuria</option>
+                              </select>
+                           </div>
                         </div>
                         <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-100 flex justify-between items-center">
                           <p className="text-[9px] font-black text-cyan-600 uppercase">Void Count (Shift)</p>
@@ -1001,54 +1231,98 @@ export default function PatientChartPage() {
                       </div>
                     </div>
 
-                    {/* 6. Integumentary (Skin) */}
+                    {/* 10. Physiological Skin Condition */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
                           <Stethoscope size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VI. Integumentary</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">XI. Skin Condition</h3>
                       </div>
                       <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Turgor</p>
+                              <select value={assessments.skin.turgor} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, turgor: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>Elastic</option>
+                                <option>Tenting</option>
+                              </select>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Temperature</p>
+                              <select value={assessments.skin.temp} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, temp: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                                <option>Warm</option>
+                                <option>Cool</option>
+                                <option>Hot</option>
+                              </select>
+                           </div>
+                        </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Condition</p>
-                          <select value={assessments.skin.condition} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, condition: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
-                            <option>Intact</option>
-                            <option>Dry</option>
-                            <option>Diaphoretic</option>
-                            <option>Clammy</option>
-                          </select>
-                        </div>
-                        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
-                          <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-3">Integrity Check</p>
-                          <div className="space-y-2">
-                            {['No Redness', 'Redness noted', 'Wound/Ulcer'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, skin: {...assessments.skin, integrity: val}})} className={`w-full py-2 px-4 rounded-lg text-left text-[9px] font-black border transition-all flex items-center justify-between ${assessments.skin.integrity === val ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-rose-500/5 text-rose-400 border-transparent'}`}>
-                                {val}
-                                {assessments.skin.integrity === val && <Check size={12} />}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pressure Ulcers Present</p>
-                          <button 
-                            onClick={() => setAssessments({...assessments, skin: {...assessments.skin, pressure_ulcers: !assessments.skin.pressure_ulcers}})}
-                            className={`w-12 h-6 rounded-full transition-all relative ${assessments.skin.pressure_ulcers ? 'bg-rose-500' : 'bg-slate-200'}`}
-                          >
-                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${assessments.skin.pressure_ulcers ? 'left-7' : 'left-1'}`} />
-                          </button>
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Moisture</p>
+                           <div className="grid grid-cols-3 gap-2">
+                             {['Dry', 'Diaphoretic', 'Clammy'].map(val => (
+                               <button key={val} onClick={() => setAssessments({...assessments, skin: {...assessments.skin, moisture: val}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.skin.moisture === val ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                 {val}
+                               </button>
+                             ))}
+                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* 7. Pain Assessment */}
+                    {/* 11. Pressure Ulcers standalone */}
+                    <div className="glass-card p-8 bg-rose-50 border border-rose-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm">
+                          <Shield size={20} />
+                        </div>
+                        <h3 className="text-[11px] font-black text-rose-900 uppercase tracking-widest">XII. Pressure Ulcers</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100 shadow-sm">
+                           <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Ulcers Present</p>
+                           <button 
+                             onClick={() => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, present: !assessments.pressure_ulcers.present}})}
+                             className={`w-12 h-6 rounded-full transition-all relative ${assessments.pressure_ulcers.present ? 'bg-rose-500' : 'bg-slate-200'}`}
+                           >
+                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${assessments.pressure_ulcers.present ? 'left-7' : 'left-1'}`} />
+                           </button>
+                        </div>
+                        {assessments.pressure_ulcers.present && (
+                          <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div>
+                               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Highest Stage</p>
+                               <select value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as any}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
+                                 <option>1</option>
+                                 <option>2</option>
+                                 <option>3</option>
+                                 <option>4</option>
+                                 <option>Unstageable</option>
+                                 <option>DTI</option>
+                               </select>
+                            </div>
+                            <div>
+                               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Primary Site</p>
+                               <input 
+                                 type="text" 
+                                 placeholder="e.g. Coccyx"
+                                 value={assessments.pressure_ulcers.site}
+                                 onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, site: e.target.value}})}
+                                 className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] outline-none text-rose-600"
+                               />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 12. Pain Assessment */}
                     <div className="glass-card p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                           <Volume2 size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">VII. Pain Assessment</h3>
+                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">XIII. Pain Assessment</h3>
                       </div>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -1073,68 +1347,37 @@ export default function PatientChartPage() {
                             </select>
                           </div>
                         </div>
-                        
-                        <div className="pt-2 border-t border-slate-100">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Non-Verbal Cues</p>
-                          <div className="flex flex-wrap gap-2">
-                            {['Grimacing', 'Moaning', 'Guarding'].map(cue => (
-                              <button key={cue} onClick={() => {
-                                const newCues = assessments.pain.non_verbal.includes(cue) 
-                                  ? assessments.pain.non_verbal.filter(c => c !== cue)
-                                  : [...assessments.pain.non_verbal, cue];
-                                setAssessments({...assessments, pain: {...assessments.pain, non_verbal: newCues}});
-                              }} className={`px-3 py-1 rounded-full text-[8px] font-black border transition-all ${assessments.pain.non_verbal.includes(cue) ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                {cue}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
                       </div>
                     </div>
 
-                    {/* 8. ADL & Safety */}
+                    {/* 13. Safety & Precautions */}
                     <div className="glass-card p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl shadow-slate-900/40 border border-white/5">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-teal-400">
                           <ShieldCheck size={20} />
                         </div>
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">VIII. ADL & Safety</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-teal-400">XIV. Safety & Environmental</h3>
                       </div>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Mobility</p>
-                            <select value={assessments.adl.mobility} onChange={e => setAssessments({...assessments, adl: {...assessments.adl, mobility: e.target.value}})} className="w-full bg-white/5 border border-white/10 p-2 rounded-lg font-black text-[9px] uppercase outline-none text-white">
-                              <option className="bg-slate-900">Independent</option>
-                              <option className="bg-slate-900">Bedrest</option>
-                              <option className="bg-slate-900">Assist of 1</option>
-                              <option className="bg-slate-900">Assist of 2</option>
-                            </select>
+                      <div className="space-y-4">
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Safety Verification</p>
+                          <div className="space-y-2">
+                            {['Bed Lowest', 'Call Light', 'Side Rails', 'Floor Mats'].map(check => (
+                              <button 
+                                key={check} 
+                                onClick={() => {
+                                  const checks = assessments.adl.safety_checks.includes(check)
+                                    ? assessments.adl.safety_checks.filter(c => c !== check)
+                                    : [...assessments.adl.safety_checks, check];
+                                  setAssessments({...assessments, adl: {...assessments.adl, safety_checks: checks}});
+                                }}
+                                className={`w-full py-2 px-4 rounded-lg text-left text-[9px] font-black border transition-all flex items-center justify-between ${assessments.adl.safety_checks.includes(check) ? 'bg-teal-500 text-white border-teal-500' : 'bg-white/5 text-slate-400 border-transparent'}`}
+                              >
+                                {check}
+                                {assessments.adl.safety_checks.includes(check) && <Check size={12} />}
+                              </button>
+                            ))}
                           </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Transfer</p>
-                            <select value={assessments.adl.transfer} onChange={e => setAssessments({...assessments, adl: {...assessments.adl, transfer: e.target.value}})} className="w-full bg-white/5 border border-white/10 p-2 rounded-lg font-black text-[9px] uppercase outline-none text-white">
-                              <option className="bg-slate-900">Independent</option>
-                              <option className="bg-slate-900">Pivot</option>
-                              <option className="bg-slate-900">Hoyer</option>
-                              <option className="bg-slate-900">Sit-to-Stand</option>
-                            </select>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Safety Rounds</p>
-                           {['Bed Lowest', 'Call Light', 'Side Rails Up', 'Non-skid socks'].map(check => (
-                             <label key={check} className="flex items-center justify-between p-3 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
-                               <span className="text-[9px] font-black uppercase text-slate-300">{check}</span>
-                               <input type="checkbox" checked={assessments.adl.safety_checks.includes(check)} onChange={e => {
-                                 const newChecks = e.target.checked 
-                                   ? [...assessments.adl.safety_checks, check]
-                                   : assessments.adl.safety_checks.filter(c => c !== check);
-                                 setAssessments({...assessments, adl: {...assessments.adl, safety_checks: newChecks}});
-                               }} className="w-4 h-4 rounded border-white/20 text-teal-400 bg-transparent" />
-                             </label>
-                           ))}
                         </div>
                       </div>
                     </div>
@@ -1306,35 +1549,117 @@ export default function PatientChartPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-x-12 gap-y-6 flex-grow">
-            {/* System I: Neuro */}
+            {/* 1. Neurological */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                I. Neurological & Mental Status
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                I. Neurological Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Orientation</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">A&O X {assessments.neuro.orientation}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">A&O Level</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">A&O X {assessments.neuro.orientation.length}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Level of Consciousness</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">LOC</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.loc}</p>
                 </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Speech Pattern</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.speech}</p>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Orientation To</p>
+                  <p className="text-[9px] font-black uppercase text-slate-500 italic">
+                    {assessments.neuro.orientation.join(', ') || 'No orientation markers noted'}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pupils (PERRLA)</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pupils</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.neuro.pupils}</p>
                 </div>
               </div>
             </div>
 
-            {/* System II: Respiratory */}
+            {/* 2. Cognitive */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                II. Respiratory System
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                II. Cognitive Status
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Short-Term Memory</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.short_term_memory}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Long-Term Memory</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.long_term_memory}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Daily Decision Making</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cognitive.decision_making}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Sensory & Speech */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                III. Sensory & Communication
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hearing</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.hearing}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vision</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.vision}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Speech Pattern</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.sensory.speech}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 & 5. Mood & Behavior */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                IV & V. Psycho-Social Status
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 border-b border-slate-100 pb-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Mood Indicators (PHQ)</p>
+                  <p className="text-[9px] font-black uppercase text-slate-900 italic">
+                    {assessments.mood.indicators.join(', ') || 'No mood distress noted'}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Behavioral Expressions</p>
+                  <p className="text-[9px] font-black uppercase text-slate-900 italic">
+                    {assessments.behavior.types.join(', ') || 'No behavioral issues noted'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 6. Functional Status */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                VI. Functional Status (MDS)
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase">
+                <div className="text-slate-400">Eating:</div>
+                <div className="text-slate-900">{assessments.functional.self_perf.eating} / {assessments.functional.support.eating}</div>
+                <div className="text-slate-400">Hygiene:</div>
+                <div className="text-slate-900">{assessments.functional.self_perf.hygiene} / {assessments.functional.support.hygiene}</div>
+                <div className="text-slate-400">Toileting:</div>
+                <div className="text-slate-900">{assessments.functional.self_perf.toileting} / {assessments.functional.support.toileting}</div>
+                <div className="text-slate-400">Mobility:</div>
+                <div className="text-slate-900">{assessments.functional.self_perf.mobility} / {assessments.functional.support.mobility}</div>
+              </div>
+            </div>
+
+            {/* 7. Respiratory */}
+            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                VII. Respiratory System
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1346,162 +1671,101 @@ export default function PatientChartPage() {
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.sounds}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Oxygen Delivery</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">O2 Delivery</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.oxygen}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cough Type</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cough</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.cough}</p>
                 </div>
               </div>
             </div>
 
-            {/* System III: Cardiovascular */}
+            {/* 8. Cardiovascular */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                III. Cardiovascular System
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                VIII. Cardiovascular
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Heart Rhythm</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Rhythm</p>
                   <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.rhythm}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pulses (Radial/Pedal)</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.pulses}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Edema (Location/Grade)</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.edema} {assessments.cardio.edema_location}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Capillary Refill</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.cap_refill}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Edema</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.edema} ({assessments.cardio.edema_location})</p>
                 </div>
               </div>
             </div>
 
-            {/* System IV: GI & Nutrition */}
+            {/* 9 & 10. GI & GU */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                IV. GI & Nutritional Status
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                IX & X. Elimination & Nutrition
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appetite</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.appetite}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">BM Status</p>
+                  <p className="text-[10px] font-black uppercase text-slate-900">Bristol Type {assessments.gi.stool_bristol}</p>
                 </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Bowel Sounds</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.bowel_sounds}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Abdomen Assessment</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.abdomen}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Latest Stool (Bristol)</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">Bristol Type {assessments.gi.stool_bristol}</p>
-                </div>
-                <div className="col-span-2 mt-2 pt-2 border-t border-slate-200">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Shift Fluid Intake</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gi.fluids_in_ml} mL</p>
-                </div>
-              </div>
-            </div>
-
-            {/* System V: Genitourinary */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                V. Genitourinary
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Voiding Status</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.voiding}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Catheter / Device</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.catheter}</p>
+                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gu.voiding}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Urine Characteristics</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.gu.urine_appearance}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Shift Intake</p>
+                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gi.fluids_in_ml} mL / Appetite: {assessments.gi.appetite}</p>
                 </div>
               </div>
             </div>
 
-            {/* System VI: Integumentary */}
+            {/* 11 & 12. Skin & Pressure Ulcers */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                VI. Integumentary (Skin)
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                XI & XII. Skin & Wound Status
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Skin Condition</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.condition}</p>
+                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.skin.condition}</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Skin Integrity</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.integrity}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Presence of Pressure Ulcers</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.skin.pressure_ulcers ? 'YES - SEE TREATMENT FLOWSHEET' : 'NONE NOTED'}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pressure Ulcer</p>
+                  <p className="text-[10px] font-black uppercase text-rose-600">
+                    {assessments.pressure_ulcers.present ? `YES: STAGE ${assessments.pressure_ulcers.stage} @ ${assessments.pressure_ulcers.site}` : 'NONE NOTED'}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* System VII: Pain */}
+            {/* 13. Pain */}
             <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 flex justify-between items-center text-slate-900">
-                VII. Pain Assessment
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-slate-900 pb-2 text-slate-900">
+                XIII. Pain Assessment
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Level (0-10)</p>
-                  <p className="text-[11px] font-black text-slate-900">{assessments.pain.level} / 10</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Level</p>
+                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.level} / 10</p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Type</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.type}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pain Location</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.location || 'NONE'}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Non-Verbal Cues</p>
-                  <p className="text-[9px] font-black uppercase text-slate-500">{assessments.pain.non_verbal.join(', ') || 'NONE'}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Type/Site</p>
+                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.pain.type} ({assessments.pain.location || 'N/A'})</p>
                 </div>
               </div>
             </div>
 
-            {/* System VIII: ADL & Safety */}
+            {/* 14. Safety */}
             <div className="border-2 border-slate-900 p-4 rounded-2xl bg-slate-900 text-white">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-white/20 pb-2 flex justify-between items-center text-teal-400">
-                VIII. ADL & Safety Rounds
+              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-white/20 pb-2 text-teal-400">
+                XIV. Safety Rounds
               </h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Mobility</p>
-                  <p className="text-[11px] font-black uppercase text-white">{assessments.adl.mobility}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Transfer</p>
-                  <p className="text-[11px] font-black uppercase text-white">{assessments.adl.transfer}</p>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Safety Checks Completed</p>
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {assessments.adl.safety_checks.map(check => (
-                    <span key={check} className="text-[9px] font-black uppercase flex items-center gap-1">
-                      <span className="text-teal-400">✓</span> {check}
-                    </span>
-                  ))}
-                  {assessments.adl.safety_checks.length === 0 && <span className="text-[9px] text-white/20 italic font-black">NO CHECKS RECORDED</span>}
-                </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {assessments.adl.safety_checks.map(check => (
+                  <span key={check} className="text-[9px] font-black uppercase flex items-center gap-1">
+                    <span className="text-teal-400">✓</span> {check}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
