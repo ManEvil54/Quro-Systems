@@ -26,7 +26,7 @@ export default function PatientsPage() {
     const matchesSearch = `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.mrn.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
-  });
+  }).slice(0, 6);
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
