@@ -36,7 +36,9 @@ import {
   Phone,
   Smile,
   Accessibility,
-  Shield
+  Shield,
+  Send,
+  Archive
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
@@ -45,7 +47,9 @@ import { useHandover } from '@/hooks/useHandover';
 import { useNotes } from '@/hooks/useNotes';
 import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrders } from '@/hooks/useOrders';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
+import { MedRoute, MedFrequency, ProviderOrder } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
   const params = useParams();
@@ -58,12 +62,24 @@ export default function PatientChartPage() {
   const { createNote } = useHandover();
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
+  const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
   const { staff } = useAuth();
   
   const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders' | 'charting' | 'trends'>('facesheet');
   const [signOffActions, setSignOffActions] = useState<Record<string, 'given' | 'held'>>({});
   const [isSigningOff, setIsSigningOff] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+
+  // Orders State
+  const [isAddingOrder, setIsAddingOrder] = useState(false);
+  const [newOrder, setNewOrder] = useState({
+    order_text: '',
+    order_type: 'medication' as ProviderOrder['order_type'],
+    priority: 'routine' as ProviderOrder['priority'],
+    route: 'PO' as MedRoute,
+    frequency: 'QD' as MedFrequency,
+    is_psychotropic: false
+  });
 
   // Charting State
   const [chartingSide, setChartingSide] = useState<'front' | 'back'>('front');
@@ -281,6 +297,74 @@ export default function PatientChartPage() {
       alert('Failed to save shift charting.');
     } finally {
       setIsSavingNote(false);
+    }
+  };
+
+  const handleAddOrder = async () => {
+    if (!newOrder.order_text.trim()) return;
+    try {
+      const orderRef = await addOrder({
+        order_text: newOrder.order_text,
+        order_type: newOrder.order_type,
+        priority: newOrder.priority,
+        status: 'signed',
+        ordering_physician_id: staff?.id || 'attending-1',
+        facility_id: patient.facility_id,
+      });
+
+      // Automatically place on MAR if it's a medication or specific monitoring order
+      if (newOrder.order_type === 'medication') {
+        await addMedication({
+          generic_name: newOrder.order_text.split(' ')[0],
+          brand_name: '',
+          strength: 'As ordered',
+          dosage: 'As ordered',
+          route: newOrder.route,
+          frequency: newOrder.frequency,
+          start_date: new Date().toISOString(),
+          status: 'active',
+          is_psychotropic: newOrder.is_psychotropic,
+          special_instructions: newOrder.order_text,
+          order_id: orderRef.id
+        });
+      } else if (newOrder.order_text.toLowerCase().includes('weight') || newOrder.order_text.toLowerCase().includes('sleep')) {
+        await addMedication({
+          generic_name: newOrder.order_text.includes('weight') ? 'Monthly Weight' : 'Sleep Monitoring',
+          strength: 'N/A',
+          dosage: 'N/A',
+          route: 'PO',
+          frequency: newOrder.order_text.includes('weight') ? 'MONTHLY' : 'QD',
+          start_date: new Date().toISOString(),
+          status: 'active',
+          special_instructions: newOrder.order_text,
+          order_id: orderRef.id
+        });
+      }
+
+      setNewOrder({ 
+        order_text: '', 
+        order_type: 'medication', 
+        priority: 'routine',
+        route: 'PO',
+        frequency: 'QD',
+        is_psychotropic: false
+      });
+      setIsAddingOrder(false);
+      alert('Order signed and automatically synchronized with Patient MAR.');
+    } catch (err) {
+      console.error('Failed to add order:', err);
+      alert('Failed to add order.');
+    }
+  };
+
+  const handleStopOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to discontinue this order?')) return;
+    try {
+      await updateOrderStatus(orderId, 'cancelled');
+      alert('Order has been discontinued.');
+    } catch (err) {
+      console.error('Failed to stop order:', err);
+      alert('Failed to discontinue order.');
     }
   };
 
@@ -662,6 +746,214 @@ export default function PatientChartPage() {
           {activeTab === 'trends' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               <VitalsTrendChart vitals={vitals} />
+            </div>
+          )}
+
+          {activeTab === 'orders' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <div className="flex items-center justify-between mb-12">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-3">
+                      <Stethoscope size={18} className="text-quro-teal" />
+                      Active Provider Orders
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Review and manage clinical directives for this resident.</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsAddingOrder(true)}
+                    className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+                  >
+                    <Plus size={16} />
+                    New Medical Order
+                  </button>
+                </div>
+
+                {isAddingOrder && (
+                  <div className="mb-10 p-8 bg-slate-50 border border-slate-100 rounded-[2rem] animate-in slide-in-from-top-4">
+                    <div className="flex items-center justify-between mb-8">
+                      <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Entry: New Provider Directive</h4>
+                      <button onClick={() => setIsAddingOrder(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Type</p>
+                        <select 
+                          value={newOrder.order_type}
+                          onChange={e => setNewOrder({...newOrder, order_type: e.target.value as any})}
+                          className="w-full bg-white border border-slate-200 p-4 rounded-xl font-black text-xs uppercase outline-none focus:border-quro-teal transition-all"
+                        >
+                          <option value="medication">Medication Order</option>
+                          <option value="lab">Laboratory / Diagnostics</option>
+                          <option value="imaging">Radiology / Imaging</option>
+                          <option value="therapy">Therapy (PT/OT/ST)</option>
+                          <option value="diet">Dietary Directive</option>
+                          <option value="other">General Nursing Order</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Priority Level</p>
+                        <div className="flex gap-2">
+                          {['routine', 'urgent', 'stat'].map(p => (
+                            <button 
+                              key={p}
+                              onClick={() => setNewOrder({...newOrder, priority: p as any})}
+                              className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                newOrder.priority === p 
+                                  ? 'bg-slate-900 text-white border-slate-900' 
+                                  : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-8">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Description / Instructions</p>
+                      <textarea 
+                        value={newOrder.order_text}
+                        onChange={e => setNewOrder({...newOrder, order_text: e.target.value})}
+                        placeholder={newOrder.order_type === 'medication' ? "e.g. Aspirin 81mg PO Daily..." : "Enter clinical directive..."}
+                        className="w-full h-24 p-6 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-quro-teal transition-all resize-none"
+                      />
+                    </div>
+
+                    {newOrder.order_type === 'medication' && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Route</p>
+                          <select 
+                            value={newOrder.route}
+                            onChange={e => setNewOrder({...newOrder, route: e.target.value as any})}
+                            className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
+                          >
+                            <option value="PO">PO (Oral)</option>
+                            <option value="SL">SL (Sublingual)</option>
+                            <option value="IM">IM (Intramuscular)</option>
+                            <option value="IV">IV (Intravenous)</option>
+                            <option value="TOP">TOP (Topical)</option>
+                            <option value="PATCH">PATCH</option>
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Frequency</p>
+                          <select 
+                            value={newOrder.frequency}
+                            onChange={e => setNewOrder({...newOrder, frequency: e.target.value as any})}
+                            className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
+                          >
+                            <option value="QD">QD (Daily)</option>
+                            <option value="BID">BID (Twice Daily)</option>
+                            <option value="TID">TID (Three Daily)</option>
+                            <option value="QID">QID (Four Daily)</option>
+                            <option value="QHS">QHS (At Bedtime)</option>
+                            <option value="PRN">PRN (As Needed)</option>
+                            <option value="WEEKLY">Weekly</option>
+                            <option value="MONTHLY">Monthly</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Clinical Flag</p>
+                          <button 
+                            onClick={() => setNewOrder({...newOrder, is_psychotropic: !newOrder.is_psychotropic})}
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                              newOrder.is_psychotropic 
+                                ? 'bg-rose-50 border-rose-200 text-rose-600' 
+                                : 'bg-white border-slate-200 text-slate-400'
+                            }`}
+                          >
+                            <div className={`w-3 h-3 rounded-full border-2 ${newOrder.is_psychotropic ? 'bg-rose-500 border-rose-500' : 'border-slate-300'}`} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Psychotropic</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={handleAddOrder}
+                        className="px-12 py-5 bg-quro-teal text-white rounded-2xl font-black text-xs tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-quro-teal/20 flex items-center gap-3"
+                      >
+                        <Send size={18} />
+                        Sign & Submit Order
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-6">
+                  {ordersLoading ? (
+                    <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">Accessing Orders...</div>
+                  ) : orders.filter(o => o.status !== 'cancelled').length > 0 ? orders.filter(o => o.status !== 'cancelled').map((order) => (
+                    <div key={order.id} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:border-quro-teal/30 transition-all group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                              order.priority === 'stat' ? 'bg-rose-50 text-rose-600 border-rose-100' : 
+                              order.priority === 'urgent' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                              'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            }`}>
+                              {order.priority} • {order.order_type}
+                            </span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {new Date(order.created_at as any).toLocaleDateString()}</span>
+                          </div>
+                          <h4 className="text-xl font-black text-slate-900 tracking-tight mb-4 leading-relaxed">{order.order_text}</h4>
+                          <div className="flex gap-6 pt-4 border-t border-slate-200/60">
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                              <p className="text-xs font-black uppercase text-quro-teal">{order.status}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ordering Provider</p>
+                              <p className="text-xs font-bold text-slate-700">Dr. Demo Attending</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                           <button 
+                             onClick={() => handleStopOrder(order.id)}
+                             className="p-4 bg-white text-rose-500 rounded-2xl shadow-sm border border-slate-100 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center"
+                             title="Discontinue Order"
+                           >
+                             <X size={20} />
+                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="py-20 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                      <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No active orders found.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* History of Discontinued Orders */}
+              {orders.filter(o => o.status === 'cancelled').length > 0 && (
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                      <Archive size={18} />
+                      Discontinued / Inactive Orders
+                    </h3>
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'cancelled').map(order => (
+                        <div key={order.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                           <div>
+                             <p className="text-xs font-black text-slate-400 line-through">{order.order_text}</p>
+                             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Discontinued on {new Date(order.updated_at as any).toLocaleDateString()}</p>
+                           </div>
+                           <span className="px-3 py-1 bg-slate-200 text-slate-500 text-[8px] font-black rounded-lg uppercase">Inactive</span>
+                        </div>
+                      ))}
+                    </div>
+                </div>
+              )}
             </div>
           )}
 

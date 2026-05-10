@@ -44,6 +44,21 @@ export default function SettingsPage() {
     }
   };
 
+  const toggleClinicalSetting = async (key: 'mar_template_psych' | 'mar_template_weights' | 'mar_template_sleep') => {
+    if (!org) return;
+    const current = org.clinical_settings || { mar_template_psych: true, mar_template_weights: true, mar_template_sleep: true };
+    try {
+      await updateOrg({
+        clinical_settings: {
+          ...current,
+          [key]: !current[key]
+        }
+      });
+    } catch (err) {
+      console.error('Failed to update clinical settings:', err);
+    }
+  };
+
   if (loading) return <div className="py-20 text-center text-slate-400">Loading settings...</div>;
 
   return (
@@ -153,11 +168,14 @@ export default function SettingsPage() {
 
                   <div className="space-y-4">
                     {/* Psych Monitoring */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                    <div 
+                      onClick={() => toggleClinicalSetting('mar_template_psych')}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all cursor-pointer"
+                    >
                       <div className="flex gap-4">
                         <div className="mt-1">
-                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${org?.clinical_settings?.mar_template_psych ? 'border-emerald-500' : 'border-slate-300'}`}>
+                            {org?.clinical_settings?.mar_template_psych && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}
                           </div>
                         </div>
                         <div>
@@ -168,15 +186,20 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.mar_template_psych ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
+                        {org?.clinical_settings?.mar_template_psych ? 'ENABLED' : 'DISABLED'}
+                      </span>
                     </div>
 
                     {/* Monthly Weights */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                    <div 
+                      onClick={() => toggleClinicalSetting('mar_template_weights')}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all cursor-pointer"
+                    >
                       <div className="flex gap-4">
                         <div className="mt-1">
-                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${org?.clinical_settings?.mar_template_weights ? 'border-emerald-500' : 'border-slate-300'}`}>
+                            {org?.clinical_settings?.mar_template_weights && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}
                           </div>
                         </div>
                         <div>
@@ -187,15 +210,20 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.mar_template_weights ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
+                        {org?.clinical_settings?.mar_template_weights ? 'ENABLED' : 'DISABLED'}
+                      </span>
                     </div>
 
                     {/* Sleep Hours */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                    <div 
+                      onClick={() => toggleClinicalSetting('mar_template_sleep')}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all cursor-pointer"
+                    >
                       <div className="flex gap-4">
                         <div className="mt-1">
-                          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${org?.clinical_settings?.mar_template_sleep ? 'border-emerald-500' : 'border-slate-300'}`}>
+                            {org?.clinical_settings?.mar_template_sleep && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}
                           </div>
                         </div>
                         <div>
@@ -205,7 +233,9 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ENABLED</span>
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${org?.clinical_settings?.mar_template_sleep ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
+                        {org?.clinical_settings?.mar_template_sleep ? 'ENABLED' : 'DISABLED'}
+                      </span>
                     </div>
                   </div>
 
