@@ -747,6 +747,7 @@ export default function PatientChartPage() {
                             <option>Depressed/Withdrawn</option>
                           </select>
                         </div>
+                      </div>
                     </div>
                   </div>
                 </div>
