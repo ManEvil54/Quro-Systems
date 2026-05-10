@@ -67,7 +67,7 @@ export const COMMON_DRUGS: DrugInfo[] = [
 
   // 4. Pain & Musculoskeletal
   { generic: 'Acetaminophen', brand: 'Tylenol', class: 'Pain (Analgesic)' },
-  { generic: 'Ibuprofen', brand: 'Advil', class: 'Pain (NSAID)' },
+  { generic: 'Ibuprofen', brand: 'Advil/Motrin', class: 'Pain (NSAID)' },
   { generic: 'Naproxen', brand: 'Aleve', class: 'Pain (NSAID)' },
   { generic: 'Celecoxib', brand: 'Celebrex', class: 'Pain (NSAID)' },
   { generic: 'Meloxicam', brand: 'Mobic', class: 'Pain (NSAID)' },
@@ -129,9 +129,15 @@ export const COMMON_DRUGS: DrugInfo[] = [
   { generic: 'Multivitamin', class: 'Supplement' },
   { generic: 'Vitamin D3', class: 'Supplement' },
   { generic: 'Vitamin B12', class: 'Supplement' },
+  { generic: 'Vitamin C', brand: 'Ascorbic Acid', class: 'Supplement' },
+  { generic: 'Folic Acid', class: 'Supplement' },
   { generic: 'Ferrous Sulfate', class: 'Supplement (Iron)' },
+  { generic: 'Ferrous Gluconate', class: 'Supplement (Iron)' },
   { generic: 'Calcium + D', class: 'Supplement' },
   { generic: 'Potassium Chloride', brand: 'K-Dur', class: 'Electrolyte' },
   { generic: 'Magnesium Oxide', class: 'Electrolyte' },
+  { generic: 'Cranberry Extract', class: 'Supplement' },
+  { generic: 'Zinc', class: 'Supplement' },
+  { generic: 'Probiotic', class: 'Supplement' },
   { generic: 'Melatonin', class: 'Supplement (Sleep Aid)' }
 ];
