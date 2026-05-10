@@ -66,7 +66,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
 
       {/* Vitals Bento Grid */}
       <div className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl ${
-        isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-white/40 border-white/30'
+        isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-quro-50/40 border-white/30'
       } ${isBoutique ? 'mt-4' : ''}`}>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5 mb-2">

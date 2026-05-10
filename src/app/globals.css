@@ -157,10 +157,10 @@ body {
 
 /* High-End Glassmorphism */
 .glass-card-quro {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(240, 253, 250, 0.95) 0%, rgba(204, 251, 241, 0.85) 100%);
   backdrop-filter: blur(12px) saturate(1.5);
   -webkit-backdrop-filter: blur(12px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(13, 148, 136, 0.1);
   box-shadow: var(--shadow-inner-glass), var(--shadow-card);
 }
 

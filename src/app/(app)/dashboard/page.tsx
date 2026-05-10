@@ -42,7 +42,8 @@ export default function DashboardPage() {
   // Fill empty slots if needed, or just use the beds from the hook
   // The hook already returns beds from the database. 
   // We'll use the hook's beds and ensure they are sorted or padded as desired.
-  const beds = facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
+  // Strictly limit to 6 beds for Platinum Health Hub
+  const rawBeds = facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
     id: `empty-${i}`,
     bed_name: `Bed ${i + 1}`,
     room_name: 'Unassigned',
@@ -51,10 +52,12 @@ export default function DashboardPage() {
     patient: undefined
   }));
 
+  const beds = activeFacility === 'platinum-health-hub' ? rawBeds.slice(0, 6) : rawBeds;
+
   const { isImpersonating } = useAuth();
 
   return (
-    <div className={`animate-in -m-8 p-8 min-h-screen bg-white ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
+    <div className={`animate-in -m-8 p-8 min-h-screen bg-quro-50/10 ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
       {/* Ghost Mode Advanced Tools */}
       {isImpersonating && (
         <div className="mb-8 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-rose-900/10">
