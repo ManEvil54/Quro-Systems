@@ -1,72 +1,137 @@
 // Quro — Clinical Medication Library
-// A curated list of common medications for order entry
+// A comprehensive list of common Skilled Nursing Facility (SNF) medications
+// Organized by clinical category for intuitive searching
 
 export interface DrugInfo {
   generic: string;
   brand?: string;
-  class?: string;
+  class: string;
   is_psychotropic?: boolean;
 }
 
 export const COMMON_DRUGS: DrugInfo[] = [
-  // Cardiovascular
-  { generic: 'Atorvastatin', brand: 'Lipitor', class: 'Statin' },
-  { generic: 'Lisinopril', brand: 'Zestril', class: 'ACE Inhibitor' },
-  { generic: 'Amlodipine', brand: 'Norvasc', class: 'Calcium Channel Blocker' },
-  { generic: 'Metoprolol', brand: 'Lopressor', class: 'Beta Blocker' },
-  { generic: 'Losartan', brand: 'Cozaar', class: 'ARB' },
-  { generic: 'Furosemide', brand: 'Lasix', class: 'Diuretic' },
-  { generic: 'Clopidogrel', brand: 'Plavix', class: 'Antiplatelet' },
-  { generic: 'Warfarin', brand: 'Coumadin', class: 'Anticoagulant' },
-  { generic: 'Apixaban', brand: 'Eliquis', class: 'Anticoagulant' },
-  { generic: 'Aspirin', class: 'Antiplatelet' },
+  // 1. Cardiovascular (Heart & Blood Pressure)
+  { generic: 'Amlodipine', brand: 'Norvasc', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Lisinopril', brand: 'Zestril', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Losartan', brand: 'Cozaar', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Metoprolol', brand: 'Lopressor', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Carvedilol', brand: 'Coreg', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Clonidine', brand: 'Catapres', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Furosemide', brand: 'Lasix', class: 'Cardiovascular (Diuretic)' },
+  { generic: 'Hydrochlorothiazide', brand: 'HCTZ', class: 'Cardiovascular (Diuretic)' },
+  { generic: 'Spironolactone', brand: 'Aldactone', class: 'Cardiovascular (Diuretic)' },
+  { generic: 'Bumetanide', brand: 'Bumex', class: 'Cardiovascular (Diuretic)' },
+  { generic: 'Atorvastatin', brand: 'Lipitor', class: 'Cardiovascular (Statin)' },
+  { generic: 'Simvastatin', brand: 'Zocor', class: 'Cardiovascular (Statin)' },
+  { generic: 'Pravastatin', brand: 'Pravachol', class: 'Cardiovascular (Statin)' },
+  { generic: 'Rosuvastatin', brand: 'Crestor', class: 'Cardiovascular (Statin)' },
+  { generic: 'Apixaban', brand: 'Eliquis', class: 'Cardiovascular (Anticoagulant)' },
+  { generic: 'Rivaroxaban', brand: 'Xarelto', class: 'Cardiovascular (Anticoagulant)' },
+  { generic: 'Warfarin', brand: 'Coumadin', class: 'Cardiovascular (Anticoagulant)' },
+  { generic: 'Clopidogrel', brand: 'Plavix', class: 'Cardiovascular (Antiplatelet)' },
+  { generic: 'Aspirin (81mg)', class: 'Cardiovascular (Antiplatelet)' },
+  { generic: 'Aspirin (325mg)', class: 'Cardiovascular (Antiplatelet)' },
+  { generic: 'Digoxin', brand: 'Lanoxin', class: 'Cardiovascular' },
+  { generic: 'Isosorbide Mononitrate', brand: 'Imdur', class: 'Cardiovascular' },
 
-  // Endocrine / Diabetes
-  { generic: 'Metformin', brand: 'Glucophage', class: 'Biguanide' },
-  { generic: 'Levothyroxine', brand: 'Synthroid', class: 'Thyroid Hormone' },
-  { generic: 'Glipizide', brand: 'Glucotrol', class: 'Sulfonylurea' },
-  { generic: 'Insulin Glargine', brand: 'Lantus', class: 'Insulin' },
-  { generic: 'Insulin Lispro', brand: 'Humalog', class: 'Insulin' },
+  // 2. Endocrine (Diabetes & Thyroid)
+  { generic: 'Insulin Lispro', brand: 'Humalog', class: 'Endocrine (Insulin)' },
+  { generic: 'Insulin Aspart', brand: 'Novolog', class: 'Endocrine (Insulin)' },
+  { generic: 'Insulin Glargine', brand: 'Lantus', class: 'Endocrine (Insulin)' },
+  { generic: 'Insulin Detemir', brand: 'Levemir', class: 'Endocrine (Insulin)' },
+  { generic: 'Insulin NPH', brand: 'Humulin N', class: 'Endocrine (Insulin)' },
+  { generic: 'Insulin Regular', brand: 'Humulin R', class: 'Endocrine (Insulin)' },
+  { generic: 'Metformin', brand: 'Glucophage', class: 'Endocrine (Hypoglycemic)' },
+  { generic: 'Glipizide', brand: 'Glucotrol', class: 'Endocrine (Hypoglycemic)' },
+  { generic: 'Sitagliptin', brand: 'Januvia', class: 'Endocrine (Hypoglycemic)' },
+  { generic: 'Empagliflozin', brand: 'Jardiance', class: 'Endocrine (Hypoglycemic)' },
+  { generic: 'Levothyroxine', brand: 'Synthroid', class: 'Endocrine (Thyroid)' },
+  { generic: 'Armour Thyroid', class: 'Endocrine (Thyroid)' },
 
-  // Psychotropic (Flagged for Monitoring)
-  { generic: 'Sertraline', brand: 'Zoloft', class: 'SSRI', is_psychotropic: true },
-  { generic: 'Escitalopram', brand: 'Lexapro', class: 'SSRI', is_psychotropic: true },
-  { generic: 'Fluoxetine', brand: 'Prozac', class: 'SSRI', is_psychotropic: true },
-  { generic: 'Quetiapine', brand: 'Seroquel', class: 'Antipsychotic', is_psychotropic: true },
-  { generic: 'Haloperidol', brand: 'Haldol', class: 'Antipsychotic', is_psychotropic: true },
-  { generic: 'Risperidone', brand: 'Risperdal', class: 'Antipsychotic', is_psychotropic: true },
-  { generic: 'Olanzapine', brand: 'Zyprexa', class: 'Antipsychotic', is_psychotropic: true },
-  { generic: 'Lorazepam', brand: 'Ativan', class: 'Benzodiazepine', is_psychotropic: true },
-  { generic: 'Alprazolam', brand: 'Xanax', class: 'Benzodiazepine', is_psychotropic: true },
-  { generic: 'Donepezil', brand: 'Aricept', class: 'Cholinesterase Inhibitor', is_psychotropic: true },
-  { generic: 'Memantine', brand: 'Namenda', class: 'NMDA Antagonist', is_psychotropic: true },
+  // 3. Gastrointestinal (GI & Digestion)
+  { generic: 'Omeprazole', brand: 'Prilosec', class: 'Gastrointestinal (PPI)' },
+  { generic: 'Pantoprazole', brand: 'Protonix', class: 'Gastrointestinal (PPI)' },
+  { generic: 'Famotidine', brand: 'Pepcid', class: 'Gastrointestinal (H2 Blocker)' },
+  { generic: 'Esomeprazole', brand: 'Nexium', class: 'Gastrointestinal (PPI)' },
+  { generic: 'Polyethylene Glycol', brand: 'Miralax', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Senna', brand: 'Senokot', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Senna 8.6mg', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Docusate Sodium', brand: 'Colace', class: 'Gastrointestinal (Stool Softener)' },
+  { generic: 'Bisacodyl', brand: 'Dulcolax', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Bisacodyl 10mg supp', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Lactulose', class: 'Gastrointestinal (Laxative)' },
+  { generic: 'Loperamide', brand: 'Imodium', class: 'Gastrointestinal (Anti-Diarrheal)' },
+  { generic: 'Ondansetron', brand: 'Zofran', class: 'Gastrointestinal (Anti-Emetic)' },
+  { generic: 'Promethazine', brand: 'Phenergan', class: 'Gastrointestinal (Anti-Emetic)' },
+  { generic: 'Metoclopramide', brand: 'Reglan', class: 'Gastrointestinal (Anti-Emetic)' },
 
-  // Respiratory
-  { generic: 'Albuterol', brand: 'ProAir', class: 'Bronchodilator' },
-  { generic: 'Fluticasone', brand: 'Flonase', class: 'Corticosteroid' },
-  { generic: 'Montelukast', brand: 'Singulair', class: 'Leukotriene Modifier' },
-  { generic: 'Tiotropium', brand: 'Spiriva', class: 'Anticholinergic' },
+  // 4. Pain & Musculoskeletal
+  { generic: 'Acetaminophen', brand: 'Tylenol', class: 'Pain (Analgesic)' },
+  { generic: 'Ibuprofen', brand: 'Advil', class: 'Pain (NSAID)' },
+  { generic: 'Naproxen', brand: 'Aleve', class: 'Pain (NSAID)' },
+  { generic: 'Celecoxib', brand: 'Celebrex', class: 'Pain (NSAID)' },
+  { generic: 'Meloxicam', brand: 'Mobic', class: 'Pain (NSAID)' },
+  { generic: 'Morphine Sulfate', brand: 'MS Contin', class: 'Pain (Opioid)' },
+  { generic: 'Oxycodone', brand: 'Roxicodone', class: 'Pain (Opioid)' },
+  { generic: 'Oxycodone ER', brand: 'OxyContin', class: 'Pain (Opioid)' },
+  { generic: 'Hydrocodone/APAP', brand: 'Norco', class: 'Pain (Opioid)' },
+  { generic: 'Tramadol', brand: 'Ultram', class: 'Pain (Opioid)' },
+  { generic: 'Gabapentin', brand: 'Neurontin', class: 'Pain (Neuropathic)' },
+  { generic: 'Pregabalin', brand: 'Lyrica', class: 'Pain (Neuropathic)' },
+  { generic: 'Amitriptyline', brand: 'Elavil', class: 'Pain (Neuropathic)' },
+  { generic: 'Cyclobenzaprine', brand: 'Flexeril', class: 'Musculoskeletal (Muscle Relaxant)' },
+  { generic: 'Baclofen', brand: 'Lioresal', class: 'Musculoskeletal (Muscle Relaxant)' },
+  { generic: 'Tizanidine', brand: 'Zanaflex', class: 'Musculoskeletal (Muscle Relaxant)' },
 
-  // Pain / Inflammation
-  { generic: 'Acetaminophen', brand: 'Tylenol', class: 'Analgesic' },
-  { generic: 'Ibuprofen', brand: 'Advil', class: 'NSAID' },
-  { generic: 'Naproxen', brand: 'Aleve', class: 'NSAID' },
-  { generic: 'Morphine Sulfate', brand: 'MS Contin', class: 'Opioid' },
-  { generic: 'Oxycodone', brand: 'OxyContin', class: 'Opioid' },
-  { generic: 'Gabapentin', brand: 'Neurontin', class: 'Anticonvulsant' },
-  { generic: 'Prednisone', class: 'Corticosteroid' },
+  // 5. Psychotropic & Neurological (Flagged for Monitoring)
+  { generic: 'Quetiapine', brand: 'Seroquel', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
+  { generic: 'Risperidone', brand: 'Risperdal', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
+  { generic: 'Olanzapine', brand: 'Zyprexa', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
+  { generic: 'Haloperidol', brand: 'Haldol', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
+  { generic: 'Lorazepam', brand: 'Ativan', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
+  { generic: 'Alprazolam', brand: 'Xanax', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
+  { generic: 'Diazepam', brand: 'Valium', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
+  { generic: 'Buspirone', brand: 'Buspar', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
+  { generic: 'Sertraline', brand: 'Zoloft', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
+  { generic: 'Escitalopram', brand: 'Lexapro', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
+  { generic: 'Fluoxetine', brand: 'Prozac', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
+  { generic: 'Mirtazapine', brand: 'Remeron', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
+  { generic: 'Trazodone', brand: 'Desyrel', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
+  { generic: 'Donepezil', brand: 'Aricept', class: 'Neurological (Anti-Dementia)', is_psychotropic: true },
+  { generic: 'Memantine', brand: 'Namenda', class: 'Neurological (Anti-Dementia)', is_psychotropic: true },
+  { generic: 'Levetiracetam', brand: 'Keppra', class: 'Neurological (Anti-Seizure)' },
+  { generic: 'Phenytoin', brand: 'Dilantin', class: 'Neurological (Anti-Seizure)' },
+  { generic: 'Divalproex', brand: 'Depakote', class: 'Neurological (Anti-Seizure)' },
 
-  // Gastrointestinal
-  { generic: 'Omeprazole', brand: 'Prilosec', class: 'PPI' },
-  { generic: 'Pantoprazole', brand: 'Protonix', class: 'PPI' },
-  { generic: 'Famotidine', brand: 'Pepcid', class: 'H2 Blocker' },
-  { generic: 'Docusate Sodium', brand: 'Colace', class: 'Stool Softener' },
-  { generic: 'Polyethylene Glycol', brand: 'Miralax', class: 'Laxative' },
+  // 6. Respiratory & Allergy
+  { generic: 'Albuterol', brand: 'ProAir', class: 'Respiratory (Bronchodilator)' },
+  { generic: 'Ipratropium', brand: 'Atrovent', class: 'Respiratory (Anticholinergic)' },
+  { generic: 'Budesonide', brand: 'Pulmicort', class: 'Respiratory (Corticosteroid)' },
+  { generic: 'Symbicort', class: 'Respiratory' },
+  { generic: 'Advair', class: 'Respiratory' },
+  { generic: 'Cetirizine', brand: 'Zyrtec', class: 'Allergy' },
+  { generic: 'Loratadine', brand: 'Claritin', class: 'Allergy' },
+  { generic: 'Diphenhydramine', brand: 'Benadryl', class: 'Allergy' },
+  { generic: 'Fluticasone', brand: 'Flonase', class: 'Allergy' },
 
-  // Anti-infective
-  { generic: 'Amoxicillin', class: 'Antibiotic' },
-  { generic: 'Azithromycin', brand: 'Zithromax', class: 'Antibiotic' },
-  { generic: 'Cephalexin', brand: 'Keflex', class: 'Antibiotic' },
-  { generic: 'Ciprofloxacin', brand: 'Cipro', class: 'Antibiotic' },
-  { generic: 'Ceftriaxone', brand: 'Rocephin', class: 'Antibiotic' }
+  // 7. Anti-Infectives (Antibiotics/Antifungals)
+  { generic: 'Amoxicillin/Clavulanate', brand: 'Augmentin', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Cephalexin', brand: 'Keflex', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Ciprofloxacin', brand: 'Cipro', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Nitrofurantoin', brand: 'Macrobid', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Sulfamethoxazole/Trimethoprim', brand: 'Bactrim', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Azithromycin', brand: 'Z-Pak', class: 'Anti-Infective (Antibiotic)' },
+  { generic: 'Fluconazole', brand: 'Diflucan', class: 'Anti-Infective (Antifungal)' },
+  { generic: 'Nystatin', brand: 'Mycostatin', class: 'Anti-Infective (Antifungal)' },
+  { generic: 'Acyclovir', brand: 'Zovirax', class: 'Anti-Infective (Antiviral)' },
+
+  // 8. Miscellaneous/Supplements
+  { generic: 'Multivitamin', class: 'Supplement' },
+  { generic: 'Vitamin D3', class: 'Supplement' },
+  { generic: 'Vitamin B12', class: 'Supplement' },
+  { generic: 'Ferrous Sulfate', class: 'Supplement (Iron)' },
+  { generic: 'Calcium + D', class: 'Supplement' },
+  { generic: 'Potassium Chloride', brand: 'K-Dur', class: 'Electrolyte' },
+  { generic: 'Magnesium Oxide', class: 'Electrolyte' },
+  { generic: 'Melatonin', class: 'Supplement (Sleep Aid)' }
 ];
