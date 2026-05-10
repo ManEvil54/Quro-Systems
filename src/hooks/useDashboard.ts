@@ -23,6 +23,8 @@ export interface DashboardBed {
     bp: string | null;
     temp: number | null;
     is_active_monitoring: boolean;
+    code_status?: string;
+    diagnoses?: string[];
   };
 }
 
@@ -86,7 +88,9 @@ export function useDashboard(facilityId: string) {
                 hr: null,
                 bp: null,
                 temp: null,
-                is_active_monitoring: patient.is_active_monitoring
+                is_active_monitoring: patient.is_active_monitoring,
+                code_status: patient.code_status,
+                diagnoses: patient.diagnoses
               } : undefined
             };
           });

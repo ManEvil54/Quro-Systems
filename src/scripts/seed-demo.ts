@@ -134,66 +134,89 @@ async function seed() {
         first_name: 'Margaret', last_name: 'Thompson', mrn: 'MRN-001', code: 'dnr', status: 'Critical', monitoring: true, 
         dob: '1938-11-12', ssn: '4412', gender: 'female', 
         allergies: ['Penicillin', 'Sulfa'], 
-        diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Osteoporosis'],
-        diet: 'Heart Healthy',
+        diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Osteoporosis', 'Chronic Kidney Disease (Stage 3)'],
+        diet: 'Heart Healthy / Low Sodium',
+        physician: 'Dr. Sarah Smith',
+        contact: 'James Thompson (Son) - (555) 123-4567',
         meds: [
           { generic: 'Furosemide', brand: 'Lasix', strength: '40mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Fluid retention' },
-          { generic: 'Warfarin', brand: 'Coumadin', strength: '5mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '18:00', indication: 'Anticoagulation' }
+          { generic: 'Warfarin', brand: 'Coumadin', strength: '5mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '18:00', indication: 'Anticoagulation' },
+          { generic: 'Digoxin', brand: 'Lanoxin', strength: '125mcg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Heart rate control' }
         ]
       },
       { 
         first_name: 'Robert', last_name: 'Chen', mrn: 'MRN-002', code: 'full', status: 'Stable', monitoring: false,
         dob: '1945-06-22', ssn: '1092', gender: 'male',
         allergies: ['Latex'], 
-        diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia'],
-        diet: 'Diabetic',
+        diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy'],
+        diet: 'Diabetic / 2000 Calorie',
+        physician: 'Dr. James Wilson',
+        contact: 'Lily Chen (Wife) - (555) 987-6543',
         meds: [
           { generic: 'Metformin', brand: 'Glucophage', strength: '500mg', dose: '1 tab', route: 'PO', frequency: 'BID', time: '09:00, 18:00', indication: 'Diabetes management' },
-          { generic: 'Lisinopril', brand: 'Zestril', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Hypertension' }
+          { generic: 'Lisinopril', brand: 'Zestril', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Hypertension' },
+          { generic: 'Atorvastatin', brand: 'Lipitor', strength: '20mg', dose: '1 tab', route: 'PO', frequency: 'QHS', time: '21:00', indication: 'Cholesterol' },
+          { generic: 'Gabapentin', brand: 'Neurontin', strength: '300mg', dose: '1 cap', route: 'PO', frequency: 'TID', time: '09:00, 14:00, 20:00', indication: 'Nerve pain' }
         ]
       },
       { 
         first_name: 'Eleanor', last_name: 'Vance', mrn: 'MRN-003', code: 'dnr_dni', status: 'Stable', monitoring: false,
         dob: '1942-03-08', ssn: '8832', gender: 'female',
         allergies: ['None Reported'], 
-        diagnoses: ['Alzheimer\'s Disease', 'Anxiety'],
-        diet: 'Regular',
+        diagnoses: ['Alzheimer\'s Disease', 'Anxiety', 'Insomnia', 'Vascular Dementia'],
+        diet: 'Regular / Mechanical Soft',
+        physician: 'Dr. Gregory Miller',
+        contact: 'Theodora Vance (Daughter) - (555) 444-5555',
         meds: [
           { generic: 'Donepezil', brand: 'Aricept', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'QHS', time: '21:00', indication: 'Cognitive enhancement' },
-          { generic: 'Sertraline', brand: 'Zoloft', strength: '50mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Anxiety', is_psychotropic: true }
+          { generic: 'Sertraline', brand: 'Zoloft', strength: '50mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Anxiety', is_psychotropic: true },
+          { generic: 'Memantine', brand: 'Namenda', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'BID', time: '09:00, 18:00', indication: 'Dementia' },
+          { generic: 'Quetiapine', brand: 'Seroquel', strength: '25mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Agitation', is_psychotropic: true }
         ]
       },
       { 
         first_name: 'Arthur', last_name: 'Morgan', mrn: 'MRN-004', code: 'full', status: 'Critical', monitoring: true,
         dob: '1950-08-15', ssn: '2214', gender: 'male',
         allergies: ['Aspirin'], 
-        diagnoses: ['COPD', 'Pneumonia (Right Lower Lobe)', 'Hypertension'],
+        diagnoses: ['COPD', 'Pneumonia (Right Lower Lobe)', 'Hypertension', 'Tobacco Use Disorder'],
         diet: 'Regular',
+        physician: 'Dr. Sarah Smith',
+        contact: 'Charles Smith (Friend) - (555) 777-8888',
         meds: [
           { generic: 'Albuterol', brand: 'ProAir', strength: '90mcg', dose: '2 puffs', route: 'INH', frequency: 'Q4H', time: '08:00, 12:00, 16:00, 20:00, 00:00, 04:00', indication: 'Bronchospasm' },
-          { generic: 'Ceftriaxone', brand: 'Rocephin', strength: '1g', dose: '1g', route: 'IV', frequency: 'Daily', time: '10:00', indication: 'Bacterial infection' }
+          { generic: 'Ceftriaxone', brand: 'Rocephin', strength: '1g', dose: '1g', route: 'IV', frequency: 'Daily', time: '10:00', indication: 'Bacterial infection' },
+          { generic: 'Prednisone', brand: 'Deltasone', strength: '20mg', dose: '2 tabs', route: 'PO', frequency: 'Daily', time: '08:00', indication: 'Inflammation' },
+          { generic: 'Spiriva', brand: 'Tiotropium', strength: '18mcg', dose: '1 cap inhaled', route: 'INH', frequency: 'Daily', time: '08:00', indication: 'COPD maintenance' }
         ]
       },
       { 
         first_name: 'Sarah', last_name: 'Jenkins', mrn: 'MRN-005', code: 'full', status: 'Stable', monitoring: false,
         dob: '1948-12-01', ssn: '5521', gender: 'female',
         allergies: ['Codeine'], 
-        diagnoses: ['Rheumatoid Arthritis', 'GERD'],
+        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome'],
         diet: 'Regular',
+        physician: 'Dr. James Wilson',
+        contact: 'Bill Jenkins (Husband) - (555) 222-3333',
         meds: [
           { generic: 'Methotrexate', brand: 'Trexall', strength: '7.5mg', dose: '3 tabs', route: 'PO', frequency: 'WEEKLY', time: '09:00', indication: 'Arthritis' },
-          { generic: 'Omeprazole', brand: 'Prilosec', strength: '20mg', dose: '1 cap', route: 'PO', frequency: 'Daily', time: '07:00', indication: 'Acid reflux' }
+          { generic: 'Omeprazole', brand: 'Prilosec', strength: '20mg', dose: '1 cap', route: 'PO', frequency: 'Daily', time: '07:00', indication: 'Acid reflux' },
+          { generic: 'Folic Acid', brand: 'Folvite', strength: '1mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Supplementation' },
+          { generic: 'Adalimumab', brand: 'Humira', strength: '40mg', dose: '40mg', route: 'SQ', frequency: 'Every 2 Weeks', time: '09:00', indication: 'Autoimmune' }
         ]
       },
       { 
         first_name: 'Victor', last_name: 'Dumont', mrn: 'MRN-006', code: 'comfort', status: 'Stable', monitoring: false,
         dob: '1935-01-30', ssn: '9901', gender: 'male',
         allergies: ['None Reported'], 
-        diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain'],
+        diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression'],
         diet: 'Comfort (Ad Lib)',
+        physician: 'Dr. Gregory Miller',
+        contact: 'Marie Dumont (Sister) - (555) 111-2222',
         meds: [
           { generic: 'Morphine Sulfate', brand: 'MS Contin', strength: '15mg', dose: '1 tab', route: 'PO', frequency: 'Q12H', time: '09:00, 21:00', indication: 'Chronic pain management' },
-          { generic: 'Lorazepam', brand: 'Ativan', strength: '0.5mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Agitation', is_psychotropic: true }
+          { generic: 'Lorazepam', brand: 'Ativan', strength: '0.5mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Agitation', is_psychotropic: true },
+          { generic: 'Docusate Sodium', brand: 'Colace', strength: '100mg', dose: '1 cap', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Stool softener' },
+          { generic: 'Haloperidol', brand: 'Haldol', strength: '1mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Delirium', is_psychotropic: true }
         ]
       },
     ];
@@ -221,6 +244,8 @@ async function seed() {
         diagnoses: p.diagnoses,
         code_status: p.code,
         diet: p.diet,
+        primary_physician: p.physician,
+        emergency_contact: p.contact,
         is_active: true,
         is_active_monitoring: p.monitoring,
         created_at: new Date().toISOString(),

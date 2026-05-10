@@ -108,6 +108,24 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           </div>
         </div>
 
+        {/* Clinical Snippet */}
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest ${
+              patient.code_status === 'dnr' || patient.code_status === 'dnr_dni' 
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' 
+                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+            }`}>
+              {patient.code_status?.replace('_', ' ') || 'FULL CODE'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium line-clamp-1 italic">
+            {patient.diagnoses && patient.diagnoses.length > 0 
+              ? patient.diagnoses.join(', ') 
+              : 'No clinical diagnoses listed'}
+          </p>
+        </div>
+
         {/* Footer Actions */}
         <div className={`mt-4 pt-4 border-t border-white/10 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity`}>
           <div className="flex gap-3">
