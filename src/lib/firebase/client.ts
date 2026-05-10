@@ -7,7 +7,7 @@ import { getAuth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentIndexedDbStore 
+  persistentSingleTabManager 
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -31,7 +31,7 @@ const app = getApps().length
 export const auth = app ? getAuth(app) : ({} as any);
 export const db = app ? initializeFirestore(app, {
   localCache: persistentLocalCache({
-    tabManager: persistentIndexedDbStore()
+    tabManager: persistentSingleTabManager()
   }),
   experimentalForceLongPolling: true,
 }) : ({} as any);
