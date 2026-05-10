@@ -269,7 +269,7 @@ export default function HandoverPage() {
               const latestNote = patientNotes[0];
 
               return (
-                <div key={patient.id} className="glass-card-quro p-8 group transition-all relative overflow-hidden bg-white border border-slate-100">
+                <div key={patient.id} className="glass-card-quro p-8 group transition-all relative overflow-hidden">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg ${
@@ -279,11 +279,11 @@ export default function HandoverPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-black text-quro-teal uppercase tracking-widest">{bed.room_name} • {bed.bed_name}</span>
-                          <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MRN: {patient.mrn}</span>
+                          <span className="text-[10px] font-black text-teal-300 uppercase tracking-widest">{bed.room_name} • {bed.bed_name}</span>
+                          <span className="w-1 h-1 bg-white/20 rounded-full" />
+                          <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">MRN: {patient.mrn}</span>
                         </div>
-                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Patient {patient.initials}</h3>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight">Patient {patient.initials}</h3>
                       </div>
                     </div>
 
@@ -299,21 +299,21 @@ export default function HandoverPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Subjective / Observation</p>
-                        <p className="text-sm text-slate-800 font-bold leading-relaxed">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Subjective / Observation</p>
+                        <p className="text-sm text-white font-bold leading-relaxed">
                           {latestNote?.subjective || 'Resident comfortable, no new complaints voiced. Resting quietly.'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Clinical Status</p>
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Clinical Status</p>
                         <div className="flex gap-4">
                           <div className="flex items-center gap-2">
-                            <Heart size={14} className="text-rose-500" />
-                            <span className="text-xs font-black text-slate-700">{patient.hr || '--'} BPM</span>
+                            <Heart size={14} className="text-rose-400" />
+                            <span className="text-xs font-black text-white">{patient.hr || '--'} BPM</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Activity size={14} className="text-blue-500" />
-                            <span className="text-xs font-black text-slate-700">{patient.bp || '--'}</span>
+                            <Activity size={14} className="text-blue-400" />
+                            <span className="text-xs font-black text-white">{patient.bp || '--'}</span>
                           </div>
                         </div>
                       </div>
@@ -321,8 +321,8 @@ export default function HandoverPage() {
 
                     <div className="space-y-4">
                       <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Assessment & Plan</p>
-                        <p className="text-sm text-slate-800 font-bold leading-relaxed">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Assessment & Plan</p>
+                        <p className="text-sm text-white font-bold leading-relaxed">
                           {latestNote?.assessment || 'Clinical status stable. Continue current plan of care and routine monitoring.'}
                         </p>
                       </div>
@@ -339,16 +339,16 @@ export default function HandoverPage() {
                     </div>
                   </div>
 
-                  <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                  <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest rounded-xl transition-all">
+                      <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-[9px] font-black text-white uppercase tracking-widest rounded-xl transition-all">
                         View Chart
                       </button>
-                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest rounded-xl transition-all">
+                      <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-[9px] font-black text-white uppercase tracking-widest rounded-xl transition-all">
                         Add Note
                       </button>
                     </div>
-                    <button className="flex items-center gap-2 text-[10px] font-black text-teal-600 uppercase tracking-widest hover:translate-x-1 transition-transform group/btn">
+                    <button className="flex items-center gap-2 text-[10px] font-black text-teal-300 uppercase tracking-widest hover:translate-x-1 transition-transform group/btn">
                       Full History
                       <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                     </button>
