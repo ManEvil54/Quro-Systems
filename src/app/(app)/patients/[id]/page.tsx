@@ -1215,83 +1215,87 @@ export default function PatientChartPage() {
                         <Activity size={28} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900 mb-1">Vital Signs Charting</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-quro-teal mb-1">Vital Signs Charting</p>
                         <h2 className="text-lg font-black uppercase tracking-tighter">Current Shift Assessment</h2>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Temperature</p>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Temperature</p>
                         <div className="flex items-center gap-2">
                           <input 
                             type="number" 
                             step="0.1"
                             value={assessments.vitals.temp} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, temp: parseFloat(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 font-black text-base outline-none focus:border-quro-teal transition-all text-center"
                           />
-                          <span className="text-slate-500 font-black">°F</span>
+                          <span className="text-slate-500 font-black text-xs">°F</span>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">B/P (Sys/Dia)</p>
-                        <div className="flex items-center gap-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">B/P (Sys/Dia)</p>
+                        <div className="flex items-center gap-1.5">
                           <input 
                             type="number" 
                             value={assessments.vitals.bp_systolic} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            placeholder="Sys"
                           />
-                          <span className="text-slate-500 font-black">/</span>
+                          <span className="text-slate-600 font-black text-xs">/</span>
                           <input 
                             type="number" 
                             value={assessments.vitals.bp_diastolic} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            placeholder="Dia"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pulse / Resp</p>
-                        <div className="flex items-center gap-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pulse / Resp</p>
+                        <div className="flex items-center gap-1.5">
                           <input 
                             type="number" 
                             value={assessments.vitals.pulse} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            placeholder="HR"
                           />
-                          <span className="text-slate-500 font-black">/</span>
+                          <span className="text-slate-600 font-black text-xs">/</span>
                           <input 
                             type="number" 
                             value={assessments.vitals.resp} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            placeholder="RR"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">SpO2</p>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">SpO2</p>
                         <div className="flex items-center gap-2">
                           <input 
                             type="number" 
                             value={assessments.vitals.spo2} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, spo2: parseInt(e.target.value)}})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-lg outline-none focus:border-rose-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 font-black text-base outline-none focus:border-quro-teal transition-all text-center"
                           />
-                          <span className="text-slate-500 font-black">%</span>
+                          <span className="text-slate-500 font-black text-xs">%</span>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BP Site</p>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Site</p>
                         <select 
                           value={assessments.vitals.bp_site} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as any}})}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-rose-500/50 transition-all"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                         >
                           <option className="bg-slate-900">L-Arm</option>
                           <option className="bg-slate-900">R-Arm</option>
@@ -1300,11 +1304,11 @@ export default function PatientChartPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BP Position</p>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Position</p>
                         <select 
                           value={assessments.vitals.bp_position} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as any}})}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-rose-500/50 transition-all"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                         >
                           <option className="bg-slate-900">Sitting</option>
                           <option className="bg-slate-900">Standing</option>
