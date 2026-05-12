@@ -81,7 +81,7 @@ export default function MarketingPage() {
               <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-inner border border-slate-200/50">
                 <Image 
                   src="/premium-hero.png"
-                  alt="Quro Clinical Excellence"
+                  alt="Quro Systems AI-Powered Clinical Dashboard for Sub-Acute Care"
                   fill
                   className="object-cover scale-105 hover:scale-100 transition-transform duration-[3s]"
                   priority
