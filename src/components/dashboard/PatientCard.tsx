@@ -8,9 +8,10 @@ interface PatientCardProps {
   isCritical: boolean;
   viewType: 'boutique' | 'enterprise';
   showDiagnostics?: boolean;
+  onVitalsClick?: (patient: any) => void;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, onVitalsClick }) => {
   const isBoutique = viewType === 'boutique';
   const { patient } = bed;
 
@@ -66,10 +67,19 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           )}
         </div>
 
-        {/* Vitals Bento Grid */}
-        <div className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl ${
-          isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'
-        } ${isBoutique ? 'mt-4' : ''}`}>
+        {/* Vitals Bento Grid — Tap area for Quick Entry */}
+        <div 
+          onClick={(e) => {
+            if (onVitalsClick) {
+              e.preventDefault();
+              e.stopPropagation();
+              onVitalsClick(patient);
+            }
+          }}
+          className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${
+            isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10 hover:border-quro-teal/40 hover:bg-quro-teal/5'
+          } ${isBoutique ? 'mt-4' : ''}`}
+        >
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
               <Heart size={12} className={patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} />

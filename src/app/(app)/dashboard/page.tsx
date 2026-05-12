@@ -18,10 +18,15 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
+import VitalsInlay from '@/components/clinical/VitalsInlay';
+import GlobalIntelligenceBar from '@/components/dashboard/GlobalIntelligenceBar';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 
 export default function DashboardPage() {
   const { organization, staff, activeFacility: authActiveFacility } = useAuth();
   const [activeFacility, setActiveFacility] = useState(authActiveFacility?.id || 'platinum-health-hub');
+  const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<any>(null);
   
   // Update local state when auth state changes
   useEffect(() => {
@@ -161,6 +166,17 @@ export default function DashboardPage() {
 
   const beds = rawBeds.slice(0, 6);
 
+  const handleVitalsSubmit = async (data: any) => {
+    if (!organization?.id) return;
+    
+    await addDoc(collection(db, 'organizations', organization.id, 'vitals'), {
+      ...data,
+      org_id: organization.id,
+      recorded_by: staff?.id || 'system',
+      created_at: serverTimestamp()
+    });
+  };
+
   const { isImpersonating } = useAuth();
 
   return (
@@ -235,6 +251,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* AI Synthesis Bar */}
+      <GlobalIntelligenceBar />
+
       {/* Bed Grid */}
       <div className={`grid gap-6 ${viewType === 'boutique' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'}`}>
         {beds.map((bed) => (
@@ -244,9 +263,18 @@ export default function DashboardPage() {
             isCritical={bed.patient?.status === 'Critical'}
             viewType={viewType}
             showDiagnostics={isImpersonating}
+            onVitalsClick={(p) => setSelectedPatientForVitals(p)}
           />
         ))}
       </div>
+
+      {selectedPatientForVitals && (
+        <VitalsInlay 
+          patient={selectedPatientForVitals}
+          onClose={() => setSelectedPatientForVitals(null)}
+          onSubmit={handleVitalsSubmit}
+        />
+      )}
 
       <footer className="mt-auto flex items-center justify-between py-6 border-t border-slate-100 text-[10px] text-slate-400 font-medium">
         <p>Powered by <span className="text-quro-teal font-bold">ModernQure LLC</span></p>

@@ -51,6 +51,7 @@ import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
+import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, Patient } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
@@ -1919,13 +1920,16 @@ export default function PatientChartPage() {
                         </select>
                       </div>
 
-                      <div className="mb-6 flex flex-wrap gap-2">
-                        <span className="text-[9px] font-black text-emerald-900 uppercase tracking-widest self-center mr-2">Quick Macros:</span>
-                        {macros.map((m, i) => (
-                          <button key={i} onClick={() => applyMacro(m.text)} className="px-4 py-2 bg-slate-50 hover:bg-quro-teal/10 hover:text-emerald-900 text-emerald-900 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100 transition-all">
-                            {m.label}
-                          </button>
-                        ))}
+                      <div className="mb-6 flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-[9px] font-black text-emerald-900 uppercase tracking-widest self-center mr-2">Quick Macros:</span>
+                          {macros.map((m, i) => (
+                            <button key={i} onClick={() => applyMacro(m.text)} className="px-4 py-2 bg-slate-50 hover:bg-quro-teal/10 hover:text-emerald-900 text-emerald-900 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100 transition-all">
+                              {m.label}
+                            </button>
+                          ))}
+                        </div>
+                        <VoiceToSOAP onTranscribed={(text) => setNarrativeNote(prev => prev ? `${prev}\n\n${text}` : text)} />
                       </div>
 
                       <textarea 
