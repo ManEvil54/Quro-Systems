@@ -4,7 +4,7 @@
 // ============================================================
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Activity, ClipboardList, Clock, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Activity, ClipboardList, Clock, ShieldCheck, TrendingUp, Mic } from 'lucide-react';
 import QuroLogo from '@/components/brand/QuroLogo';
 
 export default function MarketingPage() {
@@ -44,15 +44,13 @@ export default function MarketingPage() {
             </div>
             
             <h1 className="text-6xl lg:text-8xl tracking-tight leading-[0.95] mb-8 font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000">
-              <span className="font-serif italic text-teal-600/80 font-light block mb-2">Synchronized</span>
-              <span className="text-slate-900">Clinical Excellence</span>
+              <span className="font-serif italic text-teal-600/80 font-light block mb-2">Active</span>
+              <span className="text-slate-900">Clinical Partner</span>
             </h1>
             
             <p className="text-xl text-slate-500 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              Elevate your operations with <span className="font-semibold text-slate-800 tracking-tight">Quro</span>: 
-              the unified synchronization hub for up to <span className="text-teal-600 font-medium">3 facilities (1–25 beds each)</span>. 
-              Experience a seamless digital handshake between shifts, high-precision MAR generation, and 
-              intelligent provider order loops.
+              Transforming your facility from a passive database into an <span className="font-semibold text-slate-800 tracking-tight">Active Intelligent Partner</span>. 
+              In high-stakes environments, the best use of AI isn't "chatting"—it's <span className="text-teal-600 font-medium">Noise Reduction</span>.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 animate-in fade-in slide-in-from-bottom-10 duration-1000">
@@ -86,13 +84,91 @@ export default function MarketingPage() {
                 {/* Floating Glass Indicator */}
                 <div className="absolute top-8 right-8 glass-card py-3 px-5 rounded-2xl border-white/40 flex items-center gap-3 animate-pulse">
                   <div className="w-2 h-2 rounded-full bg-teal-500"></div>
-                  <span className="text-[10px] font-black tracking-widest text-teal-800 uppercase">Live Systems Active</span>
+                  <span className="text-[10px] font-black tracking-widest text-teal-800 uppercase">Live Intelligence Active</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </main>
+
+      {/* The Clinical Brain - AI Section */}
+      <section className="py-32 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-teal-500 rounded-full blur-[200px] -translate-y-1/2 translate-x-1/2"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+          <div className="flex flex-col lg:flex-row gap-20 items-center">
+            <div className="flex-1">
+              <div className="text-teal-400 font-black tracking-[0.3em] uppercase text-[10px] mb-6">AI Noise Reduction</div>
+              <h2 className="text-5xl lg:text-6xl font-medium mb-10 tracking-tight leading-[1.1]">
+                The <span className="font-serif italic text-teal-400">Handover</span> <br />Synthesizer.
+              </h2>
+              <p className="text-xl text-slate-400 mb-12 leading-relaxed font-light max-w-xl">
+                Legacy apps force nurses to scan 25 charts manually at 7:00 AM. 
+                Quro's "Clinical Brain" analyzes the last 12 hours of vitals and notes to generate an 
+                <span className="text-white font-medium"> Executive Summary</span> instantly.
+              </p>
+              
+              <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] shadow-2xl">
+                <div className="flex items-center gap-3 mb-6 text-teal-400">
+                  <Activity className="w-5 h-5" />
+                  <span className="text-xs font-bold tracking-widest uppercase">Morning Briefing • 07:00</span>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    "Room 202 had a 3:00 AM spike in BP",
+                    "Room 105 has a new order for Lisinopril",
+                    "2 handshakes are still pending for the night shift"
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-4 text-sm text-slate-200">
+                      <span className="text-teal-500 font-bold">•</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex-1 grid gap-8 w-full">
+              {[
+                {
+                  title: "Smart 'Spine-Line' Trending",
+                  desc: "Velocity-based alerts trigger a Soft Teal Pulse before vitals hit critical levels.",
+                  val: "Early intervention, fewer hospital transfers.",
+                  icon: TrendingUp
+                },
+                {
+                  title: "Voice-to-Structured-SOAP",
+                  desc: "Dictate notes directly. AI parses natural speech into professional clinical documentation.",
+                  val: "Finished in seconds. Zero mental clutter.",
+                  icon: Mic
+                },
+                {
+                  title: "Fax-Ready Quality Auditor",
+                  desc: "Scans for missing signatures or 'Holes' before surveyors walk in.",
+                  val: "100% Compliance Score guaranteed.",
+                  icon: ShieldCheck
+                }
+              ].map((ai, i) => (
+                <div key={i} className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <div className="flex gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                      <ai.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold mb-2">{ai.title}</h3>
+                      <p className="text-sm text-slate-400 mb-4 leading-relaxed">{ai.desc}</p>
+                      <div className="text-[10px] font-black tracking-widest text-teal-400 uppercase">{ai.val}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Features Grid */}
       <section id="features" className="py-32 bg-white relative">
@@ -154,5 +230,6 @@ export default function MarketingPage() {
     </div>
   );
 }
+
 
 
