@@ -54,12 +54,17 @@ export default function MarketingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-              <Link 
-                href="/login?demo=true" 
-                className="w-full sm:w-auto px-10 py-5 bg-teal-600 text-white rounded-2xl text-sm font-bold hover:bg-teal-700 transition-all shadow-[0_20px_40px_-12px_rgba(13,148,136,0.3)] hover:-translate-y-1"
-              >
-                Request Enterprise Demo
-              </Link>
+              <div className="flex flex-col gap-3 w-full sm:w-auto">
+                <Link 
+                  href="/login?demo=true" 
+                  className="w-full sm:w-auto px-10 py-5 bg-teal-600 text-white rounded-2xl text-sm font-bold hover:bg-teal-700 transition-all shadow-[0_20px_40px_-12px_rgba(13,148,136,0.3)] hover:-translate-y-1 text-center"
+                >
+                  Explore Clinical Demo
+                </Link>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center lg:text-left px-2">
+                  Instant Access — Enter with just an email
+                </p>
+              </div>
               <Link 
                 href="/login" 
                 className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all backdrop-blur-md hover:-translate-y-1"

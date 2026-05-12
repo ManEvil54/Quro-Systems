@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QuroLogo from '@/components/brand/QuroLogo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,8 @@ import { initializeApp, getApps } from 'firebase/app';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDemoMode = searchParams.get('demo') === 'true';
   const { signIn, loading, error, clearError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -207,7 +209,7 @@ export default function LoginPage() {
                 <p className="text-xs text-slate-500 font-light">Explore the <b>Platinum Health Hub</b> demo instantly.</p>
               </div>
 
-              <div className="group relative bg-white border border-slate-200 p-1.5 rounded-2xl focus-within:border-teal-500/30 focus-within:ring-4 focus-within:ring-teal-500/5 transition-all flex items-center gap-2 shadow-sm">
+              <div className={`group relative bg-white border ${isDemoMode ? 'border-teal-500 ring-4 ring-teal-500/10 animate-pulse' : 'border-slate-200'} p-1.5 rounded-2xl focus-within:border-teal-500/30 focus-within:ring-4 focus-within:ring-teal-500/5 transition-all flex items-center gap-2 shadow-sm`}>
                 <div className="relative flex-1">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600/30" />
                   <input

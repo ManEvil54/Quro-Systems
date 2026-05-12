@@ -3,6 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Patient } from '@/lib/firebase/types';
+import { DEMO_PATIENTS } from '@/lib/demoData';
 
 export function usePatient(patientId: string) {
   const { organization } = useAuth();
@@ -21,7 +22,13 @@ export function usePatient(patientId: string) {
       if (docSnap.exists()) {
         setPatient({ id: docSnap.id, ...docSnap.data() } as Patient);
       } else {
-        setError('Patient not found');
+        // Fallback to Demo Data
+        const demoPatient = DEMO_PATIENTS.find(p => p.id === patientId);
+        if (demoPatient) {
+          setPatient(demoPatient);
+        } else {
+          setError('Patient not found');
+        }
       }
       setLoading(false);
     }, (err) => {

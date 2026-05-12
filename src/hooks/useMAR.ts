@@ -21,6 +21,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MarEntry } from '@/lib/firebase/types';
+import { DEMO_MAR } from '@/lib/demoData';
 
 export function useMAR(patientId: string) {
   const { staff } = useAuth();
@@ -44,7 +45,13 @@ export function useMAR(patientId: string) {
         id: doc.id,
         ...doc.data()
       })) as MarEntry[];
-      setEntries(docs);
+      
+      // Fallback to Demo Data
+      if (docs.length === 0 && DEMO_MAR[patientId]) {
+        setEntries(DEMO_MAR[patientId]);
+      } else {
+        setEntries(docs);
+      }
       setLoading(false);
     }, (err) => {
       console.error('Error fetching MAR:', err);

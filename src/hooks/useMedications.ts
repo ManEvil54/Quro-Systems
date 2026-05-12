@@ -19,6 +19,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Medication } from '@/lib/firebase/types';
+import { DEMO_MEDICATIONS } from '@/lib/demoData';
 
 export function useMedications(patientId: string) {
   const { staff } = useAuth();
@@ -40,7 +41,13 @@ export function useMedications(patientId: string) {
         id: doc.id,
         ...doc.data()
       })) as Medication[];
-      setMedications(docs);
+      
+      // Fallback to Demo Data if empty and matches demo patient
+      if (docs.length === 0 && DEMO_MEDICATIONS[patientId]) {
+        setMedications(DEMO_MEDICATIONS[patientId]);
+      } else {
+        setMedications(docs);
+      }
       setLoading(false);
     }, (err) => {
       console.error('Error fetching medications:', err);

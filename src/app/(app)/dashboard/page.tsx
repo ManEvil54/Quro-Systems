@@ -147,7 +147,19 @@ export default function DashboardPage() {
       bed_name: 'Bed 6',
       room_name: 'Room 106',
       room_id: '106',
-      status: 'available',
+      status: 'occupied',
+      patient: {
+        id: 'frank-ocean',
+        initials: 'FO',
+        mrn: 'MRN-7721',
+        status: 'Stable',
+        hr: 76,
+        bp: '124/82',
+        temp: 98.7,
+        is_active_monitoring: false,
+        code_status: 'Full Code',
+        diagnoses: ['Chronic Pain', 'Physical Therapy']
+      }
     }
   ];
 

@@ -19,6 +19,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ProviderOrder } from '@/lib/firebase/types';
+import { DEMO_ORDERS } from '@/lib/demoData';
 
 export function useOrders(patientId: string) {
   const { staff } = useAuth();
@@ -40,7 +41,13 @@ export function useOrders(patientId: string) {
         id: doc.id,
         ...doc.data()
       })) as ProviderOrder[];
-      setOrders(docs);
+      
+      // Fallback to Demo Data
+      if (docs.length === 0 && DEMO_ORDERS[patientId]) {
+        setOrders(DEMO_ORDERS[patientId]);
+      } else {
+        setOrders(docs);
+      }
       setLoading(false);
     }, (err) => {
       console.error('Error fetching orders:', err);

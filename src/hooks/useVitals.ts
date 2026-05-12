@@ -20,6 +20,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { VitalSign } from '@/lib/firebase/types';
+import { DEMO_VITALS } from '@/lib/demoData';
 
 export function useVitals(patientId: string) {
   const { staff } = useAuth();
@@ -41,7 +42,13 @@ export function useVitals(patientId: string) {
         id: doc.id,
         ...doc.data()
       })) as VitalSign[];
-      setVitals(docs);
+      
+      // Fallback to Demo Data
+      if (docs.length === 0 && DEMO_VITALS[patientId]) {
+        setVitals(DEMO_VITALS[patientId]);
+      } else {
+        setVitals(docs);
+      }
       setLoading(false);
     }, (err) => {
       console.error('Error fetching vitals:', err);

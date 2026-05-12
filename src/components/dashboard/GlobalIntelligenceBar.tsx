@@ -38,9 +38,9 @@ export default function GlobalIntelligenceBar() {
       } else {
         // Mock data for initial sprint demo if collection is empty
         setSummary({
-          high_risk_trends: "3 patients showing upward temperature trends in the last 4 hours.",
-          clinical_tasks: "New Lisinopril order for Room 202 requires verification.",
-          compliance_gaps: "4 Handshakes pending for the night shift transition.",
+          high_risk_trends: "Manny Evil (Room 101) showing persistent tachycardia; review BP trends.",
+          clinical_tasks: "New order for Frank Ocean (Room 106) needs acknowledgement.",
+          compliance_gaps: "2 handover handshakes pending for the night shift transition.",
           created_at: new Date().toISOString()
         });
       }

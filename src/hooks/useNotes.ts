@@ -20,6 +20,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ProgressNote } from '@/lib/firebase/types';
+import { DEMO_NOTES } from '@/lib/demoData';
 
 export function useNotes(patientId: string) {
   const { staff } = useAuth();
@@ -41,7 +42,13 @@ export function useNotes(patientId: string) {
         id: doc.id,
         ...doc.data()
       })) as ProgressNote[];
-      setNotes(docs);
+      
+      // Fallback to Demo Data
+      if (docs.length === 0 && DEMO_NOTES[patientId]) {
+        setNotes(DEMO_NOTES[patientId]);
+      } else {
+        setNotes(docs);
+      }
       setLoading(false);
     }, (err) => {
       console.error('Error fetching notes:', err);
