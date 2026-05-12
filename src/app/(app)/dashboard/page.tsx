@@ -54,16 +54,16 @@ export default function DashboardPage() {
       room_id: '101',
       status: 'occupied',
       patient: {
-        id: 'manny-evil',
-        initials: 'ME',
-        mrn: '666-GHOST',
-        status: 'Critical',
-        hr: 112,
-        bp: '148/92',
-        temp: 99.1,
+        id: 'robert-chen',
+        initials: 'RC',
+        mrn: 'MRN-002',
+        status: 'Stable',
+        hr: 78,
+        bp: '138/84',
+        temp: 98.6,
         is_active_monitoring: true,
-        code_status: 'DNR',
-        diagnoses: ['Hypertension', 'Tachycardia']
+        code_status: 'Full Code',
+        diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy']
       }
     },
     {
@@ -73,16 +73,16 @@ export default function DashboardPage() {
       room_id: '102',
       status: 'occupied',
       patient: {
-        id: 'sarah-miller',
-        initials: 'SM',
-        mrn: 'MRN-8821',
+        id: 'victor-dumont',
+        initials: 'VD',
+        mrn: 'MRN-006',
         status: 'Stable',
         hr: 72,
-        bp: '120/80',
-        temp: 98.6,
+        bp: '122/78',
+        temp: 98.4,
         is_active_monitoring: false,
-        code_status: 'Full Code',
-        diagnoses: ['Post-Op Hip', 'PT Recovery']
+        code_status: 'Comfort',
+        diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression']
       }
     },
     {
@@ -92,16 +92,16 @@ export default function DashboardPage() {
       room_id: '103',
       status: 'occupied',
       patient: {
-        id: 'james-wilson',
-        initials: 'JW',
-        mrn: 'MRN-4492',
-        status: 'Critical',
-        hr: 94,
-        bp: '162/98',
-        temp: 98.9,
-        is_active_monitoring: true,
-        code_status: 'DNR/DNI',
-        diagnoses: ['CHF', 'Diabetes Type II']
+        id: 'sarah-jenkins',
+        initials: 'SJ',
+        mrn: 'MRN-005',
+        status: 'Stable',
+        hr: 82,
+        bp: '130/82',
+        temp: 98.8,
+        is_active_monitoring: false,
+        code_status: 'Full Code',
+        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome']
       }
     },
     {
@@ -109,6 +109,25 @@ export default function DashboardPage() {
       bed_name: 'Bed 4',
       room_name: 'Room 104',
       room_id: '104',
+      status: 'occupied',
+      patient: {
+        id: 'manny-evil',
+        initials: 'ME',
+        mrn: '666-GHOST',
+        status: 'Critical',
+        hr: 112,
+        bp: '148/92',
+        temp: 99.1,
+        is_active_monitoring: true,
+        code_status: 'DNR',
+        diagnoses: ['Hypertension', 'Tachycardia', 'Chronic Kidney Disease']
+      }
+    },
+    {
+      id: 'bed-5',
+      bed_name: 'Bed 5',
+      room_name: 'Room 105',
+      room_id: '105',
       status: 'occupied',
       patient: {
         id: 'elena-rod',
@@ -120,14 +139,14 @@ export default function DashboardPage() {
         temp: 98.4,
         is_active_monitoring: false,
         code_status: 'Full Code',
-        diagnoses: ['Early Onset Dementia']
+        diagnoses: ['Early Onset Dementia', 'Anxiety']
       }
     },
     {
-      id: 'bed-5',
-      bed_name: 'Bed 5',
-      room_name: 'Room 105',
-      room_id: '105',
+      id: 'bed-6',
+      bed_name: 'Bed 6',
+      room_name: 'Room 106',
+      room_id: '106',
       status: 'occupied',
       patient: {
         id: 'david-chen',
@@ -139,26 +158,7 @@ export default function DashboardPage() {
         temp: 100.2,
         is_active_monitoring: true,
         code_status: 'Full Code',
-        diagnoses: ['Post-Stroke Rehab', 'Aphasia']
-      }
-    },
-    {
-      id: 'bed-6',
-      bed_name: 'Bed 6',
-      room_name: 'Room 106',
-      room_id: '106',
-      status: 'occupied',
-      patient: {
-        id: 'frank-ocean',
-        initials: 'FO',
-        mrn: 'MRN-7721',
-        status: 'Stable',
-        hr: 76,
-        bp: '124/82',
-        temp: 98.7,
-        is_active_monitoring: false,
-        code_status: 'Full Code',
-        diagnoses: ['Chronic Pain', 'Physical Therapy']
+        diagnoses: ['Post-Stroke Rehab', 'Aphasia', 'Right-Side Weakness']
       }
     }
   ];
@@ -166,7 +166,7 @@ export default function DashboardPage() {
   // Fill empty slots if needed, or just use the beds from the hook
   // Strictly limit to 6 beds for Platinum Health Hub demo
   const rawBeds = activeFacility === 'platinum-health-hub' 
-    ? (facilityBeds.length > 1 ? facilityBeds : mockPatients)
+    ? mockPatients
     : (facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
         bed_name: `Bed ${i + 1}`,
