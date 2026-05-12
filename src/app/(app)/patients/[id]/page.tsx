@@ -1954,7 +1954,7 @@ export default function PatientChartPage() {
                         <button 
                           onClick={() => handleSaveCharting(false)}
                           disabled={isSavingNote || !narrativeNote.trim()}
-                          className="px-12 py-5 bg-quro-forest text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-quro-forest/20 disabled:opacity-50 flex items-center gap-3"
+                          className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 disabled:opacity-50 flex items-center gap-3"
                         >
                           {isSavingNote ? 'Archiving...' : 'Finalize & Sign Record'}
                         </button>
@@ -1967,15 +1967,15 @@ export default function PatientChartPage() {
                         <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest mb-6">Note Guidelines</h3>
                         <div className="space-y-4">
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Data</p>
+                              <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mb-1">Data</p>
                               <p className="text-[10px] text-emerald-900 font-medium">Objective observations and clinical facts.</p>
                            </div>
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Action</p>
+                              <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mb-1">Action</p>
                               <p className="text-[10px] text-emerald-900 font-medium">Nursing interventions performed.</p>
                            </div>
                            <div className="p-4 bg-white rounded-xl border border-slate-100">
-                              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Response</p>
+                              <p className="text-[10px] font-black text-quro-teal uppercase tracking-widest mb-1">Response</p>
                               <p className="text-[10px] text-emerald-900 font-medium">Patient reaction and effectiveness of care.</p>
                            </div>
                         </div>
