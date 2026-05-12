@@ -4,7 +4,7 @@
 // ============================================================
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QuroLogo from '@/components/brand/QuroLogo';
@@ -13,7 +13,7 @@ import { Eye, EyeOff, ArrowRight, Shield, Activity, Mail, CheckCircle2 } from 'l
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDemoMode = searchParams.get('demo') === 'true';
@@ -245,5 +245,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#fcfdfe] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-teal-500/10 border-t-teal-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
