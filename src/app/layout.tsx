@@ -2,57 +2,28 @@
 // Quro — Root Layout
 // Wraps entire app with AuthProvider
 // ============================================================
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: {
-    default: "Quro — The Active Clinical Partner for Modern Healthcare",
-    template: "%s | Quro Systems"
+    default: "Quro Systems | Quality Understanding • Real-time Outcomes",
+    template: "%s | Quro Systems",
   },
-  description: "Transform your facility with Quro. The AI-driven clinical partner designed for noise reduction, zero mental clutter, and precision care synchronization in Congregate Living Health Facilities (CLHF).",
-  keywords: [
-    "CLHF software", 
-    "clinical intelligence", 
-    "AI healthcare partner", 
-    "medication management", 
-    "MAR automation", 
-    "sub-acute care", 
-    "HIPAA compliant EHR", 
-    "care synchronization"
-  ],
+  description: "Evolved clinical operations for skilled nursing facilities. Reduce cognitive load and achieve real-time patient outcomes with Quro Systems.",
+  keywords: ["SNF Software", "CLHF Management", "Clinical Synchronization", "Nursing MAR", "Healthcare AI"],
   authors: [{ name: "ModernQure LLC" }],
-  creator: "ModernQure LLC",
-  publisher: "ModernQure LLC",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
   openGraph: {
-    title: "Quro — The Active Clinical Partner",
-    description: "The AI-driven clinical platform designed to reduce cognitive load and eliminate handover errors in high-stakes healthcare environments.",
-    url: "https://qurosystems.com",
+    title: "Quro Systems",
+    description: "Quality Understanding • Real-time Outcomes",
+    url: "https://qurosync.com",
     siteName: "Quro Systems",
-    images: [
-      {
-        url: "/og-image.png", // Ensure this exists or I should generate one
-        width: 1200,
-        height: 630,
-        alt: "Quro Systems Clinical Intelligence Dashboard",
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     locale: "en_US",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Quro — Precision Care, Synchronized.",
-    description: "AI-powered noise reduction for sub-acute clinical teams.",
-    images: ["/og-image.png"],
-  },
-  metadataBase: new URL("https://qurosystems.com"),
+  metadataBase: new URL("https://qurosync.com"),
   alternates: {
     canonical: "/",
   },
@@ -60,6 +31,10 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     apple: "/icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0D9488", // Quro Teal
 };
 
 export default function RootLayout({
