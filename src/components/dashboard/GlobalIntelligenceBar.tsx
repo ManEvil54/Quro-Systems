@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
   ChevronRight, 
   AlertCircle, 
   ClipboardList, 
@@ -17,9 +16,16 @@ import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestor
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface IntelligenceSummary {
+  high_risk_trends: string;
+  clinical_tasks: string;
+  compliance_gaps: string;
+  created_at: string;
+}
+
 export default function GlobalIntelligenceBar() {
-  const { organization, staff } = useAuth();
-  const [summary, setSummary] = useState<any>(null);
+  const { organization } = useAuth();
+  const [summary, setSummary] = useState<IntelligenceSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,13 +40,13 @@ export default function GlobalIntelligenceBar() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        setSummary(snapshot.docs[0].data());
+        setSummary(snapshot.docs[0].data() as IntelligenceSummary);
       } else {
         // Mock data for initial sprint demo if collection is empty
         setSummary({
-          high_risk_trends: "Manny Evil (Room 101) showing persistent tachycardia; review BP trends.",
-          clinical_tasks: "New order for Frank Ocean (Room 106) needs acknowledgement.",
-          compliance_gaps: "2 handover handshakes pending for the night shift transition.",
+          high_risk_trends: "Respiratory infection risk flagged for Arthur Morgan; thick yellow secretions noted.",
+          clinical_tasks: "Enteral residual >150mL for Margaret Thompson; feeding paused per protocol.",
+          compliance_gaps: "All high-acuity RT/GT charting complete for the current shift.",
           created_at: new Date().toISOString()
         });
       }
@@ -104,7 +110,15 @@ export default function GlobalIntelligenceBar() {
   );
 }
 
-function IntelligenceItem({ icon: Icon, label, value, color, glow }: any) {
+interface IntelligenceItemProps {
+  icon: React.ElementType;
+  label: string;
+  value: string | undefined;
+  color: string;
+  glow?: string;
+}
+
+function IntelligenceItem({ icon: Icon, label, value, color, glow }: IntelligenceItemProps) {
   return (
     <div className={`bg-white/5 px-6 py-4 flex flex-col justify-center transition-all hover:bg-white/10 group cursor-default ${glow}`}>
       <div className="flex items-center gap-2 mb-1.5">

@@ -1,17 +1,21 @@
 import React from 'react';
-import { Heart, Activity, Pill, AlertTriangle, FileText, UserPlus, ShieldAlert } from 'lucide-react';
+import { Heart, Activity, Pill, FileText, UserPlus, ShieldAlert, Wind, Droplets } from 'lucide-react';
 import Link from 'next/link';
 import type { DashboardBed } from '@/hooks/useDashboard';
+
+type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 interface PatientCardProps {
   bed: DashboardBed;
   isCritical: boolean;
   viewType: 'boutique' | 'enterprise';
   showDiagnostics?: boolean;
-  onVitalsClick?: (patient: any) => void;
+  onVitalsClick?: (patient: DashboardPatient) => void;
+  onRTClick?: (patient: DashboardPatient) => void;
+  onGTClick?: (patient: DashboardPatient) => void;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, onVitalsClick }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, onVitalsClick, onRTClick, onGTClick }) => {
   const isBoutique = viewType === 'boutique';
   const { patient } = bed;
 
@@ -134,6 +138,28 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               ? patient.diagnoses.join(', ') 
               : 'No clinical diagnoses listed'}
           </p>
+          
+          {/* RT & GT Rapid Tiles */}
+          <div className="flex gap-2 mt-3">
+            {(patient.diagnoses?.some((d: string) => d.includes('COPD') || d.includes('Pneumonia') || d.includes('Respiratory')) || patient.id === 'arthur-morgan') && (
+              <button 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRTClick?.(patient); }}
+                className="flex-1 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-500/20 transition-all group/rt"
+              >
+                <Wind size={12} className="text-cyan-500 group-hover/rt:animate-pulse" />
+                <span className="text-[8px] font-black text-cyan-600 uppercase tracking-widest">Respiratory</span>
+              </button>
+            )}
+            {(patient.diagnoses?.some((d: string) => d.includes('PEG') || d.includes('Dysphagia') || d.includes('Diabetes')) || patient.id === 'margaret-thompson') && (
+              <button 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGTClick?.(patient); }}
+                className="flex-1 py-2 bg-quro-teal/10 border border-quro-teal/20 rounded-xl flex items-center justify-center gap-2 hover:bg-quro-teal/20 transition-all group/gt"
+              >
+                <Droplets size={12} className="text-quro-teal group-hover/gt:animate-bounce" />
+                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Enteral</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Footer Actions */}

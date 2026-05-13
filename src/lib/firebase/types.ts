@@ -83,8 +83,43 @@ export interface Patient {
   photo_url?: string;
   is_active: boolean;
   is_active_monitoring: boolean;
+  respiratory_state?: RespiratoryState;
+  enteral_state?: EnteralState;
   created_at: string;
   updated_at: string;
+}
+
+export interface RespiratoryState {
+  o2_delivery: 'Room Air' | 'Nasal Cannula' | 'Trach Mask';
+  lpm?: number;
+  fio2_percent?: number;
+  trach_size?: string;
+  trach_type?: string;
+  last_trach_change?: string;
+  stoma_condition: 'Healthy' | 'Redness' | 'Drainage' | 'Granulation';
+  suction_frequency: 'Shiftly' | 'PRN' | 'Q4H';
+  secretions_consistency: 'Thin' | 'Thick';
+  secretions_color: 'Clear' | 'White' | 'Yellow' | 'Green';
+  lung_sounds: {
+    ruq: 'Clear' | 'Wheezing' | 'Crackles' | 'Diminished';
+    luq: 'Clear' | 'Wheezing' | 'Crackles' | 'Diminished';
+    rlq: 'Clear' | 'Wheezing' | 'Crackles' | 'Diminished';
+    llq: 'Clear' | 'Wheezing' | 'Crackles' | 'Diminished';
+  };
+}
+
+export interface EnteralState {
+  formula_name: string;
+  delivery_method: 'Continuous' | 'Bolus';
+  rate_ml_hr?: number;
+  bolus_volume?: number;
+  bolus_frequency?: string;
+  water_flush_pre: number;
+  water_flush_post: number;
+  last_residual_volume: number;
+  last_residual_at: string;
+  site_condition: 'Normal' | 'Redness' | 'Drainage' | 'Granulation';
+  is_paused: boolean;
 }
 
 export interface VitalSign {
@@ -178,7 +213,7 @@ export interface ProviderOrder {
   facility_id: string;
   ordering_physician_id: string;
   acknowledging_nurse_id?: string;
-  order_type: 'medication' | 'lab' | 'imaging' | 'therapy' | 'diet' | 'other';
+  order_type: 'medication' | 'lab' | 'imaging' | 'therapy' | 'diet' | 'treatment' | 'other';
   order_text: string;
   priority: 'routine' | 'urgent' | 'stat';
   status: OrderStatus;
@@ -258,6 +293,8 @@ export interface ProgressNote {
       call_light_reach: boolean;
       alarm_active: boolean;
     };
+    respiratory?: RespiratoryState;
+    enteral?: EnteralState;
   };
   status: 'DRAFT' | 'SIGNED';
   created_at: string;
@@ -300,5 +337,38 @@ export interface Bed {
   name: string; // e.g. "Bed A"
   patient_id?: string | null;
   status: 'available' | 'occupied' | 'maintenance' | 'reserved';
+  created_at: string;
+}
+export interface Treatment {
+  id: string;
+  org_id: string;
+  patient_id: string;
+  treatment_name: string;
+  site?: string;
+  frequency: string;
+  frequency_times?: string[];
+  duration?: string;
+  indication?: string;
+  prescriber_id?: string;
+  start_date: string;
+  end_date?: string | null;
+  status: 'active' | 'discontinued' | 'completed';
+  instructions?: string;
+  order_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TreatmentEntry {
+  id: string;
+  org_id: string;
+  patient_id: string;
+  treatment_id: string;
+  action: 'done' | 'refused' | 'absent';
+  performed_by: string;
+  scheduled_date: string;
+  scheduled_time: string;
+  actual_time: string;
+  notes?: string;
   created_at: string;
 }

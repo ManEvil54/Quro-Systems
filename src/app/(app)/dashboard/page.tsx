@@ -13,14 +13,45 @@ import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
 import VitalsInlay from '@/components/clinical/VitalsInlay';
 import GlobalIntelligenceBar from '@/components/dashboard/GlobalIntelligenceBar';
+import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
+import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
+import { X } from 'lucide-react';
+import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+
+type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
   const { organization, staff, activeFacility: authActiveFacility } = useAuth();
   const [activeFacility, setActiveFacility] = useState(authActiveFacility?.id || 'platinum-health-hub');
   const [prevAuthFacilityId, setPrevAuthFacilityId] = useState(authActiveFacility?.id);
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
+  const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
+  const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
+  
+  // Specialized RT/GT State for Inlays
+  const [rtData, setRtData] = useState<RespiratoryState>({
+    o2_delivery: 'Room Air',
+    lpm: 2,
+    stoma_condition: 'Healthy',
+    suction_frequency: 'Shiftly',
+    secretions_consistency: 'Thin',
+    secretions_color: 'Clear',
+    lung_sounds: { ruq: 'Clear', luq: 'Clear', rlq: 'Clear', llq: 'Clear' }
+  });
+
+  const [gtData, setGtData] = useState<EnteralState>({
+    formula_name: 'Jevity 1.2',
+    delivery_method: 'Continuous',
+    rate_ml_hr: 65,
+    water_flush_pre: 30,
+    water_flush_post: 30,
+    last_residual_volume: 25,
+    last_residual_at: new Date().toISOString(),
+    site_condition: 'Normal',
+    is_paused: false
+  });
   
   // Update local state when auth state changes (React pattern: adjusting state based on props)
   if (authActiveFacility?.id !== prevAuthFacilityId) {
@@ -269,7 +300,9 @@ export default function DashboardPage() {
             isCritical={bed.patient?.status === 'Critical'}
             viewType={viewType}
             showDiagnostics={isImpersonating}
-            onVitalsClick={(p) => setSelectedPatientForVitals(p)}
+            onVitalsClick={(p: DashboardPatient) => setSelectedPatientForVitals(p)}
+            onRTClick={(p: DashboardPatient) => setSelectedPatientForRT(p)}
+            onGTClick={(p: DashboardPatient) => setSelectedPatientForGT(p)}
           />
         ))}
       </div>
@@ -280,6 +313,52 @@ export default function DashboardPage() {
           onClose={() => setSelectedPatientForVitals(null)}
           onSubmit={handleVitalsSubmit}
         />
+      )}
+
+      {/* RT Inlay Modal */}
+      {selectedPatientForRT && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+          <div className="w-full max-w-4xl bg-slate-50 rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-8">
+               <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Respiratory Assessment</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Patient: {selectedPatientForRT.initials} • MRN: {selectedPatientForRT.mrn}</p>
+               </div>
+               <button onClick={() => setSelectedPatientForRT(null)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-sm transition-all">
+                 <X size={24} />
+               </button>
+            </div>
+            <RT_Assessment_Inlay data={rtData} onChange={setRtData} />
+            <div className="mt-10 flex justify-end">
+               <button onClick={() => setSelectedPatientForRT(null)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
+                 Commit Assessment
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GT Inlay Modal */}
+      {selectedPatientForGT && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+          <div className="w-full max-w-4xl bg-slate-50 rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-8">
+               <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Enteral Management</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Patient: {selectedPatientForGT.initials} • MRN: {selectedPatientForGT.mrn}</p>
+               </div>
+               <button onClick={() => setSelectedPatientForGT(null)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-sm transition-all">
+                 <X size={24} />
+               </button>
+            </div>
+            <GT_Feeding_Inlay data={gtData} onChange={setGtData} />
+            <div className="mt-10 flex justify-end">
+               <button onClick={() => setSelectedPatientForGT(null)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
+                 Sync Feeding Logs
+               </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <footer className="mt-auto flex items-center justify-between py-6 border-t border-slate-100 text-[10px] text-slate-400 font-medium">

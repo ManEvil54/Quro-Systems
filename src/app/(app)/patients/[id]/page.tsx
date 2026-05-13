@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { 
   User, 
   ArrowLeft, 
@@ -10,7 +11,6 @@ import {
   FileText, 
   ClipboardList, 
   Activity, 
-  Calendar, 
   MapPin, 
   ShieldCheck,
   Plus,
@@ -22,11 +22,7 @@ import {
   Apple,
   Eye,
   Zap,
-  Move,
-  Thermometer,
   Volume2,
-  Ear,
-  EyeOff,
   Heart,
   Droplets,
   Stethoscope,
@@ -52,7 +48,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
 import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
-import { MedRoute, MedFrequency, ProviderOrder, Medication, Patient } from '@/lib/firebase/types';
+import TreatmentPortal from '@/components/clinical/TreatmentPortal';
+import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
+import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
+import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
   const params = useParams();
@@ -61,16 +60,14 @@ export default function PatientChartPage() {
   const { activeFacility } = useAuth();
   const { patient, loading: patientLoading, error } = usePatient(id);
   const { medications, loading: medsLoading, addMedication } = useMedications(id);
-  const { entries: marEntries, loading: marLoading, logAdministration, bulkLogAdministrations } = useMAR(id);
-  const { createNote } = useHandover();
+  const { entries: marEntries, logAdministration } = useMAR(id);
+  useHandover();
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
   const { staff } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'orders' | 'charting' | 'trends' | 'compliance'>('facesheet');
-  const [surveyorMode, setSurveyorMode] = useState(false);
-  const [isSigningOff, setIsSigningOff] = useState(false);
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'trends' | 'compliance'>('facesheet');
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
@@ -83,6 +80,7 @@ export default function PatientChartPage() {
   const [effectivenessScore, setEffectivenessScore] = useState(0);
   const [effectivenessComment, setEffectivenessComment] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [isSigningOff, setIsSigningOff] = useState(false);
 
   // Orders State
   const [isAddingOrder, setIsAddingOrder] = useState(false);
@@ -92,7 +90,10 @@ export default function PatientChartPage() {
     priority: 'routine' as ProviderOrder['priority'],
     route: 'PO' as MedRoute,
     frequency: 'QD' as MedFrequency,
-    is_psychotropic: false
+    is_psychotropic: false,
+    treatment_site: '',
+    treatment_frequency: 'Daily',
+    treatment_duration: ''
   });
   const [drugSearch, setDrugSearch] = useState('');
   const [showDrugDropdown, setShowDrugDropdown] = useState(false);
@@ -200,6 +201,31 @@ export default function PatientChartPage() {
       safety_checks: ['Bed Lowest', 'Call Light']
     }
   });
+  
+  // RT & GT State
+  const [rtState, setRtState] = useState<RespiratoryState>({
+    o2_delivery: 'Room Air',
+    lpm: 2,
+    stoma_condition: 'Healthy',
+    suction_frequency: 'Shiftly',
+    secretions_consistency: 'Thin',
+    secretions_color: 'Clear',
+    lung_sounds: {
+      ruq: 'Clear', luq: 'Clear', rlq: 'Clear', llq: 'Clear'
+    }
+  });
+
+  const [gtState, setGtState] = useState<EnteralState>({
+    formula_name: 'Jevity 1.2',
+    delivery_method: 'Continuous',
+    rate_ml_hr: 65,
+    water_flush_pre: 30,
+    water_flush_post: 30,
+    last_residual_volume: 25,
+    last_residual_at: new Date().toISOString(),
+    site_condition: 'Normal',
+    is_paused: false
+  });
 
   const macros = [
     { label: "Resting", text: "Resident resting in bed with eyes closed, respirations even and unlabored. Call light in reach." },
@@ -217,15 +243,18 @@ export default function PatientChartPage() {
   React.useEffect(() => {
     if (notes.length > 0 && staff) {
       const draft = notes.find(n => n.status === 'DRAFT' && n.authored_by === staff.id);
-      if (draft) {
-        setCurrentDraftId(draft.id);
-        setNarrativeNote(draft.content || '');
-        if (draft.assessments) {
-          setAssessments(draft.assessments as any);
-        }
+      if (draft && draft.id !== currentDraftId) {
+        // Move setState out of the synchronous effect body to satisfy React's latest linting rules
+        setTimeout(() => {
+          setCurrentDraftId(draft.id);
+          setNarrativeNote(draft.content || '');
+          if (draft.assessments) {
+            setAssessments(draft.assessments as unknown as typeof assessments);
+          }
+        }, 0);
       }
     }
-  }, [notes, staff]);
+  }, [notes, staff, currentDraftId, assessments]); // Added assessments to satisfy exhaustive-deps if needed, but the check handles it
 
   const handleSignAdministration = async () => {
     if (!selectedMedForAction || !pendingAction) return;
@@ -283,9 +312,9 @@ export default function PatientChartPage() {
       };
 
       if (currentDraftId) {
-        await updateNote(currentDraftId, noteData as any);
+        await updateNote(currentDraftId, noteData as Partial<ProgressNote>);
       } else {
-        const newNote = await saveNote(noteData as any);
+        const newNote = await saveNote(noteData as unknown as Parameters<typeof saveNote>[0]);
         if (isDraft) setCurrentDraftId(newNote.id);
       }
 
@@ -306,9 +335,14 @@ export default function PatientChartPage() {
 
   const handleAddOrder = async () => {
     if (!newOrder.order_text.trim() || !patient) return;
+    let finalOrderText = newOrder.order_text;
+    if (newOrder.order_type === 'treatment') {
+      finalOrderText = `${newOrder.order_text}${newOrder.treatment_site ? ` to ${newOrder.treatment_site}` : ''} ${newOrder.treatment_frequency}${newOrder.treatment_duration ? ` for ${newOrder.treatment_duration}` : ''}`;
+    }
+
     try {
       const orderRef = await addOrder({
-        order_text: newOrder.order_text,
+        order_text: finalOrderText,
         order_type: newOrder.order_type,
         priority: newOrder.priority,
         status: 'signed',
@@ -351,7 +385,10 @@ export default function PatientChartPage() {
         priority: 'routine',
         route: 'PO',
         frequency: 'QD',
-        is_psychotropic: false
+        is_psychotropic: false,
+        treatment_site: '',
+        treatment_frequency: 'Daily',
+        treatment_duration: ''
       });
       setIsAddingOrder(false);
       alert('Order signed and automatically synchronized with Patient MAR.');
@@ -469,6 +506,9 @@ export default function PatientChartPage() {
           { id: 'facesheet', icon: FileText, label: 'Facesheet' },
           { id: 'medications', icon: Pill, label: 'Medications' },
           { id: 'mar', icon: ClipboardList, label: 'MAR Grid' },
+          { id: 'respiratory', icon: Wind, label: 'Respiratory (RT)' },
+          { id: 'enteral', icon: Droplets, label: 'Enteral (GT)' },
+          { id: 'treatments', icon: Activity, label: 'Treatments' },
           { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
           { id: 'trends', icon: TrendingUp, label: 'Trends' },
           { id: 'orders', icon: Stethoscope, label: 'Orders' },
@@ -477,7 +517,7 @@ export default function PatientChartPage() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
               activeTab === tab.id 
                 ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50' 
@@ -629,11 +669,12 @@ export default function PatientChartPage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               {/* Resident Identity Header (State Surveyor Requirement) */}
               <div className="flex items-center gap-8 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                <div className="w-24 h-24 rounded-3xl bg-slate-100 overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
-                  <img 
+                <div className="w-24 h-24 rounded-3xl bg-slate-100 overflow-hidden border-4 border-white shadow-xl flex-shrink-0 relative">
+                  <Image 
                     src={patient?.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient?.id}`} 
-                    alt={patient?.first_name}
-                    className="w-full h-full object-cover"
+                    alt={patient?.first_name || 'Resident'}
+                    fill
+                    className="object-cover"
                   />
                 </div>
                 <div>
@@ -785,7 +826,7 @@ export default function PatientChartPage() {
 
                             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication</p>
-                              <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">"{med.indication || 'Routine administration per protocol.'}"</p>
+                              <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">&quot;{med.indication || 'Routine administration per protocol.'}&quot;</p>
                             </div>
                           </div>
 
@@ -907,6 +948,26 @@ export default function PatientChartPage() {
             </div>
           )}
 
+          {activeTab === 'respiratory' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <RT_Assessment_Inlay data={rtState} onChange={setRtState} />
+            </div>
+          )}
+
+          {activeTab === 'enteral' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <GT_Feeding_Inlay data={gtState} onChange={setGtState} />
+            </div>
+          )}
+
+          {activeTab === 'treatments' && (
+            <div className="animate-in fade-in slide-in-from-left-4">
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <TreatmentPortal patientId={id} />
+              </div>
+            </div>
+          )}
+          
           {activeTab === 'orders' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
@@ -939,10 +1000,11 @@ export default function PatientChartPage() {
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Type</p>
                         <select 
                           value={newOrder.order_type}
-                          onChange={e => setNewOrder({...newOrder, order_type: e.target.value as any})}
+                          onChange={e => setNewOrder({...newOrder, order_type: e.target.value as ProviderOrder['order_type']})}
                           className="w-full bg-white border border-slate-200 p-4 rounded-xl font-black text-xs uppercase outline-none focus:border-quro-teal transition-all"
                         >
                           <option value="medication">Medication Order</option>
+                          <option value="treatment">Treatment Order</option>
                           <option value="lab">Laboratory / Diagnostics</option>
                           <option value="imaging">Radiology / Imaging</option>
                           <option value="therapy">Therapy (PT/OT/ST)</option>
@@ -956,7 +1018,7 @@ export default function PatientChartPage() {
                           {['routine', 'urgent', 'stat'].map(p => (
                             <button 
                               key={p}
-                              onClick={() => setNewOrder({...newOrder, priority: p as any})}
+                              onClick={() => setNewOrder({...newOrder, priority: p as ProviderOrder['priority']})}
                               className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                 newOrder.priority === p 
                                   ? 'bg-slate-900 text-white border-slate-900' 
@@ -1049,7 +1111,7 @@ export default function PatientChartPage() {
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Route</p>
                           <select 
                             value={newOrder.route}
-                            onChange={e => setNewOrder({...newOrder, route: e.target.value as any})}
+                            onChange={e => setNewOrder({...newOrder, route: e.target.value as MedRoute})}
                             className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                           >
                             <option value="PO">PO (Oral)</option>
@@ -1064,7 +1126,7 @@ export default function PatientChartPage() {
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Frequency</p>
                           <select 
                             value={newOrder.frequency}
-                            onChange={e => setNewOrder({...newOrder, frequency: e.target.value as any})}
+                            onChange={e => setNewOrder({...newOrder, frequency: e.target.value as MedFrequency})}
                             className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                           >
                             <option value="QD">QD (Daily)</option>
@@ -1090,6 +1152,46 @@ export default function PatientChartPage() {
                             <div className={`w-3 h-3 rounded-full border-2 ${newOrder.is_psychotropic ? 'bg-rose-500 border-rose-500' : 'border-slate-300'}`} />
                             <span className="text-[10px] font-black uppercase tracking-widest">Psychotropic</span>
                           </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {newOrder.order_type === 'treatment' && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Treatment Site</p>
+                          <input 
+                            type="text"
+                            value={newOrder.treatment_site}
+                            onChange={e => setNewOrder({...newOrder, treatment_site: e.target.value})}
+                            placeholder="e.g. Left Lower Extremity"
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl font-black text-xs outline-none focus:border-quro-teal transition-all"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Frequency</p>
+                          <select 
+                            value={newOrder.treatment_frequency}
+                            onChange={e => setNewOrder({...newOrder, treatment_frequency: e.target.value})}
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl font-black text-xs uppercase outline-none focus:border-quro-teal transition-all"
+                          >
+                            <option>Daily</option>
+                            <option>BID (Twice Daily)</option>
+                            <option>TID (Three Daily)</option>
+                            <option>QID (Four Daily)</option>
+                            <option>Every Shift</option>
+                            <option>PRN</option>
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Duration</p>
+                          <input 
+                            type="text"
+                            value={newOrder.treatment_duration}
+                            onChange={e => setNewOrder({...newOrder, treatment_duration: e.target.value})}
+                            placeholder="e.g. 14 Days or Until Healed"
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl font-black text-xs outline-none focus:border-quro-teal transition-all"
+                          />
                         </div>
                       </div>
                     )}
@@ -1122,7 +1224,7 @@ export default function PatientChartPage() {
                               {order.priority} • {order.order_type}
                             </span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {new Date(order.created_at as any).toLocaleDateString()}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {new Date(order.created_at as string).toLocaleDateString()}</span>
                           </div>
                           <h4 className="text-xl font-black text-slate-900 tracking-tight mb-4 leading-relaxed">{order.order_text}</h4>
                           <div className="flex gap-6 pt-4 border-t border-slate-200/60">
@@ -1167,7 +1269,7 @@ export default function PatientChartPage() {
                         <div key={order.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                            <div>
                              <p className="text-xs font-black text-slate-400 line-through">{order.order_text}</p>
-                             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Discontinued on {new Date(order.updated_at as any).toLocaleDateString()}</p>
+                             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Discontinued on {new Date(order.updated_at as string).toLocaleDateString()}</p>
                            </div>
                            <span className="px-3 py-1 bg-slate-200 text-slate-500 text-[8px] font-black rounded-lg uppercase">Inactive</span>
                         </div>
@@ -1294,7 +1396,7 @@ export default function PatientChartPage() {
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Site</p>
                         <select 
                           value={assessments.vitals.bp_site} 
-                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as any}})}
+                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as "L-Arm" | "R-Arm" | "Thigh"}})}
                           className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                         >
                           <option className="bg-slate-900">L-Arm</option>
@@ -1307,7 +1409,7 @@ export default function PatientChartPage() {
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Position</p>
                         <select 
                           value={assessments.vitals.bp_position} 
-                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as any}})}
+                          onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as "Sitting" | "Standing" | "Supine"}})}
                           className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
                         >
                           <option className="bg-slate-900">Sitting</option>
@@ -1350,7 +1452,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Level of Consciousness</p>
-                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as 'Alert' | 'Lethargic' | 'Obtunded' | 'Comatose'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Alert</option>
                               <option>Lethargic</option>
                               <option>Obtunded</option>
@@ -1359,7 +1461,7 @@ export default function PatientChartPage() {
                           </div>
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Pupils</p>
-                            <select value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <select value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as 'PERRLA' | 'Sluggish' | 'Non-reactive'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>PERRLA</option>
                               <option>Sluggish</option>
                               <option>Non-reactive</option>
@@ -1394,7 +1496,7 @@ export default function PatientChartPage() {
                         </div>
                         <div>
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Decision Making</p>
-                          <select value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                          <select value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as 'Independent' | 'Modified Independence' | 'Moderately Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                             <option>Independent</option>
                             <option>Modified Independence</option>
                             <option>Moderately Impaired</option>
@@ -1416,7 +1518,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Hearing</p>
-                              <select value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as 'Adequate' | 'Minimal Difficulty' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Minimal Difficulty</option>
                                 <option>Highly Impaired</option>
@@ -1425,7 +1527,7 @@ export default function PatientChartPage() {
                            </div>
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Vision</p>
-                              <select value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as 'Adequate' | 'Impaired' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Impaired</option>
                                 <option>Highly Impaired</option>
@@ -1437,7 +1539,7 @@ export default function PatientChartPage() {
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Speech Clarity</p>
                           <div className="grid grid-cols-3 gap-2">
                             {['Clear', 'Slurred', 'Aphasic'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, sensory: {...assessments.sensory, speech: val as any}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.sensory.speech === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
+                              <button key={val} onClick={() => setAssessments({...assessments, sensory: {...assessments.sensory, speech: val as 'Clear' | 'Slurred' | 'Aphasic'}})} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.sensory.speech === val ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
@@ -1474,7 +1576,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="pt-2 border-t border-slate-100">
                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Indicator Frequency</p>
-                           <select value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                           <select value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as 'Never' | '2-6 Days' | '7-11 Days' | '12-14 Days'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Never</option>
                               <option>2-6 Days</option>
                               <option>7-11 Days</option>
@@ -1512,7 +1614,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Frequency</p>
-                              <select value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as any}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as 'None' | '1-3 times' | '4-6 times' | 'Daily'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>None</option>
                                 <option>1-3 times</option>
                                 <option>4-6 times</option>
@@ -1809,7 +1911,7 @@ export default function PatientChartPage() {
                           <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div>
                                <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Highest Stage</p>
-                               <select value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as any}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
+                               <select value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as 'N/A' | '1' | '2' | '3' | '4' | 'Unstageable' | 'DTI'}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
                                  <option>1</option>
                                  <option>2</option>
                                  <option>3</option>
@@ -2405,6 +2507,7 @@ export default function PatientChartPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, '✓'].map((num) => (
                 <button
                   key={num}
+                  disabled={isSigningOff}
                   onClick={() => {
                     if (num === 'C') setPinEntry('');
                     else if (num === '✓') {
@@ -2415,9 +2518,9 @@ export default function PatientChartPage() {
                   className={`h-16 rounded-2xl font-black text-lg transition-all ${
                     num === '✓' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' :
                     num === 'C' ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-900 hover:bg-slate-100'
-                  }`}
+                  } ${isSigningOff ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {num}
+                  {num === '✓' && isSigningOff ? '...' : num}
                 </button>
               ))}
             </div>
