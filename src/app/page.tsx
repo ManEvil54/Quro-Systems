@@ -62,7 +62,7 @@ export default function MarketingPage() {
               within a premium, low-stress environment.
             </p>
 
-            {/* Strategic CTA (Updated per user request) */}
+            {/* Strategic CTA: Restored Dual-Button Layout */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link 
                 href="/login?demo=true"
@@ -70,9 +70,18 @@ export default function MarketingPage() {
               >
                 View Live Demo
               </Link>
-              <p className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-[120px] leading-tight">
-                Instant Access <br /> No Email Required
-              </p>
+              <Link 
+                href="/login"
+                className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all backdrop-blur-md text-center"
+              >
+                Request Demo
+              </Link>
+            </div>
+            
+            {/* Subtle Onboarding Signal */}
+            <div className="mt-6 flex items-center justify-center lg:justify-start gap-2 text-[9px] font-black text-teal-600 uppercase tracking-widest animate-pulse">
+              <div className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+              Instant Access · No Credit Card Required
             </div>
             
             {/* Trust Signal */}
