@@ -29,57 +29,80 @@ export default function MarketingPage() {
         </div>
       </nav>
 
-      {/* New Brand-Aligned Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center bg-slate-50 overflow-hidden px-4 md:px-6 pt-24">
+      {/* Evolved Hero: Combining Disruptive Typography with Premium Visuals */}
+      <section className="relative min-h-[90vh] flex items-center bg-slate-50 overflow-hidden px-6 lg:px-12 pt-24 pb-32">
         {/* Background Ambience */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl">
           <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[60%] bg-teal-500/5 rounded-full blur-[120px]" />
           <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[60%] bg-teal-500/5 rounded-full blur-[120px]" />
         </div>
 
-        <div className="relative z-10 max-w-4xl text-center">
-          {/* The Acronym Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-            <p className="text-[10px] font-bold tracking-[0.25em] text-slate-500 uppercase">
-              Q.U.R.O. • Quality Understanding • Real-time Outcomes
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+          {/* Left Column: Disruptive Branding */}
+          <div className="flex-1 text-center lg:text-left max-w-2xl">
+            {/* The Acronym Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+              <p className="text-[10px] font-bold tracking-[0.25em] text-slate-500 uppercase">
+                Q.U.R.O. • Quality Understanding • Real-time Outcomes
+              </p>
+            </div>
+
+            {/* The Disruptive Headline */}
+            <h1 className="text-5xl md:text-7xl xl:text-8xl font-extralight tracking-tight text-slate-900 mb-8 leading-[1.1]">
+              Evolved clinical ops. <br />
+              <span className="font-medium text-teal-600">Zero mental clutter.</span>
+            </h1>
+
+            {/* The Hip Body Copy */}
+            <p className="text-lg text-slate-500 font-light leading-relaxed mb-12">
+              We believe medical software should feel as intuitive as the apps you use every day. 
+              <span className="text-slate-800 font-normal"> Quro Systems</span> delivers uncompromising clinical precision 
+              within a premium, low-stress environment.
             </p>
+
+            {/* Strategic CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <Link 
+                href="/login?demo=true"
+                className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-semibold hover:bg-slate-800 hover:scale-[1.02] transition-all shadow-2xl shadow-slate-200 active:scale-95 text-center"
+              >
+                Get Started
+              </Link>
+              <Link 
+                href="/login"
+                className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-semibold hover:bg-slate-50 transition-all backdrop-blur-md text-center"
+              >
+                Request Demo
+              </Link>
+            </div>
+            
+            {/* Trust Signal */}
+            <div className="mt-12 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+              Engineered for Multi-Facility Synchrony
+            </div>
           </div>
 
-          {/* The Disruptive Headline */}
-          <h1 className="text-5xl md:text-8xl font-extralight tracking-tight text-slate-900 mb-8 leading-[1.1]">
-            Evolved clinical ops. <br />
-            <span className="font-medium text-teal-600">Zero mental clutter.</span>
-          </h1>
-
-          {/* The Hip Body Copy */}
-          <p className="text-lg md:text-xl text-slate-500 font-light leading-relaxed max-w-2xl mx-auto mb-12">
-            We believe medical software should feel as intuitive as the apps you use every day. 
-            <span className="text-slate-800 font-normal"> Quro Systems</span> delivers uncompromising clinical precision 
-            within a premium, low-stress environment. Spend less time fighting legacy friction 
-            and more time at the bedside.
-          </p>
-
-          {/* Strategic CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/login?demo=true"
-              className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-semibold hover:bg-slate-800 hover:scale-[1.02] transition-all shadow-2xl shadow-slate-200 active:scale-95 text-center"
-            >
-              Get Started
-            </Link>
-            <Link 
-              href="/login"
-              className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-semibold hover:bg-slate-50 transition-all backdrop-blur-md text-center"
-            >
-              Request Demo
-            </Link>
+          {/* Right Column: Premium Visual (Restored from previous version) */}
+          <div className="flex-1 relative w-full max-w-2xl lg:max-w-none animate-in fade-in zoom-in-95 duration-1000">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-teal-200/20 to-blue-200/20 rounded-[4rem] blur-3xl opacity-60"></div>
+            <div className="relative rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(15,23,42,0.15)] overflow-hidden aspect-[16/11] border border-white p-3 bg-white/40 backdrop-blur-sm">
+              <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-inner border border-slate-200/50">
+                <Image 
+                  src="/premium-hero.png"
+                  alt="Quro Systems AI-Powered Clinical Dashboard for Sub-Acute Care"
+                  fill
+                  className="object-cover scale-105 hover:scale-100 transition-transform duration-[3s]"
+                  priority
+                />
+                {/* Floating Glass Indicator */}
+                <div className="absolute top-8 right-8 glass-card py-3 px-5 rounded-2xl border-white/40 flex items-center gap-3 animate-pulse">
+                  <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                  <span className="text-[10px] font-black tracking-widest text-teal-800 uppercase">Live Intelligence Active</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Trust Signal: The 3-Facility Mention */}
-        <div className="mt-24 text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-          Engineered for Multi-Facility Synchrony • 1-25 Beds Per Node
         </div>
       </section>
 

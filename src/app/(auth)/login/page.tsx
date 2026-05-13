@@ -9,8 +9,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import QuroLogo from '@/components/brand/QuroLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Shield, Activity, Mail, CheckCircle2 } from 'lucide-react';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
 
 function LoginContent() {
   const router = useRouter();
@@ -21,49 +19,17 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [leadEmail, setLeadEmail] = useState('');
-  const [leadCaptured, setLeadCaptured] = useState(false);
 
-  const handleDemoAccess = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!leadEmail) return;
-
+  const handleDemoAccess = async () => {
     setSubmitting(true);
     try {
-      // Lead capture logic...
-      const firebaseConfig = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      };
-      
-      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-      const db = getFirestore(app);
-      
-      await addDoc(collection(db, 'leads'), {
-        email: leadEmail,
-        source: 'demo_access_button',
-        captured_at: serverTimestamp(),
-        intent: 'explore_demo'
-      });
-
-      setLeadCaptured(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
-
       setEmail('demo@qurosystems.com');
       setPassword('QuroDemo2026!');
       clearError();
       await signIn('demo@qurosystems.com', 'QuroDemo2026!');
       router.push('/dashboard');
     } catch (err) {
-      console.error('Lead capture error:', err);
-      try {
-        await signIn('demo@qurosystems.com', 'QuroDemo2026!');
-        router.push('/dashboard');
-      } catch {}
+      console.error('Demo access error:', err);
     } finally {
       setSubmitting(false);
     }
@@ -206,43 +172,35 @@ function LoginContent() {
               </button>
             </form>
 
-            {/* Quick Demo Access (High Conversion Lead Capture) */}
+            {/* Quick Demo Access (Simplified One-Click) */}
             <div className="mt-12 pt-10 border-t border-slate-100 relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
                 Prospect Access
               </div>
               
-              <div className="text-center mb-6">
-                <p className="text-xs text-slate-500 font-light">Explore the <b>Platinum Health Hub</b> demo instantly.</p>
-              </div>
-
-              <div className={`group relative bg-white border ${isDemoMode ? 'border-teal-500 ring-4 ring-teal-500/10 animate-pulse' : 'border-slate-200'} p-1.5 rounded-2xl focus-within:border-teal-500/30 focus-within:ring-4 focus-within:ring-teal-500/5 transition-all flex items-center gap-2 shadow-sm`}>
-                <div className="relative flex-1">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600/30" />
-                  <input
-                    type="email"
-                    required
-                    value={leadEmail}
-                    onChange={(e) => setLeadEmail(e.target.value)}
-                    placeholder="Professional email for access"
-                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-900 placeholder:text-slate-400 pl-11 py-3"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDemoAccess()}
-                  disabled={submitting || !leadEmail}
-                  className="bg-teal-600 text-white rounded-xl px-6 py-3 text-xs font-bold hover:bg-teal-700 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
-                >
-                  {submitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Explore Live Demo'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleDemoAccess}
+                disabled={submitting || loading}
+                className={`w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl ${
+                  isDemoMode 
+                    ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-500/20 animate-pulse' 
+                    : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 shadow-slate-200/50'
+                }`}
+              >
+                {submitting ? (
+                  <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Activity size={18} className="text-teal-500" />
+                    Explore Platinum Health Hub
+                  </>
+                )}
+              </button>
               
-              {leadCaptured && (
-                <p className="mt-4 text-center text-[11px] font-bold text-teal-600 animate-pulse flex items-center justify-center gap-2">
-                  <Activity size={14} /> Provisioning Secure Instance...
-                </p>
-              )}
+              <p className="mt-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Instant Access · No Credit Card Required
+              </p>
             </div>
 
             <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-10">
