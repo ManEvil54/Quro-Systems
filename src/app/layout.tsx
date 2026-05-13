@@ -17,13 +17,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Quro Systems",
     description: "Quality Understanding • Real-time Outcomes",
-    url: "https://qurosync.com",
+    url: "https://www.qurosystems.com",
     siteName: "Quro Systems",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     locale: "en_US",
     type: "website",
   },
-  metadataBase: new URL("https://qurosync.com"),
+  metadataBase: new URL("https://www.qurosystems.com"),
   alternates: {
     canonical: "/",
   },
