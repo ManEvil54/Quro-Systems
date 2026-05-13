@@ -38,57 +38,54 @@ export default function MarketingPage() {
           <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[60%] bg-teal-500/5 rounded-full blur-[120px]" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+        <div className="relative z-10 max-w-7xl mx-auto lg:grid lg:grid-cols-[0.8fr_1.2fr] items-center gap-16 lg:gap-24">
           {/* Left Column: Disruptive Branding */}
-          <div className="flex-1 text-center lg:text-left max-w-2xl">
+          <div className="text-center lg:text-left">
             {/* The Acronym Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-10 rounded-full bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
               <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-              <p className="text-[10px] font-bold tracking-[0.25em] text-slate-500 uppercase">
-                Q.U.R.O. • Quality Understanding • Real-time Outcomes
+              <p className="text-[9px] font-black tracking-[0.3em] text-slate-500 uppercase">
+                Quality • Understanding • Real-time • Outcomes
               </p>
             </div>
 
-            {/* The Disruptive Headline */}
-            <h1 className="text-5xl md:text-7xl xl:text-8xl font-extralight tracking-tight text-slate-900 mb-8 leading-[1.1]">
+            {/* The Modernized Headline (Smaller, Tighter) */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extralight tracking-tighter text-slate-900 mb-8 leading-[1.05]">
               Evolved clinical ops. <br />
-              <span className="font-medium text-teal-600">Zero mental clutter.</span>
+              <span className="font-normal text-teal-600">Zero mental clutter.</span>
             </h1>
 
             {/* The Hip Body Copy */}
-            <p className="text-lg text-slate-500 font-light leading-relaxed mb-12">
-              We believe medical software should feel as intuitive as the apps you use every day. 
-              <span className="text-slate-800 font-normal"> Quro Systems</span> delivers uncompromising clinical precision 
+            <p className="text-base lg:text-lg text-slate-500 font-light leading-relaxed mb-12 max-w-xl mx-auto lg:mx-0">
+              Medical software should feel as intuitive as the tools you love. 
+              <span className="text-slate-800 font-normal"> Quro Systems</span> delivers clinical precision 
               within a premium, low-stress environment.
             </p>
 
-            {/* Strategic CTA */}
+            {/* Strategic CTA (Updated per user request) */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link 
                 href="/login?demo=true"
-                className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-semibold hover:bg-slate-800 hover:scale-[1.02] transition-all shadow-2xl shadow-slate-200 active:scale-95 text-center"
+                className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 hover:scale-[1.02] transition-all shadow-2xl shadow-slate-200 active:scale-95 text-center"
               >
-                Get Started
+                View Live Demo
               </Link>
-              <Link 
-                href="/login"
-                className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-semibold hover:bg-slate-50 transition-all backdrop-blur-md text-center"
-              >
-                Request Demo
-              </Link>
+              <p className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-[120px] leading-tight">
+                Instant Access <br /> No Email Required
+              </p>
             </div>
             
             {/* Trust Signal */}
-            <div className="mt-12 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-              Engineered for Multi-Facility Synchrony
+            <div className="mt-16 text-[9px] font-black tracking-[0.3em] text-slate-300 uppercase">
+              Boutique Care • Clinical Intelligence
             </div>
           </div>
 
-          {/* Right Column: Premium Visual (Restored from previous version) */}
-          <div className="flex-1 relative w-full max-w-2xl lg:max-w-none animate-in fade-in zoom-in-95 duration-1000">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-teal-200/20 to-blue-200/20 rounded-[4rem] blur-3xl opacity-60"></div>
-            <div className="relative rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(15,23,42,0.15)] overflow-hidden aspect-[16/11] border border-white p-3 bg-white/40 backdrop-blur-sm">
-              <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-inner border border-slate-200/50">
+          {/* Right Column: Premium Visual (Enlarged) */}
+          <div className="relative w-full animate-in fade-in zoom-in-95 duration-1000">
+            <div className="absolute -inset-10 bg-gradient-to-tr from-teal-200/30 to-blue-200/20 rounded-[5rem] blur-3xl opacity-40"></div>
+            <div className="relative rounded-[3rem] lg:rounded-[4rem] shadow-[0_64px_128px_-24px_rgba(15,23,42,0.2)] overflow-hidden aspect-[16/10] border border-white p-4 bg-white/40 backdrop-blur-sm">
+              <div className="relative h-full w-full rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden shadow-inner border border-slate-200/50">
                 <Image 
                   src="/premium-hero.png"
                   alt="Quro Systems AI-Powered Clinical Dashboard for Sub-Acute Care"
@@ -97,9 +94,9 @@ export default function MarketingPage() {
                   priority
                 />
                 {/* Floating Glass Indicator */}
-                <div className="absolute top-8 right-8 glass-card py-3 px-5 rounded-2xl border-white/40 flex items-center gap-3 animate-pulse">
-                  <div className="w-2 h-2 rounded-full bg-teal-500"></div>
-                  <span className="text-[10px] font-black tracking-widest text-teal-800 uppercase">Live Intelligence Active</span>
+                <div className="absolute top-10 right-10 glass-card py-4 px-6 rounded-3xl border-white/40 flex items-center gap-3 animate-pulse shadow-2xl backdrop-blur-xl bg-white/30">
+                  <div className="w-2.5 h-2.5 rounded-full bg-teal-500"></div>
+                  <span className="text-[10px] font-black tracking-[0.2em] text-teal-900 uppercase">Live Intel Active</span>
                 </div>
               </div>
             </div>
