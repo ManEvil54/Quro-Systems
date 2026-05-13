@@ -3,6 +3,7 @@
 // High-End Spa-Tech Aesthetic
 // ============================================================
 import Link from 'next/link';
+import Image from 'next/image';
 import { Activity, ClipboardList, Clock, ShieldCheck, TrendingUp, Mic } from 'lucide-react';
 import QuroLogo from '@/components/brand/QuroLogo';
 
