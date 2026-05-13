@@ -11,7 +11,6 @@ import {
   Pill,
   ClipboardList,
   Activity,
-  FileText,
   ShieldAlert,
   Settings,
   LogOut,
@@ -33,33 +32,40 @@ export default function Sidebar() {
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
   useEffect(() => {
-    if (organization?.id && staff) {
-      fetchFacilities();
-    }
-  }, [organization, staff]);
+    if (!organization?.id || !staff) return;
 
-  async function fetchFacilities() {
-    try {
-      const q = query(
-        collection(db, 'organizations', organization!.id, 'facilities'),
-        where('is_active', '==', true)
-      );
-      const snap = await getDocs(q);
-      const allFacilities = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Facility));
-      
-      // Filter by staff access
-      const accessible = staff?.role === 'SUPER_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin'
-        ? allFacilities
-        : allFacilities.filter(f => staff?.assigned_facility_ids?.includes(f.id) || staff?.facility_id === f.id);
-      
-      setFacilities(accessible);
-      
-      const current = accessible.find(f => f.id === staff?.facility_id);
-      if (current) setCurrentFacilityName(current.name);
-    } catch (err) {
-      console.error('Error fetching facilities for sidebar:', err);
+    let isMounted = true;
+
+    async function fetchFacilities() {
+      try {
+        const q = query(
+          collection(db, 'organizations', organization!.id, 'facilities'),
+          where('is_active', '==', true)
+        );
+        const snap = await getDocs(q);
+        const allFacilities = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Facility));
+        
+        // Filter by staff access
+        const accessible = staff?.role === 'SUPER_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin'
+          ? allFacilities
+          : allFacilities.filter(f => staff?.assigned_facility_ids?.includes(f.id) || staff?.facility_id === f.id);
+        
+        if (isMounted) {
+          setFacilities(accessible);
+          const current = accessible.find(f => f.id === staff?.facility_id);
+          if (current) setCurrentFacilityName(current.name);
+        }
+      } catch (err) {
+        console.error('Error fetching facilities for sidebar:', err);
+      }
     }
-  }
+
+    fetchFacilities();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [organization, staff]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -76,9 +82,57 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar flex flex-col h-screen">
-      {/* Logo */}
-      <div className="px-6 py-6 border-b border-white/5">
+      {/* Logo area with interactive Q.U.R.O. Breakdown */}
+      <div className="px-6 py-8 border-b border-white/5 relative group cursor-help">
         <QuroLogo size={36} showText variant="full" />
+        
+        {/* Acronym Tagline */}
+        <p className="text-[7px] font-black tracking-[0.4em] text-slate-500 uppercase mt-3 transition-colors group-hover:text-teal-400">
+          Quality • Understanding • Real-time • Outcomes
+        </p>
+
+        {/* High-End Tooltip / Info Panel */}
+        <div className="absolute left-[calc(100%-1rem)] top-4 ml-4 w-72 p-6 bg-slate-900 border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-[100] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-x-2 transition-all duration-300 backdrop-blur-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+            <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">Clinical Value Framework</span>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <span className="text-teal-400 font-black text-sm">[Q]</span>
+              <div>
+                <p className="text-[10px] font-bold text-slate-100 uppercase tracking-tight">Quality</p>
+                <p className="text-[9px] text-slate-500 leading-relaxed">Automated audit trails and institutional signature legends.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-teal-400 font-black text-sm">[U]</span>
+              <div>
+                <p className="text-[10px] font-bold text-slate-100 uppercase tracking-tight">Understanding</p>
+                <p className="text-[9px] text-slate-500 leading-relaxed">AI-driven shift synthesis and velocity-based trend analysis.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-teal-400 font-black text-sm">[R]</span>
+              <div>
+                <p className="text-[10px] font-bold text-slate-100 uppercase tracking-tight">Real-time</p>
+                <p className="text-[9px] text-slate-500 leading-relaxed">Instant &quot;Teal Glow&quot; monitoring and bedside clinical sync.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-teal-400 font-black text-sm">[O]</span>
+              <div>
+                <p className="text-[10px] font-bold text-slate-100 uppercase tracking-tight">Outcomes</p>
+                <p className="text-[9px] text-slate-500 leading-relaxed">Reduced re-hospitalizations and optimized discharge paths.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-white/5 text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] text-center">
+            Validated by ModernQure Intelligence
+          </div>
+        </div>
       </div>
 
       {/* Facility Selector */}

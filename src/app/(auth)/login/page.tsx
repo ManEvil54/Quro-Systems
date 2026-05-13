@@ -6,10 +6,9 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import QuroLogo from '@/components/brand/QuroLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, ArrowRight, Shield, Activity, Mail, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Shield, Activity, Mail, CheckCircle2 } from 'lucide-react';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 
@@ -59,7 +58,7 @@ function LoginContent() {
       clearError();
       await signIn('demo@qurosystems.com', 'QuroDemo2026!');
       router.push('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Lead capture error:', err);
       try {
         await signIn('demo@qurosystems.com', 'QuroDemo2026!');
@@ -95,7 +94,12 @@ function LoginContent() {
         </div>
 
         <div className="relative z-10 px-20 max-w-2xl">
-          <QuroLogo size={64} showText variant="full" />
+          <div className="flex flex-col items-center lg:items-start">
+            <QuroLogo size={64} showText variant="full" />
+            <p className="text-[11px] font-black tracking-[0.4em] text-teal-400 uppercase mt-4 animate-in fade-in slide-in-from-left-4 duration-1000">
+              Quality Understanding • Real-time Outcomes
+            </p>
+          </div>
           
           <div className="mt-16 space-y-8">
             <h2 className="text-5xl font-medium text-white tracking-tight leading-[1.1]">
@@ -132,8 +136,11 @@ function LoginContent() {
         
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-12">
+          <div className="lg:hidden flex flex-col items-center mb-12">
             <QuroLogo size={52} showText variant="full" />
+            <p className="text-[9px] font-black tracking-[0.3em] text-teal-600 uppercase mt-2">
+              Quality Understanding • Real-time Outcomes
+            </p>
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
