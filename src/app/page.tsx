@@ -81,7 +81,7 @@ export default function MarketingPage() {
             {/* Subtle Onboarding Signal */}
             <div className="mt-6 flex items-center justify-center lg:justify-start gap-2 text-[9px] font-black text-teal-600 uppercase tracking-widest animate-pulse">
               <div className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-              Instant Access · No Credit Card Required
+              Instant Access · Only Email Required
             </div>
             
             {/* Trust Signal */}
