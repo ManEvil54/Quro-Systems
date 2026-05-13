@@ -3,17 +3,10 @@
 // ============================================================
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Users,
-  Pill,
-  Activity,
   ShieldAlert,
-  ArrowRightLeft,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  LayoutDashboard
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
@@ -26,14 +19,15 @@ import { db } from '@/lib/firebase/client';
 export default function DashboardPage() {
   const { organization, staff, activeFacility: authActiveFacility } = useAuth();
   const [activeFacility, setActiveFacility] = useState(authActiveFacility?.id || 'platinum-health-hub');
-  const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<any>(null);
+  const [prevAuthFacilityId, setPrevAuthFacilityId] = useState(authActiveFacility?.id);
+  const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   
-  // Update local state when auth state changes
-  useEffect(() => {
-    if (authActiveFacility?.id) {
-      setActiveFacility(authActiveFacility.id);
-    }
-  }, [authActiveFacility?.id]);
+  // Update local state when auth state changes (React pattern: adjusting state based on props)
+  if (authActiveFacility?.id !== prevAuthFacilityId) {
+    setPrevAuthFacilityId(authActiveFacility?.id);
+    setActiveFacility(authActiveFacility?.id || 'platinum-health-hub');
+  }
+
   // Constant view type for simplified demo
   const viewType = 'boutique';
   
@@ -43,13 +37,32 @@ export default function DashboardPage() {
     'cedar-haven': 'Cedar Haven Assisted Living'
   };
 
-  const { beds: facilityBeds, alerts, loading } = useDashboard(activeFacility);
+  const { beds: facilityBeds, alerts } = useDashboard(activeFacility);
   
   // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
   const mockPatients: DashboardBed[] = [
     {
       id: 'bed-1',
-      bed_name: 'Bed 1',
+      bed_name: 'Bed A',
+      room_name: 'Room 101',
+      room_id: '101',
+      status: 'occupied',
+      patient: {
+        id: 'margaret-thompson',
+        initials: 'MT',
+        mrn: 'MRN-001',
+        status: 'Critical',
+        hr: 112,
+        bp: '148/92',
+        temp: 99.1,
+        is_active_monitoring: true,
+        code_status: 'DNR',
+        diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Chronic Kidney Disease']
+      }
+    },
+    {
+      id: 'bed-2',
+      bed_name: 'Bed B',
       room_name: 'Room 101',
       room_id: '101',
       status: 'occupied',
@@ -61,33 +74,52 @@ export default function DashboardPage() {
         hr: 78,
         bp: '138/84',
         temp: 98.6,
-        is_active_monitoring: true,
+        is_active_monitoring: false,
         code_status: 'Full Code',
         diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy']
       }
     },
     {
-      id: 'bed-2',
-      bed_name: 'Bed 2',
+      id: 'bed-3',
+      bed_name: 'Bed A',
       room_name: 'Room 102',
       room_id: '102',
       status: 'occupied',
       patient: {
-        id: 'victor-dumont',
-        initials: 'VD',
-        mrn: 'MRN-006',
+        id: 'eleanor-vance',
+        initials: 'EV',
+        mrn: 'MRN-003',
         status: 'Stable',
         hr: 72,
-        bp: '122/78',
+        bp: '118/74',
         temp: 98.4,
         is_active_monitoring: false,
-        code_status: 'Comfort',
-        diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression']
+        code_status: 'DNR',
+        diagnoses: ['Alzheimer\'s Disease', 'Anxiety', 'Insomnia']
       }
     },
     {
-      id: 'bed-3',
-      bed_name: 'Bed 3',
+      id: 'bed-4',
+      bed_name: 'Bed B',
+      room_name: 'Room 102',
+      room_id: '102',
+      status: 'occupied',
+      patient: {
+        id: 'arthur-morgan',
+        initials: 'AM',
+        mrn: 'MRN-004',
+        status: 'Critical',
+        hr: 105,
+        bp: '168/94',
+        temp: 100.2,
+        is_active_monitoring: true,
+        code_status: 'Full Code',
+        diagnoses: ['COPD', 'Pneumonia', 'Tobacco Use Disorder']
+      }
+    },
+    {
+      id: 'bed-5',
+      bed_name: 'Bed A',
       room_name: 'Room 103',
       room_id: '103',
       status: 'occupied',
@@ -101,64 +133,26 @@ export default function DashboardPage() {
         temp: 98.8,
         is_active_monitoring: false,
         code_status: 'Full Code',
-        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome']
-      }
-    },
-    {
-      id: 'bed-4',
-      bed_name: 'Bed 4',
-      room_name: 'Room 104',
-      room_id: '104',
-      status: 'occupied',
-      patient: {
-        id: 'manny-evil',
-        initials: 'ME',
-        mrn: '666-GHOST',
-        status: 'Critical',
-        hr: 112,
-        bp: '148/92',
-        temp: 99.1,
-        is_active_monitoring: true,
-        code_status: 'DNR',
-        diagnoses: ['Hypertension', 'Tachycardia', 'Chronic Kidney Disease']
-      }
-    },
-    {
-      id: 'bed-5',
-      bed_name: 'Bed 5',
-      room_name: 'Room 105',
-      room_id: '105',
-      status: 'occupied',
-      patient: {
-        id: 'elena-rod',
-        initials: 'ER',
-        mrn: 'MRN-1102',
-        status: 'Stable',
-        hr: 68,
-        bp: '118/74',
-        temp: 98.4,
-        is_active_monitoring: false,
-        code_status: 'Full Code',
-        diagnoses: ['Early Onset Dementia', 'Anxiety']
+        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia']
       }
     },
     {
       id: 'bed-6',
-      bed_name: 'Bed 6',
-      room_name: 'Room 106',
-      room_id: '106',
+      bed_name: 'Bed A',
+      room_name: 'Room 104',
+      room_id: '104',
       status: 'occupied',
       patient: {
-        id: 'david-chen',
-        initials: 'DC',
-        mrn: 'MRN-9938',
-        status: 'Critical',
-        hr: 105,
-        bp: '140/90',
-        temp: 100.2,
-        is_active_monitoring: true,
-        code_status: 'Full Code',
-        diagnoses: ['Post-Stroke Rehab', 'Aphasia', 'Right-Side Weakness']
+        id: 'victor-dumont',
+        initials: 'VD',
+        mrn: 'MRN-006',
+        status: 'Stable',
+        hr: 70,
+        bp: '122/78',
+        temp: 98.4,
+        is_active_monitoring: false,
+        code_status: 'Comfort',
+        diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression']
       }
     }
   ];
@@ -178,7 +172,7 @@ export default function DashboardPage() {
 
   const beds = rawBeds.slice(0, 6);
 
-  const handleVitalsSubmit = async (data: any) => {
+  const handleVitalsSubmit = async (data: Record<string, string | number | boolean | null>) => {
     if (!organization?.id) return;
     
     await addDoc(collection(db, 'organizations', organization.id, 'vitals'), {
@@ -243,7 +237,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-black text-quro-charcoal uppercase tracking-tight">
-            {viewType === 'enterprise' ? 'Enterprise Facility Cluster' : 'Boutique Care Facility'}
+            Boutique Care Facility
           </h1>
           <p className="text-slate-500 text-xs font-black tracking-widest uppercase opacity-70">
             {facilityNames[activeFacility]} — 6 Patients Active
@@ -295,13 +289,5 @@ export default function DashboardPage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function Heart({ size, fill = 'none' }: { size: number, fill?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-    </svg>
   );
 }

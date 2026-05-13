@@ -9,13 +9,11 @@ import {
   doc, 
   setDoc, 
   deleteDoc,
-  getDocs,
-  query,
-  where,
-  serverTimestamp 
+  getDocs
 } from 'firebase/firestore';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { Bed, Room, VitalSign } from '../lib/firebase/types';
 
 // Load env vars
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -95,8 +93,8 @@ async function seed() {
       { room: '104', beds: ['A'] }       
     ];
 
-    const beds: any[] = [];
-    const rooms: any[] = [];
+    const beds: Bed[] = [];
+    const rooms: Room[] = [];
 
     for (const item of setup) {
       const roomRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms'));
@@ -132,7 +130,7 @@ async function seed() {
     const demoPatients = [
       { 
         first_name: 'Margaret', last_name: 'Thompson', mrn: 'MRN-001', code: 'dnr', status: 'Critical', monitoring: true, 
-        dob: '1938-11-12', ssn: '4412', gender: 'female', 
+        dob: '1938-11-12', ssn: '4412', gender: 'female', room_number: '101-A',
         allergies: ['Penicillin', 'Sulfa'], 
         diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Osteoporosis', 'Chronic Kidney Disease (Stage 3)'],
         diet: 'Heart Healthy / Low Sodium',
@@ -146,7 +144,7 @@ async function seed() {
       },
       { 
         first_name: 'Robert', last_name: 'Chen', mrn: 'MRN-002', code: 'full', status: 'Stable', monitoring: false,
-        dob: '1945-06-22', ssn: '1092', gender: 'male',
+        dob: '1945-06-22', ssn: '1092', gender: 'male', room_number: '101-B',
         allergies: ['Latex'], 
         diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy'],
         diet: 'Diabetic / 2000 Calorie',
@@ -161,7 +159,7 @@ async function seed() {
       },
       { 
         first_name: 'Eleanor', last_name: 'Vance', mrn: 'MRN-003', code: 'dnr_dni', status: 'Stable', monitoring: false,
-        dob: '1942-03-08', ssn: '8832', gender: 'female',
+        dob: '1942-03-08', ssn: '8832', gender: 'female', room_number: '102-A',
         allergies: ['None Reported'], 
         diagnoses: ['Alzheimer\'s Disease', 'Anxiety', 'Insomnia', 'Vascular Dementia'],
         diet: 'Regular / Mechanical Soft',
@@ -176,7 +174,7 @@ async function seed() {
       },
       { 
         first_name: 'Arthur', last_name: 'Morgan', mrn: 'MRN-004', code: 'full', status: 'Critical', monitoring: true,
-        dob: '1950-08-15', ssn: '2214', gender: 'male',
+        dob: '1950-08-15', ssn: '2214', gender: 'male', room_number: '102-B',
         allergies: ['Aspirin'], 
         diagnoses: ['COPD', 'Pneumonia (Right Lower Lobe)', 'Hypertension', 'Tobacco Use Disorder'],
         diet: 'Regular',
@@ -191,7 +189,7 @@ async function seed() {
       },
       { 
         first_name: 'Sarah', last_name: 'Jenkins', mrn: 'MRN-005', code: 'full', status: 'Stable', monitoring: false,
-        dob: '1948-12-01', ssn: '5521', gender: 'female',
+        dob: '1948-12-01', ssn: '5521', gender: 'female', room_number: '103-A',
         allergies: ['Codeine'], 
         diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome'],
         diet: 'Regular',
@@ -206,7 +204,7 @@ async function seed() {
       },
       { 
         first_name: 'Victor', last_name: 'Dumont', mrn: 'MRN-006', code: 'comfort', status: 'Stable', monitoring: false,
-        dob: '1935-01-30', ssn: '9901', gender: 'male',
+        dob: '1935-01-30', ssn: '9901', gender: 'male', room_number: '104-A',
         allergies: ['None Reported'], 
         diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression'],
         diet: 'Comfort (Ad Lib)',
@@ -246,6 +244,7 @@ async function seed() {
         diet: p.diet,
         primary_physician: p.physician,
         emergency_contact: p.contact,
+        room_number: p.room_number,
         is_active: true,
         is_active_monitoring: p.monitoring,
         created_at: new Date().toISOString(),
@@ -268,7 +267,7 @@ async function seed() {
         const timeOffset = h * 4 * 60 * 60 * 1000;
         const recorded_at = new Date(Date.now() - timeOffset).toISOString();
         const isLatest = h === 0;
-        let vitalData: any = {
+        const vitalData: Partial<VitalSign> = {
           org_id: ORG_ID,
           patient_id: patientRef.id,
           recorded_by: 'demo-staff-member',
@@ -309,7 +308,7 @@ async function seed() {
           frequency: med.frequency,
           frequency_times: med.time.split(', '),
           indication: med.indication,
-          is_psychotropic: (med as any).is_psychotropic || false,
+          is_psychotropic: (med as { is_psychotropic?: boolean }).is_psychotropic || false,
           status: 'active',
           start_date: '2024-01-15',
           created_at: new Date().toISOString(),

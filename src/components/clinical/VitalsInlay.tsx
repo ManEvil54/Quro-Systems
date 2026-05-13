@@ -11,8 +11,7 @@ import {
   Heart, 
   Thermometer, 
   Wind,
-  CheckCircle2,
-  AlertCircle
+  CheckCircle2
 } from 'lucide-react';
 
 interface VitalsInlayProps {
@@ -20,12 +19,12 @@ interface VitalsInlayProps {
     id: string;
     initials: string;
     mrn: string;
-    hr?: number;
-    bp?: string;
-    temp?: number;
+    hr?: number | null;
+    bp?: string | null;
+    temp?: number | null;
   };
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: Record<string, string | number | boolean | null>) => Promise<void>;
 }
 
 export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayProps) {
@@ -72,7 +71,6 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
     }
   };
 
-  // Instant Feedback: Outlier Detection
   const isOutlier = (field: string, value: string) => {
     const val = Number(value);
     if (!value || isNaN(val)) return false;
@@ -85,38 +83,6 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
       case 'o2_saturation': return val < 92;
       default: return false;
     }
-  };
-
-  const InputField = ({ label, icon: Icon, field, placeholder, unit, step = "1" }: any) => {
-    const outlier = isOutlier(field, (form as any)[field]);
-    
-    return (
-      <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Icon size={12} className={outlier ? 'text-red-500' : 'text-quro-teal'} />
-          {label}
-        </label>
-        <div className="relative">
-          <input
-            ref={field === 'systolic' ? firstInputRef : null}
-            type="number"
-            step={step}
-            inputMode="decimal"
-            placeholder={placeholder}
-            value={(form as any)[field]}
-            onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-            className={`w-full bg-white/5 border rounded-2xl p-4 text-xl font-black text-white transition-all outline-none text-center ${
-              outlier 
-                ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] bg-red-500/5' 
-                : 'border-white/10 focus:border-quro-teal/50 focus:bg-white/10'
-            }`}
-          />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none">
-            {unit}
-          </span>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -142,12 +108,54 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
         {/* Content */}
         <div className="p-8 pt-0 space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            <InputField label="Systolic" icon={Heart} field="systolic" placeholder="120" unit="mmHg" />
-            <InputField label="Diastolic" icon={Heart} field="diastolic" placeholder="80" unit="mmHg" />
-            <InputField label="Heart Rate" icon={Activity} field="pulse" placeholder="72" unit="bpm" />
-            <InputField label="Temperature" icon={Thermometer} field="temperature" placeholder="98.6" unit="°F" step="0.1" />
+            <InputField 
+              label="Systolic" 
+              icon={Heart} 
+              placeholder="120" 
+              unit="mmHg" 
+              value={form.systolic}
+              isOutlier={isOutlier('systolic', form.systolic)}
+              onChange={(val) => setForm({ ...form, systolic: val })}
+              inputRef={firstInputRef}
+            />
+            <InputField 
+              label="Diastolic" 
+              icon={Heart} 
+              placeholder="80" 
+              unit="mmHg" 
+              value={form.diastolic}
+              isOutlier={isOutlier('diastolic', form.diastolic)}
+              onChange={(val) => setForm({ ...form, diastolic: val })}
+            />
+            <InputField 
+              label="Heart Rate" 
+              icon={Activity} 
+              placeholder="72" 
+              unit="bpm" 
+              value={form.pulse}
+              isOutlier={isOutlier('pulse', form.pulse)}
+              onChange={(val) => setForm({ ...form, pulse: val })}
+            />
+            <InputField 
+              label="Temperature" 
+              icon={Thermometer} 
+              placeholder="98.6" 
+              unit="°F" 
+              step="0.1" 
+              value={form.temperature}
+              isOutlier={isOutlier('temperature', form.temperature)}
+              onChange={(val) => setForm({ ...form, temperature: val })}
+            />
             <div className="col-span-2">
-              <InputField label="SpO2 Saturation" icon={Wind} field="o2_saturation" placeholder="98" unit="%" />
+              <InputField 
+                label="SpO2 Saturation" 
+                icon={Wind} 
+                placeholder="98" 
+                unit="%" 
+                value={form.o2_saturation}
+                isOutlier={isOutlier('o2_saturation', form.o2_saturation)}
+                onChange={(val) => setForm({ ...form, o2_saturation: val })}
+              />
             </div>
           </div>
 
@@ -185,3 +193,55 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
     </div>
   );
 }
+
+interface InputFieldProps {
+  label: string;
+  icon: React.ElementType;
+  placeholder: string;
+  unit: string;
+  value: string;
+  isOutlier: boolean;
+  onChange: (val: string) => void;
+  step?: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+
+const InputField = ({ 
+  label, 
+  icon: Icon, 
+  placeholder, 
+  unit, 
+  value, 
+  isOutlier, 
+  onChange, 
+  step = "1", 
+  inputRef 
+}: InputFieldProps) => {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+        <Icon size={12} className={isOutlier ? 'text-red-500' : 'text-quro-teal'} />
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="number"
+          step={step}
+          inputMode="decimal"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full bg-white/5 border rounded-2xl p-4 text-xl font-black text-white transition-all outline-none text-center ${
+            isOutlier 
+              ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] bg-red-500/5' 
+              : 'border-white/10 focus:border-quro-teal/50 focus:bg-white/10'
+          }`}
+        />
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none">
+          {unit}
+        </span>
+      </div>
+    </div>
+  );
+};

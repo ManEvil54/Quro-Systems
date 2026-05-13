@@ -2,7 +2,7 @@
 // Quro — High-Fidelity Demo Data
 // Updated with user-specified patient clinical profiles
 // ============================================================
-import { Patient, Medication, VitalSign, ProgressNote, MarEntry, ProviderOrder } from './firebase/types';
+import { Patient, Medication, VitalSign, ProgressNote, MAREntry, ProviderOrder } from './firebase/types';
 
 export const DEMO_PATIENTS: Patient[] = [
   {
@@ -20,6 +20,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy'],
     code_status: 'full',
     diet: 'Diabetic',
+    room_number: '101-A',
     is_active: true,
     is_active_monitoring: true,
     created_at: new Date().toISOString(),
@@ -40,6 +41,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression'],
     code_status: 'comfort',
     diet: 'Regular as tolerated',
+    room_number: '102-A',
     is_active: true,
     is_active_monitoring: false,
     created_at: new Date().toISOString(),
@@ -60,6 +62,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome'],
     code_status: 'full',
     diet: 'Regular',
+    room_number: '103-A',
     is_active: true,
     is_active_monitoring: false,
     created_at: new Date().toISOString(),
@@ -80,6 +83,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Hypertension', 'Tachycardia', 'Chronic Kidney Disease'],
     code_status: 'dnr',
     diet: 'Low Sodium',
+    room_number: '104-A',
     is_active: true,
     is_active_monitoring: true,
     created_at: new Date().toISOString(),
@@ -100,6 +104,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Early Onset Dementia', 'Anxiety'],
     code_status: 'full',
     diet: 'Soft / Mechanical',
+    room_number: '105-A',
     is_active: true,
     is_active_monitoring: false,
     created_at: new Date().toISOString(),
@@ -120,6 +125,7 @@ export const DEMO_PATIENTS: Patient[] = [
     diagnoses: ['Post-Stroke Rehab', 'Aphasia', 'Right-Side Weakness'],
     code_status: 'full',
     diet: 'Regular (Thickened Liquids)',
+    room_number: '106-A',
     is_active: true,
     is_active_monitoring: true,
     created_at: new Date().toISOString(),
@@ -169,7 +175,7 @@ export const DEMO_MEDICATIONS: Record<string, Medication[]> = {
       strength: '5mg',
       dosage: '1 tablet',
       route: 'PO',
-      frequency: 'Q4H PRN',
+      frequency: 'PRN',
       indication: 'Chronic Pain',
       start_date: '2024-03-01',
       status: 'active',
@@ -201,7 +207,7 @@ export const DEMO_MEDICATIONS: Record<string, Medication[]> = {
       strength: '2.5mg',
       dosage: '3 tablets',
       route: 'PO',
-      frequency: 'Weekly',
+      frequency: 'WEEKLY',
       indication: 'Rheumatoid Arthritis',
       start_date: '2024-02-15',
       status: 'active',
@@ -383,22 +389,19 @@ export const DEMO_NOTES: Record<string, ProgressNote[]> = {
   ]
 };
 
-export const DEMO_MAR: Record<string, MarEntry[]> = {
+export const DEMO_MAR: Record<string, MAREntry[]> = {
   'robert-chen': [
     {
       id: 'mar-rc-1',
       org_id: 'SYSTEM',
       patient_id: 'robert-chen',
       medication_id: 'med-rc-1',
-      medication_name: 'Metformin',
       scheduled_date: new Date().toISOString().split('T')[0],
       scheduled_time: '08:00',
       actual_time: '08:15',
       action: 'given',
       administered_by: 'nurse-1',
-      status: 'completed',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      created_at: new Date().toISOString()
     }
   ],
   'victor-dumont': [
@@ -407,15 +410,12 @@ export const DEMO_MAR: Record<string, MarEntry[]> = {
       org_id: 'SYSTEM',
       patient_id: 'victor-dumont',
       medication_id: 'med-vd-1',
-      medication_name: 'Oxycodone',
       scheduled_date: new Date().toISOString().split('T')[0],
       scheduled_time: '12:00',
       actual_time: '12:05',
       action: 'given',
       administered_by: 'nurse-1',
-      status: 'completed',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      created_at: new Date().toISOString()
     }
   ]
 };
@@ -425,11 +425,13 @@ export const DEMO_ORDERS: Record<string, ProviderOrder[]> = {
     {
       id: 'ord-rc-1',
       org_id: 'SYSTEM',
+      facility_id: 'platinum-health-hub',
       patient_id: 'robert-chen',
+      ordering_physician_id: 'dr-house',
       order_type: 'medication',
-      content: 'Increase Metformin to 1000mg BID if fasting glucose > 150',
+      order_text: 'Increase Metformin to 1000mg BID if fasting glucose > 150',
+      priority: 'routine',
       status: 'signed',
-      provider_name: 'Dr. Gregory House',
       signed_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -439,11 +441,13 @@ export const DEMO_ORDERS: Record<string, ProviderOrder[]> = {
     {
       id: 'ord-vd-1',
       org_id: 'SYSTEM',
+      facility_id: 'platinum-health-hub',
       patient_id: 'victor-dumont',
+      ordering_physician_id: 'dr-house',
       order_type: 'other',
-      content: 'Palliative care consult for pain management titration.',
+      order_text: 'Palliative care consult for pain management titration.',
+      priority: 'routine',
       status: 'signed',
-      provider_name: 'Dr. Gregory House',
       signed_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

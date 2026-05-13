@@ -4,7 +4,7 @@
 // ============================================================
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Activity, ClipboardList, Clock, ShieldCheck, TrendingUp, Mic } from 'lucide-react';
+import { Activity, ClipboardList, Clock, ShieldCheck, TrendingUp, Mic } from 'lucide-react';
 import QuroLogo from '@/components/brand/QuroLogo';
 
 export default function MarketingPage() {
@@ -50,7 +50,7 @@ export default function MarketingPage() {
             
             <p className="text-xl text-slate-500 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-1000">
               Transforming your facility from a passive database into an <span className="font-semibold text-slate-800 tracking-tight">Active Intelligent Partner</span>. 
-              In high-stakes environments, the best use of AI isn't "chatting"—it's <span className="text-teal-600 font-medium">Noise Reduction</span>.
+              In high-stakes environments, the best use of AI isn&apos;t &quot;chatting&quot;—it&apos;s <span className="text-teal-600 font-medium">Noise Reduction</span>.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 animate-in fade-in slide-in-from-bottom-10 duration-1000">
@@ -112,7 +112,7 @@ export default function MarketingPage() {
               </h2>
               <p className="text-xl text-slate-400 mb-12 leading-relaxed font-light max-w-xl">
                 Legacy apps force nurses to scan 25 charts manually at 7:00 AM. 
-                Quro's "Clinical Brain" analyzes the last 12 hours of vitals and notes to generate an 
+                Quro&apos;s &quot;Clinical Brain&quot; analyzes the last 12 hours of vitals and notes to generate an 
                 <span className="text-white font-medium"> Executive Summary</span> instantly.
               </p>
               
