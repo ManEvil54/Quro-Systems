@@ -3,10 +3,10 @@
 // Live data engine for the Boutique & Enterprise Control Centers
 // ============================================================
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy, limit, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient, VitalSign, HandoverNote } from '@/lib/firebase/types';
+import type { Patient, VitalSign, HandoverNote, Bed } from '@/lib/firebase/types';
 
 export interface DashboardBed {
   id: string;
@@ -17,6 +17,7 @@ export interface DashboardBed {
   patient?: {
     id: string;
     initials: string;
+    full_name?: string;
     mrn: string;
     status: 'Critical' | 'Stable';
     hr: number | null;
@@ -31,12 +32,20 @@ export interface DashboardBed {
 export function useDashboard(facilityId: string) {
   const { organization } = useAuth();
   const [beds, setBeds] = useState<DashboardBed[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<HandoverNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prevFacilityId, setPrevFacilityId] = useState(facilityId);
+  const [prevOrgId, setPrevOrgId] = useState(organization?.id);
+
+  // Sync state with props/auth during render to avoid useEffect cascading renders
+  if (facilityId !== prevFacilityId || organization?.id !== prevOrgId) {
+    setPrevFacilityId(facilityId);
+    setPrevOrgId(organization?.id);
+    setLoading(true);
+  }
 
   useEffect(() => {
     if (!organization?.id || !facilityId) {
-      setLoading(false);
       return;
     }
 
@@ -58,7 +67,7 @@ export function useDashboard(facilityId: string) {
         const bedList = bedsSnap.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as any[];
+        })) as Bed[];
 
         // 3. Listen to Patients
         const patientsRef = collection(db, 'organizations', organization.id, 'patients');
@@ -139,7 +148,7 @@ export function useDashboard(facilityId: string) {
         id: doc.id,
         ...doc.data()
       }));
-      setAlerts(urgentNotes);
+      setAlerts(urgentNotes as HandoverNote[]);
     });
 
     return () => {
@@ -151,5 +160,8 @@ export function useDashboard(facilityId: string) {
     };
   }, [organization?.id, facilityId]);
 
-  return { beds, alerts, loading };
+  // Final loading state: true if we're internally loading AND have the required context
+  const derivedLoading = (!organization?.id || !facilityId) ? false : loading;
+
+  return { beds, alerts, loading: derivedLoading };
 }

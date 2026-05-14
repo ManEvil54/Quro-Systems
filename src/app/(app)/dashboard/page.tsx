@@ -82,15 +82,16 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'margaret-thompson',
-        initials: 'MT',
+        full_name: 'Thompson, Margaret',
+        initials: 'TM',
         mrn: 'MRN-001',
         status: 'Critical',
         hr: 112,
         bp: '148/92',
         temp: 99.1,
         is_active_monitoring: true,
-        code_status: 'DNR',
-        diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Chronic Kidney Disease']
+        code_status: 'dnr',
+        diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Osteoporosis', 'Chronic Kidney Disease (Stage 3)']
       }
     },
     {
@@ -101,14 +102,15 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'robert-chen',
-        initials: 'RC',
+        full_name: 'Chen, Robert',
+        initials: 'CR',
         mrn: 'MRN-002',
         status: 'Stable',
         hr: 78,
         bp: '138/84',
         temp: 98.6,
         is_active_monitoring: false,
-        code_status: 'Full Code',
+        code_status: 'full',
         diagnoses: ['Type 2 Diabetes', 'Hypertension', 'Hyperlipidemia', 'Peripheral Neuropathy']
       }
     },
@@ -120,15 +122,16 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'eleanor-vance',
-        initials: 'EV',
+        full_name: 'Vance, Eleanor',
+        initials: 'VE',
         mrn: 'MRN-003',
         status: 'Stable',
         hr: 72,
         bp: '118/74',
         temp: 98.4,
         is_active_monitoring: false,
-        code_status: 'DNR',
-        diagnoses: ['Alzheimer\'s Disease', 'Anxiety', 'Insomnia']
+        code_status: 'dnr_dni',
+        diagnoses: ['Alzheimer\'s Disease', 'Anxiety', 'Insomnia', 'Vascular Dementia']
       }
     },
     {
@@ -139,15 +142,16 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'arthur-morgan',
-        initials: 'AM',
+        full_name: 'Morgan, Arthur',
+        initials: 'MA',
         mrn: 'MRN-004',
         status: 'Critical',
         hr: 105,
         bp: '168/94',
         temp: 100.2,
         is_active_monitoring: true,
-        code_status: 'Full Code',
-        diagnoses: ['COPD', 'Pneumonia', 'Tobacco Use Disorder']
+        code_status: 'full',
+        diagnoses: ['COPD', 'Pneumonia (Right Lower Lobe)', 'Hypertension', 'Tobacco Use Disorder']
       }
     },
     {
@@ -158,15 +162,16 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'sarah-jenkins',
-        initials: 'SJ',
+        full_name: 'Jenkins, Sarah',
+        initials: 'JS',
         mrn: 'MRN-005',
         status: 'Stable',
         hr: 82,
         bp: '130/82',
         temp: 98.8,
         is_active_monitoring: false,
-        code_status: 'Full Code',
-        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia']
+        code_status: 'full',
+        diagnoses: ['Rheumatoid Arthritis', 'GERD', 'Anemia', 'Sjogren\'s Syndrome']
       }
     },
     {
@@ -177,14 +182,15 @@ export default function DashboardPage() {
       status: 'occupied',
       patient: {
         id: 'victor-dumont',
-        initials: 'VD',
+        full_name: 'Dumont, Victor',
+        initials: 'DV',
         mrn: 'MRN-006',
         status: 'Stable',
         hr: 70,
         bp: '122/78',
         temp: 98.4,
         is_active_monitoring: false,
-        code_status: 'Comfort',
+        code_status: 'comfort',
         diagnoses: ['Metastatic Prostate Cancer', 'Chronic Pain', 'Depression']
       }
     }

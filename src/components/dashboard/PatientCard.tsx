@@ -59,7 +59,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                 {bed.room_name} • {bed.bed_name}
               </p>
               <p className={`font-black truncate ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-white' : 'text-white'}`}>
-                Patient {patient.initials}
+                {patient.full_name || `Patient ${patient.initials}`}
               </p>
             </div>
           </div>
@@ -130,12 +130,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' 
                 : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
             }`}>
-              {patient.code_status?.replace('_', ' ') || 'FULL CODE'}
+              {patient.code_status ? `${patient.code_status} CODE` : 'FULL CODE'}
             </span>
           </div>
           <p className="text-[10px] text-slate-400 font-medium line-clamp-1 italic">
             {patient.diagnoses && patient.diagnoses.length > 0 
-              ? patient.diagnoses.join(', ') 
+              ? patient.diagnoses.join(' • ') 
               : 'No clinical diagnoses listed'}
           </p>
           
