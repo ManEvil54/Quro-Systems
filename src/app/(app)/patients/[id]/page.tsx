@@ -500,39 +500,69 @@ export default function PatientChartPage() {
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" />
       </div>
 
-      {/* Tabs Navigation - Hidden on Print */}
-      <div className="no-print flex gap-2 mb-8 p-1.5 bg-slate-100 rounded-3xl w-fit">
-        {[
-          { id: 'facesheet', icon: FileText, label: 'Facesheet' },
-          { id: 'medications', icon: Pill, label: 'Medications' },
-          { id: 'mar', icon: ClipboardList, label: 'MAR Grid' },
-          { id: 'respiratory', icon: Wind, label: 'Respiratory (RT)' },
-          { id: 'enteral', icon: Droplets, label: 'Enteral (GT)' },
-          { id: 'treatments', icon: Activity, label: 'Treatments' },
-          { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
-          { id: 'trends', icon: TrendingUp, label: 'Trends' },
-          { id: 'orders', icon: Stethoscope, label: 'Orders' },
-          { id: 'charting', icon: FileText, label: 'Shift Charting' },
-          { id: 'compliance', icon: ShieldCheck, label: 'Surveyor Review' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              activeTab === tab.id 
-                ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50' 
-                : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Clinical Control Center — Sidebar Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        
+        {/* LEFT SIDEBAR: Navigation (Modern Clinical Index) */}
+        <aside className="no-print lg:col-span-2 sticky top-8 space-y-4">
+          <div className="bg-white/40 backdrop-blur-md border border-white/40 p-3 rounded-[2.5rem] shadow-2xl shadow-slate-200/50">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-6 py-4 mb-2">Chart Index</p>
+            <div className="flex flex-col gap-1.5">
+              {[
+                { id: 'facesheet', icon: FileText, label: 'Facesheet' },
+                { id: 'medications', icon: Pill, label: 'Medications' },
+                { id: 'mar', icon: ClipboardList, label: 'MAR Grid' },
+                { id: 'respiratory', icon: Wind, label: 'Respiratory (RT)', badge: 'Active' },
+                { id: 'enteral', icon: Droplets, label: 'Enteral (GT)' },
+                { id: 'treatments', icon: Activity, label: 'Treatments' },
+                { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
+                { id: 'trends', icon: TrendingUp, label: 'Trends' },
+                { id: 'orders', icon: Stethoscope, label: 'Orders', badge: 'New' },
+                { id: 'charting', icon: FileText, label: 'Shift Charting' },
+                { id: 'compliance', icon: ShieldCheck, label: 'Surveyor Review' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className={`flex items-center justify-between group px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    activeTab === tab.id 
+                      ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 translate-x-2' 
+                      : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <tab.icon size={16} className={activeTab === tab.id ? 'text-quro-teal' : 'group-hover:text-quro-teal transition-colors'} />
+                    <span>{tab.label}</span>
+                  </div>
+                  {tab.badge && (
+                    <span className={`px-2 py-0.5 rounded-lg text-[7px] font-black uppercase ${
+                      tab.badge === 'New' ? 'bg-quro-teal text-white' : 'bg-rose-500 text-white'
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        <div className="xl:col-span-8">
+          {/* Quick Actions Footer */}
+          <div className="p-6 bg-slate-900/5 rounded-[2rem] border border-slate-900/5">
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Comm</p>
+             <div className="flex gap-2">
+                <button className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
+                   <Phone size={14} className="mx-auto" />
+                </button>
+                <button className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
+                   <Send size={14} className="mx-auto" />
+                </button>
+             </div>
+          </div>
+        </aside>
+
+        {/* MIDDLE COLUMN: Main Content Area */}
+        <div className="lg:col-span-7">
+
           {activeTab === 'facesheet' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               {/* Demographics */}
@@ -2089,8 +2119,8 @@ export default function PatientChartPage() {
           )}
         </div>
 
-        {/* Sidebar Status */}
-        <div className="xl:col-span-4 space-y-8 no-print">
+        {/* RIGHT COLUMN: Sidebar Status */}
+        <div className="lg:col-span-3 space-y-8 no-print">
           <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
             <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
               <ShieldCheck size={18} className="text-emerald-900" />
@@ -2121,14 +2151,14 @@ export default function PatientChartPage() {
 
           <div className="glass-card p-10 bg-slate-900 text-white rounded-[2.5rem] relative overflow-hidden">
             <Phone className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5" />
-            <h3 className="text-xs font-black text-emerald-900 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest mb-1">Primary Representative</p>
-                <p className="text-lg font-black">Jane Thompson</p>
-                <p className="text-xs font-medium text-emerald-900">555-0123 • Daughter</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Representative</p>
+                <p className="text-lg font-black text-white">Jane Thompson</p>
+                <p className="text-xs font-medium text-slate-400">555-0123 • Daughter</p>
               </div>
-              <button className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+              <button className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-white">
                 View All Contacts
               </button>
             </div>
