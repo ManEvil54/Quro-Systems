@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/client';
-import { collection, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 export async function GET() {
   try {
@@ -112,7 +112,7 @@ export async function GET() {
     ];
 
     // Batch Write
-    const batch = []; // We can't use writeBatch with the client SDK easily in this context if we want to wait, but we can do it one by one or Promise.all
+    // Individual Writes (Parallel)
 
     for (const room of rooms) {
       await setDoc(doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms', room.id), room, { merge: true });
@@ -127,8 +127,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, message: 'Database seeded with high-fidelity patient data.' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Seeding Failed:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error during seeding';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
