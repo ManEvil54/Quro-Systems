@@ -126,11 +126,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2">
             <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest ${
-              patient.code_status === 'dnr' || patient.code_status === 'dnr_dni' 
+              patient.code_status?.toLowerCase().includes('dnr') || patient.code_status?.toLowerCase().includes('comfort') 
                 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' 
                 : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
             }`}>
-              {patient.code_status ? `${patient.code_status} CODE` : 'FULL CODE'}
+              {patient.code_status ? (patient.code_status.toUpperCase().includes('CODE') ? patient.code_status : `${patient.code_status} CODE`) : 'FULL CODE'}
             </span>
           </div>
           <p className="text-[10px] text-slate-400 font-medium line-clamp-1 italic">
