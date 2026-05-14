@@ -21,18 +21,18 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
 
   if (!patient) {
     return (
-      <div className={`glass-card-quro rounded-3xl p-6 border border-dashed border-white/30 flex flex-col items-center justify-center min-h-[220px] transition-all duration-500 hover:border-quro-teal/40 group cursor-pointer ${
-        bed.status === 'maintenance' ? 'bg-amber-500/5' : 'bg-white/5'
+      <div className={`glass-card-quro rounded-3xl p-6 border border-dashed border-white/20 flex flex-col items-center justify-center min-h-[240px] transition-all duration-700 hover:border-quro-teal/40 group cursor-pointer ${
+        bed.status === 'maintenance' ? 'bg-amber-950/10' : 'bg-black/20'
       }`}>
-        <div className="w-12 h-12 rounded-full bg-quro-charcoal/5 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-          {bed.status === 'maintenance' ? <ShieldAlert size={20} className="text-amber-500" /> : <UserPlus size={20} className="text-slate-400" />}
+        <div className="w-14 h-14 rounded-full bg-black/40 flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:bg-quro-teal/10 border border-white/5">
+          {bed.status === 'maintenance' ? <ShieldAlert size={24} className="text-amber-500" /> : <UserPlus size={24} className="text-slate-500 group-hover:text-quro-teal transition-colors" />}
         </div>
-        <p className="font-black text-[8px] tracking-[0.2em] text-slate-400 uppercase mb-1">{bed.room_name}</p>
-        <p className="font-black text-lg text-white opacity-40 mb-3">{bed.bed_name}</p>
-        <div className={`px-4 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase border ${
-          bed.status === 'maintenance' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600' : 'bg-slate-50 border-slate-200 text-slate-400'
+        <p className="font-black text-[9px] tracking-[0.3em] text-slate-500 uppercase mb-1">{bed.room_name}</p>
+        <p className="font-black text-2xl text-white opacity-20 mb-4 group-hover:opacity-40 transition-opacity">{bed.bed_name}</p>
+        <div className={`px-6 py-2 rounded-full text-[9px] font-black tracking-[0.2em] uppercase border transition-all duration-500 ${
+          bed.status === 'maintenance' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-slate-500 group-hover:border-quro-teal/40 group-hover:text-quro-teal'
         }`}>
-          {bed.status === 'maintenance' ? 'Out of Service' : 'Ready for Admit'}
+          {bed.status === 'maintenance' ? 'Out of Service' : 'CENSUS READY'}
         </div>
       </div>
     );
@@ -42,7 +42,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
     <Link href={`/patients/${patient.id}`} className="block h-full">
       <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
         isCritical 
-          ? 'border-red-500/50 critical-glow-quro scale-[1.03] z-10' 
+          ? 'border-red-500/50 critical-glow-red scale-[1.03] z-10' 
           : 'border-white/20 hover:border-quro-teal/30 hover:shadow-2xl hover:shadow-quro-teal/5'
       } ${isBoutique ? 'p-8' : 'p-5'}`}>
         
@@ -58,14 +58,14 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isCritical ? 'text-red-400' : 'text-quro-teal'}`}>
                 {bed.room_name} • {bed.bed_name}
               </p>
-              <p className={`font-black truncate ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-white' : 'text-white'}`}>
+              <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isCritical ? 'text-white' : 'text-slate-100'}`}>
                 {patient.full_name || `Patient ${patient.initials}`}
               </p>
             </div>
           </div>
           {isCritical && (
-            <div className="flex items-center gap-2 bg-red-500 text-white text-[8px] px-3 py-1.5 rounded-full font-black tracking-widest shadow-xl shadow-red-500/40 border border-white/20">
-              <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+            <div className="flex items-center gap-2 bg-red-600 text-white text-[8px] px-3 py-1.5 rounded-full font-black tracking-widest shadow-xl shadow-red-600/40 border border-white/20 animate-pulse">
+              <div className="w-1.5 h-1.5 bg-white rounded-full" />
               CRITICAL
             </div>
           )}
@@ -80,42 +80,42 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               onVitalsClick(patient);
             }
           }}
-          className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${
-            isCritical ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10 hover:border-quro-teal/40 hover:bg-quro-teal/5'
+          className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+            isCritical ? 'bg-red-950/20 border-red-500/30' : 'bg-black/20 border-white/5 hover:border-quro-teal/40 hover:bg-quro-teal/10'
           } ${isBoutique ? 'mt-4' : ''}`}
         >
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
               <Heart size={12} className={patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-400'}`}>Pulse</span>
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Pulse</span>
             </div>
             <div className="flex items-baseline gap-1">
               <span className={`font-black tracking-tighter ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
                 {patient.hr || '--'}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">bpm</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span>
             </div>
           </div>
           
           <div className="flex flex-col border-l border-white/10 pl-4">
             <div className="flex items-center gap-1.5 mb-2">
               <Activity size={12} className={isCritical ? 'text-red-500' : 'text-quro-teal'} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-400'}`}>BP</span>
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>BP</span>
             </div>
             <span className={`font-black tracking-tighter ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
               {patient.bp || '--'}
             </span>
           </div>
 
-          <div className="flex flex-col mt-2 pt-4 border-t border-white/40">
-            <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">Temp</span>
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Temp</span>
             <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
               {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
             </span>
           </div>
 
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
-            <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">SpO2</span>
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">SpO2</span>
             <span className={`font-bold text-quro-teal ${isBoutique ? 'text-lg' : 'text-sm'}`}>
               98%
             </span>
@@ -147,7 +147,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                 className="flex-1 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-500/20 transition-all group/rt"
               >
                 <Wind size={12} className="text-cyan-500 group-hover/rt:animate-pulse" />
-                <span className="text-[8px] font-black text-cyan-600 uppercase tracking-widest">Respiratory</span>
+                <span className="text-[8px] font-black text-cyan-500 uppercase tracking-widest">Respiratory</span>
               </button>
             )}
             {(patient.diagnoses?.some((d: string) => d.includes('PEG') || d.includes('Dysphagia') || d.includes('Diabetes')) || patient.id === 'margaret-thompson') && (
@@ -156,7 +156,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                 className="flex-1 py-2 bg-quro-teal/10 border border-quro-teal/20 rounded-xl flex items-center justify-center gap-2 hover:bg-quro-teal/20 transition-all group/gt"
               >
                 <Droplets size={12} className="text-quro-teal group-hover/gt:animate-bounce" />
-                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Enteral</span>
+                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Enteral</span>
               </button>
             )}
           </div>
@@ -168,7 +168,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
             <Pill size={14} className="text-slate-400 hover:text-quro-teal cursor-pointer transition-colors" />
             <FileText size={14} className="text-slate-400 hover:text-quro-teal cursor-pointer transition-colors" />
           </div>
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">CENSUS READY</span>
+          <span className="text-[8px] font-black text-slate-500/50 uppercase tracking-[0.2em] group-hover:text-quro-teal transition-colors">ACTIVE MONITORING</span>
         </div>
 
         {/* Diagnostic Overlay */}

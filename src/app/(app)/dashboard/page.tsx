@@ -209,7 +209,7 @@ export default function DashboardPage() {
         patient: undefined
       })));
 
-  const beds = rawBeds.slice(0, 6);
+  const beds = rawBeds;
 
   const handleVitalsSubmit = async (data: Record<string, string | number | boolean | null>) => {
     if (!organization?.id) return;

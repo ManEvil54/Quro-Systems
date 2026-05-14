@@ -63,7 +63,9 @@ export function useDashboard(facilityId: string) {
 
       // 2. Listen to Beds
       const bedsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'beds');
-      bedsUnsubscribe = onSnapshot(bedsRef, (bedsSnap) => {
+      const bedsQuery = query(bedsRef, orderBy('room_id'), orderBy('name'));
+      
+      bedsUnsubscribe = onSnapshot(bedsQuery, (bedsSnap) => {
         const bedList = bedsSnap.docs.map(doc => ({
           id: doc.id,
           ...doc.data()

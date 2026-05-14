@@ -51,6 +51,22 @@ async function cleanup() {
       await deleteDoc(hDoc.ref);
     }
 
+    // New: Cleanup Rooms
+    const roomsRef = collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms');
+    const roomsSnap = await getDocs(roomsRef);
+    console.log(`Found ${roomsSnap.docs.length} rooms to delete.`);
+    for (const rDoc of roomsSnap.docs) {
+      await deleteDoc(rDoc.ref);
+    }
+
+    // New: Cleanup Beds
+    const bedsRef = collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds');
+    const bedsSnap = await getDocs(bedsRef);
+    console.log(`Found ${bedsSnap.docs.length} beds to delete.`);
+    for (const bDoc of bedsSnap.docs) {
+      await deleteDoc(bDoc.ref);
+    }
+
     console.log('✅ Cleanup complete.');
   } catch (err) {
     console.error('❌ Cleanup failed:', err);
@@ -98,12 +114,12 @@ async function seed() {
 
     for (const item of setup) {
       const roomRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms'));
-      const roomData = {
+      const roomData: Room = {
         id: roomRef.id,
         org_id: ORG_ID,
         facility_id: FACILITY_ID,
         name: `Room ${item.room}`,
-        type: item.beds.length > 1 ? 'semi-private' : 'private',
+        type: (item.beds.length > 1 ? 'semi-private' : 'private') as any,
         is_active: true,
         created_at: new Date().toISOString()
       };
@@ -112,13 +128,13 @@ async function seed() {
 
       for (const b of item.beds) {
         const bedRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds'));
-        const bedData = {
+        const bedData: Bed = {
           id: bedRef.id,
           room_id: roomRef.id,
           facility_id: FACILITY_ID,
           org_id: ORG_ID,
           name: `Bed ${b}`,
-          status: 'available',
+          status: 'available' as any,
           created_at: new Date().toISOString()
         };
         await setDoc(bedRef, bedData);
@@ -222,7 +238,10 @@ async function seed() {
     for (let i = 0; i < demoPatients.length; i++) {
       const p = demoPatients[i];
       const bed = beds[i];
+      if (!bed) continue;
+      
       const room = rooms.find(r => r.id === bed.room_id);
+      if (!room) continue;
 
       const patientRef = doc(collection(db, 'organizations', ORG_ID, 'patients'));
       const patientData = {
