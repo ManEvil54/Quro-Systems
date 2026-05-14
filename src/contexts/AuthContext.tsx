@@ -15,7 +15,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/client';
-import type { Staff, StaffRole } from '@/lib/firebase/types';
+import type { Staff } from '@/lib/firebase/types';
 
 interface AuthContextType {
   user: User | null;
@@ -27,7 +27,15 @@ interface AuthContextType {
   activeFacility: { id: string; name: string } | null;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: any) => Promise<void>;
+  signUp: (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    initials: string;
+    role: string;
+    credential?: string;
+  }) => Promise<void>;
   signOut: () => Promise<void>;
   impersonate: (orgId: string, staffId?: string) => Promise<void>;
   stopImpersonating: () => void;
@@ -44,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     organization: { id: string, name: string } | null;
     isImpersonating: boolean;
     impersonatedDonName: string | null;
+    activeFacility: { id: string, name: string } | null;
     loading: boolean;
     error: string | null;
   }>({
@@ -203,26 +212,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               organization: { id: 'SYSTEM', name: 'Quro Global Operations' }, 
               isImpersonating: false,
               impersonatedDonName: null,
+              activeFacility: null,
               loading: false, 
               error: null 
             });
             return;
           }
 
-          const userMetaDoc = await getDoc(doc(db, 'users', user.uid));
+          let userMetaDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          // AUTO-LINK Demo User if record is missing
+          if (!userMetaDoc.exists() && user.email === 'demo@qurosystems.com') {
+            console.log("🔗 Auto-linking demo user...");
+            const ORG_ID = 'mq-demo-org';
+            const FACILITY_ID = 'platinum-health-hub';
+            
+            await setDoc(doc(db, 'users', user.uid), {
+              org_id: ORG_ID,
+              email: user.email,
+              role: 'FACILITY_ADMIN'
+            });
+            
+            await setDoc(doc(db, 'organizations', ORG_ID, 'staff', user.uid), {
+              id: user.uid,
+              auth_id: user.uid,
+              org_id: ORG_ID,
+              facility_id: FACILITY_ID,
+              first_name: 'Demo',
+              last_name: 'Clinical User',
+              initials: 'DCU',
+              role: 'FACILITY_ADMIN',
+              email: user.email,
+              is_active: true,
+              is_onboarded: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+            userMetaDoc = await getDoc(doc(db, 'users', user.uid));
+          }
+
           if (!userMetaDoc.exists()) {
             setState(prev => ({ ...prev, user, loading: false }));
             return;
           }
           
-          const { org_id } = userMetaDoc.data();
+          const { org_id } = userMetaDoc.data()!;
           await loadUserData(user, org_id);
         } catch (err) {
           console.error("Auth initialization error:", err);
           setState(prev => ({ ...prev, user, loading: false }));
         }
       } else {
-        setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, loading: false, error: null });
+          setState({ user: null, staff: null, organization: null, isImpersonating: false, impersonatedDonName: null, activeFacility: null, loading: false, error: null });
       }
     });
 
@@ -233,13 +275,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setState((s) => ({ ...s, loading: false, error: err.message }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication failed';
+      setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
   };
 
-  const signUp = async (data: any) => {
+  const signUp: AuthContextType['signUp'] = async (data) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const credential = await createUserWithEmailAndPassword(
@@ -267,8 +310,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
-    } catch (err: any) {
-      setState((s) => ({ ...s, loading: false, error: err.message }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Registration failed';
+      setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
   };

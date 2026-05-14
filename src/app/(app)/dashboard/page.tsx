@@ -190,11 +190,11 @@ export default function DashboardPage() {
     }
   ];
 
-  // Fill empty slots if needed, or just use the beds from the hook
-  // Strictly limit to 6 beds for Platinum Health Hub demo
-  const rawBeds = activeFacility === 'platinum-health-hub' 
-    ? mockPatients
-    : (facilityBeds.length > 0 ? facilityBeds : Array.from({ length: 6 }, (_, i) => ({
+  // Data Source Logic: Prioritize Live Firestore data (facilityBeds)
+  // Use mockPatients only as a fallback for the design demo if Firestore is empty
+  const rawBeds = (facilityBeds.length > 0) 
+    ? facilityBeds 
+    : (activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
         bed_name: `Bed ${i + 1}`,
         room_name: 'Unassigned',
