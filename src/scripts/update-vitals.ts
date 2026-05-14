@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, updateDoc, collection, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, collection, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
 const firebaseConfig = {
   projectId: 'quro-13d98',
@@ -9,8 +9,17 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const ORG_ID = 'mq-demo-org';
+interface CriticalVital {
+  heart_rate: number;
+  systolic: number;
+  diastolic: number;
+  temp: number;
+  spO2: number;
+  is_critical: boolean;
+  status_note: string;
+}
 
-const criticalVitals: Record<string, any> = {
+const criticalVitals: Record<string, CriticalVital> = {
   "Arthur Morgan": {
     "heart_rate": 112,
     "systolic": 145,

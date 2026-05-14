@@ -119,7 +119,7 @@ async function seed() {
         org_id: ORG_ID,
         facility_id: FACILITY_ID,
         name: `Room ${item.room}`,
-        type: (item.beds.length > 1 ? 'semi-private' : 'private') as any,
+        type: (item.beds.length > 1 ? 'semi-private' : 'private') as 'private' | 'semi-private' | 'ward',
         is_active: true,
         created_at: new Date().toISOString()
       };
@@ -134,7 +134,7 @@ async function seed() {
           facility_id: FACILITY_ID,
           org_id: ORG_ID,
           name: `Bed ${b}`,
-          status: 'available' as any,
+          status: 'available' as 'available' | 'occupied' | 'maintenance' | 'reserved',
           created_at: new Date().toISOString()
         };
         await setDoc(bedRef, bedData);
