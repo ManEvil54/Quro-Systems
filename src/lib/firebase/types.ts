@@ -90,9 +90,17 @@ export interface Patient {
 }
 
 export interface RespiratoryState {
-  o2_delivery: 'Room Air' | 'Nasal Cannula' | 'Trach Mask';
+  o2_delivery: 'Room Air' | 'Nasal Cannula' | 'Trach Mask' | 'Ventilator' | 'Cool Mist';
   lpm?: number;
   fio2_percent?: number;
+  vent_settings?: {
+    mode: 'AC/VC' | 'AC/PC' | 'SIMV' | 'CPAP/PS' | 'Other';
+    rate?: number;
+    tidal_volume?: number;
+    peep?: number;
+    pressure_support?: number;
+    fio2?: number;
+  };
   trach_size?: string;
   trach_type?: string;
   last_trach_change?: string;

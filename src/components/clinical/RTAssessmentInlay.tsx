@@ -46,6 +46,8 @@ export default function RT_Assessment_Inlay({ data, onChange }: RTAssessmentInla
               <option>Room Air</option>
               <option>Nasal Cannula</option>
               <option>Trach Mask</option>
+              <option>Ventilator</option>
+              <option>Cool Mist</option>
             </select>
 
             {data.o2_delivery === 'Nasal Cannula' && (
@@ -61,7 +63,7 @@ export default function RT_Assessment_Inlay({ data, onChange }: RTAssessmentInla
               </div>
             )}
 
-            {data.o2_delivery === 'Trach Mask' && (
+            {(data.o2_delivery === 'Trach Mask' || data.o2_delivery === 'Cool Mist') && (
               <div className="animate-in fade-in slide-in-from-top-2">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">FiO2 Percentage (%)</p>
                 <input 
@@ -71,6 +73,120 @@ export default function RT_Assessment_Inlay({ data, onChange }: RTAssessmentInla
                   className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-sm outline-none"
                   placeholder="e.g. 40"
                 />
+              </div>
+            )}
+
+            {data.o2_delivery === 'Ventilator' && (
+              <div className="animate-in fade-in slide-in-from-top-2 bg-slate-50 p-4 rounded-2xl space-y-4 border border-slate-100">
+                <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2">Vent Settings</p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Mode</p>
+                    <select 
+                      value={data.vent_settings?.mode || 'AC/VC'}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: e.target.value as 'AC/VC' | 'AC/PC' | 'SIMV' | 'CPAP/PS' | 'Other',
+                          ...(data.vent_settings || {})
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[9px] uppercase outline-none"
+                    >
+                      <option>AC/VC</option>
+                      <option>AC/PC</option>
+                      <option>SIMV</option>
+                      <option>CPAP/PS</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">FiO2 (%)</p>
+                    <input 
+                      type="number"
+                      value={data.vent_settings?.fio2}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: data.vent_settings?.mode || 'AC/VC',
+                          ...(data.vent_settings || {}), 
+                          fio2: parseInt(e.target.value) 
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[10px] outline-none"
+                      placeholder="FiO2"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Rate</p>
+                    <input 
+                      type="number"
+                      value={data.vent_settings?.rate}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: data.vent_settings?.mode || 'AC/VC',
+                          ...(data.vent_settings || {}), 
+                          rate: parseInt(e.target.value) 
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[10px] outline-none"
+                      placeholder="Rate"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">PEEP</p>
+                    <input 
+                      type="number"
+                      value={data.vent_settings?.peep}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: data.vent_settings?.mode || 'AC/VC',
+                          ...(data.vent_settings || {}), 
+                          peep: parseInt(e.target.value) 
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[10px] outline-none"
+                      placeholder="PEEP"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Tidal Vol (mL)</p>
+                    <input 
+                      type="number"
+                      value={data.vent_settings?.tidal_volume}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: data.vent_settings?.mode || 'AC/VC',
+                          ...(data.vent_settings || {}), 
+                          tidal_volume: parseInt(e.target.value) 
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[10px] outline-none"
+                      placeholder="TV"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Pressure Supp</p>
+                    <input 
+                      type="number"
+                      value={data.vent_settings?.pressure_support}
+                      onChange={(e) => onChange({ 
+                        ...data, 
+                        vent_settings: { 
+                          mode: data.vent_settings?.mode || 'AC/VC',
+                          ...(data.vent_settings || {}), 
+                          pressure_support: parseInt(e.target.value) 
+                        } 
+                      })}
+                      className="w-full bg-white border border-slate-200 p-2 rounded-lg font-black text-[10px] outline-none"
+                      placeholder="PS"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
