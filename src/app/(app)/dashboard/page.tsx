@@ -7,8 +7,8 @@ import React, { useState } from 'react';
 import {
   ShieldAlert,
   AlertTriangle,
-  LayoutDashboard,
   Building2,
+  LayoutDashboard,
   Users,
   Activity,
   Bell,
@@ -23,6 +23,7 @@ import VitalsInlay from '@/components/clinical/VitalsInlay';
 import GlobalIntelligenceBar from '@/components/dashboard/GlobalIntelligenceBar';
 import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
 import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
+
 import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
