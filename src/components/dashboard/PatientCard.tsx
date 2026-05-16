@@ -41,8 +41,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
   }
 
   return (
-    <div className="block">
-      <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border ${
+    <div className="block h-full">
+      <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
         isCritical 
           ? 'border-red-500/50 critical-glow-red critical-ripple scale-[1.03] z-10' 
           : 'border-white/20 hover:border-quro-teal/30 hover:shadow-2xl hover:shadow-quro-teal/5'
@@ -73,14 +73,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                   CRITICAL
                 </div>
               )}
-              {!isCritical && (
                 <button 
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsExpanded(!isExpanded); }}
                   className="p-1.5 rounded-xl bg-white/5 text-slate-500 hover:bg-quro-teal/10 hover:text-quro-teal transition-all"
                 >
                   {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
-              )}
             </div>
           </div>
         </Link>
@@ -101,6 +99,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           } ${isBoutique ? 'mt-4' : ''}`}
         >
           {/* Top Row: Pulse & BP (Always Visible) */}
+          {/* Summary Row: Pulse & BP */}
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
               <Heart size={12} className={`${patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} animate-vital-pulse`} />
@@ -124,23 +123,30 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
             </span>
           </div>
 
-          {/* Collapsible Lower Vitals */}
-          {(isExpanded || isCritical) && (
+          {/* Summary Row 2: Temp & Resp (Always Visible) */}
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Thermometer size={12} className={isCritical ? 'text-red-400' : 'text-quro-teal'} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Temp</span>
+            </div>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
+              {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
+            </span>
+          </div>
+
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-quro-teal'} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Resp</span>
+            </div>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+              {patient.resp || '--'}
+            </span>
+          </div>
+
+          {/* Expanded Secondary Vitals */}
+          {isExpanded && (
             <div className="col-span-2 grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
-                <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Temp</span>
-                <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
-                  {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
-                </span>
-              </div>
-
-              <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
-                <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">RR</span>
-                <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
-                  {patient.resp || '--'}
-                </span>
-              </div>
-
               <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
                 <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">SpO2</span>
                 <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.spo2 && patient.spo2 < 92 ? 'text-red-500 animate-pulse' : 'text-quro-teal'}`}>
@@ -173,7 +179,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
         </div>
 
         {/* Collapsible Clinical Content */}
-        {(isExpanded || isCritical) && (
+        {isExpanded && (
           <div className="animate-in slide-in-from-top-2 duration-500">
             {/* Clinical Snippet */}
             <div className="mt-4 space-y-2">
