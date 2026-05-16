@@ -8,7 +8,8 @@ import {
   ShieldAlert,
   Bell,
   Search,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
@@ -26,8 +27,7 @@ type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
   const { organization, staff, activeFacility: authActiveFacility } = useAuth();
-  const [activeFacility, setActiveFacility] = useState(authActiveFacility?.id || 'platinum-health-hub');
-  const [prevAuthFacilityId, setPrevAuthFacilityId] = useState(authActiveFacility?.id);
+  const [activeFacility, setActiveFacility] = useState<string | null>(authActiveFacility?.id || null);
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
@@ -55,22 +55,18 @@ export default function DashboardPage() {
     is_paused: false
   });
   
-  // Update local state when auth state changes (React pattern: adjusting state based on props)
-  if (authActiveFacility?.id !== prevAuthFacilityId) {
-    setPrevAuthFacilityId(authActiveFacility?.id);
-    setActiveFacility(authActiveFacility?.id || 'platinum-health-hub');
-  }
+  // Zero-Click Sync: Ensure local state matches auth context
+  React.useEffect(() => {
+    if (authActiveFacility?.id && authActiveFacility.id !== activeFacility) {
+      setActiveFacility(authActiveFacility.id);
+    }
+  }, [authActiveFacility?.id]);
 
-  // Constant view type for simplified demo
   const viewType = 'boutique';
   
-  const facilityNames: Record<string, string> = {
-    'platinum-health-hub': 'Platinum Health Hub',
-    'oak-ridge': 'Oak Ridge Memory Care',
-    'cedar-haven': 'Cedar Haven Assisted Living'
-  };
-
-  const { beds: facilityBeds, alerts } = useDashboard(activeFacility);
+  const isDemoOrg = organization?.id === 'mq-demo-org';
+  
+  const { beds: facilityBeds, alerts } = useDashboard(activeFacility || '');
   
   // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
   const mockPatients: DashboardBed[] = [
@@ -227,10 +223,9 @@ export default function DashboardPage() {
   ];
 
   // Data Source Logic: Prioritize Live Firestore data (facilityBeds)
-  // Use mockPatients only as a fallback for the design demo if Firestore is empty
   const rawBeds = (facilityBeds.length > 0) 
     ? facilityBeds 
-    : (activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
+    : (isDemoOrg && activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
         bed_name: `Bed ${i + 1}`,
         room_name: 'Unassigned',
@@ -321,23 +316,18 @@ export default function DashboardPage() {
       )}
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        {/* Facility Switcher — Restored to Horizontal Tabs */}
-        <div className="flex gap-4 mb-10 overflow-x-auto pb-4 scrollbar-hide">
-          {Object.keys(facilityNames).map((facId) => (
-            <button
-              key={facId}
-              onClick={() => setActiveFacility(facId)}
-              className={`flex-none px-8 py-4 rounded-2xl font-black text-[10px] tracking-[0.2em] transition-all duration-300 ${
-                activeFacility === facId 
-                  ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/20' 
-                  : 'bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-              }`}
-            >
-              {facilityNames[facId].toUpperCase()}
-              {activeFacility === facId && <span className="ml-3 text-quro-teal">●</span>}
-            </button>
-          ))}
-        </div>
+        {/* Facility Selection Header */}
+        {!activeFacility && (
+          <div className="mb-10 p-10 bg-white rounded-[3rem] border border-dashed border-slate-200 text-center space-y-4">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
+               <Building2 size={32} className="text-slate-300" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 uppercase">No Active Facility</h2>
+              <p className="text-sm text-slate-400 font-medium">Please select a facility from the sidebar to begin monitoring.</p>
+            </div>
+          </div>
+        )}
 
         {/* Header Content */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10">
@@ -347,7 +337,7 @@ export default function DashboardPage() {
             </h1>
             <p className="text-slate-500 text-xs font-black tracking-widest uppercase flex items-center gap-3 opacity-70">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              {facilityNames[activeFacility]} — Active Monitoring Console
+              {authActiveFacility?.name || 'Active Monitoring Console'}
             </p>
           </div>
           

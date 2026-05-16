@@ -42,13 +42,23 @@ export default function GlobalIntelligenceBar() {
       if (!snapshot.empty) {
         setSummary(snapshot.docs[0].data() as IntelligenceSummary);
       } else {
-        // Mock data for initial sprint demo if collection is empty
-        setSummary({
-          high_risk_trends: "Respiratory infection risk flagged for Arthur Morgan; thick yellow secretions noted.",
-          clinical_tasks: "Enteral residual >150mL for Margaret Thompson; feeding paused per protocol.",
-          compliance_gaps: "All high-acuity RT/GT charting complete for the current shift.",
-          created_at: new Date().toISOString()
-        });
+        const isDemoOrg = organization?.id === 'mq-demo-org';
+        
+        if (isDemoOrg) {
+          setSummary({
+            high_risk_trends: "Respiratory infection risk flagged for Arthur Morgan; thick yellow secretions noted.",
+            clinical_tasks: "Enteral residual >150mL for Margaret Thompson; feeding paused per protocol.",
+            compliance_gaps: "All high-acuity RT/GT charting complete for the current shift.",
+            created_at: new Date().toISOString()
+          });
+        } else {
+          setSummary({
+            high_risk_trends: "Scanning for high-risk clinical trends...",
+            clinical_tasks: "Monitoring active task queues...",
+            compliance_gaps: "Clinical compliance signals optimal.",
+            created_at: new Date().toISOString()
+          });
+        }
       }
       setLoading(false);
     });
