@@ -40,8 +40,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
   }
 
   return (
-    <div className="block h-full">
-      <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
+    <div className="block">
+      <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border ${
         isCritical 
           ? 'border-red-500/50 critical-glow-red critical-ripple scale-[1.03] z-10' 
           : 'border-white/20 hover:border-quro-teal/30 hover:shadow-2xl hover:shadow-quro-teal/5'
