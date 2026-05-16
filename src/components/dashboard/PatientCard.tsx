@@ -42,7 +42,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
     <Link href={`/patients/${patient.id}`} className="block h-full">
       <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
         isCritical 
-          ? 'border-red-500/50 critical-glow-red scale-[1.03] z-10' 
+          ? 'border-red-500/50 critical-glow-red critical-ripple scale-[1.03] z-10' 
           : 'border-white/20 hover:border-quro-teal/30 hover:shadow-2xl hover:shadow-quro-teal/5'
       } ${isBoutique ? 'p-8' : 'p-5'}`}>
         
@@ -86,11 +86,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
         >
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
-              <Heart size={12} className={patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} />
+              <Heart size={12} className={`${patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} animate-vital-pulse`} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Pulse</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className={`font-black tracking-tighter ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
+              <span key={patient.hr} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
                 {patient.hr || '--'}
               </span>
               <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span>
@@ -102,7 +102,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               <Activity size={12} className={isCritical ? 'text-red-500' : 'text-quro-teal'} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>BP</span>
             </div>
-            <span className={`font-black tracking-tighter ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
+            <span key={patient.bp} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
               {patient.bp || '--'}
             </span>
           </div>

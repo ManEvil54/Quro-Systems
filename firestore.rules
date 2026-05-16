@@ -10,86 +10,93 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user is the Master Admin (Owner)
+    // Check if user is a Master Admin (Uses system-level claim)
     function isMasterAdmin() {
       return isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN';
     }
 
-    // Get staff record for the current user
-    function getStaffData(orgId) {
-      return get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data;
-    }
-
-    // Check if user belongs to the organization and shift is not expired
+    // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck
     function isOrgMember(orgId) {
-      let staff = getStaffData(orgId);
-      let isNotExpired = staff.access_expires_at == null || request.time < timestamp.value(staff.access_expires_at);
-      return isAuthenticated() && exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)) && staff.is_active && isNotExpired;
+      return isAuthenticated() && (request.auth.token.orgId == orgId || isMasterAdmin());
     }
 
-    // Check if user has specific role
-    function hasRole(orgId, roles) {
-      let staff = getStaffData(orgId);
-      return staff.role in roles;
+    function hasRole(roles) {
+      return isAuthenticated() && request.auth.token.role in roles;
     }
 
-    // Check if user is assigned to a specific facility
-    function hasFacilityAccess(orgId, facilityId) {
-      let staff = getStaffData(orgId);
-      return staff.role in ['admin', 'FACILITY_ADMIN'] || (facilityId in staff.assigned_facility_ids);
+    function hasFacilityAccess(facilityId) {
+      return isMasterAdmin() || 
+             (isAuthenticated() && (facilityId in request.auth.token.facilityIds || request.auth.token.role in ['admin', 'FACILITY_ADMIN']));
     }
 
-    // 0. User Metadata: Users can read/write their own basic metadata (org linking)
+    // DATA VALIDATION: Defensive check against malformed/malicious clinical data
+    function isValidVital(data) {
+      return data.pulse is number && data.pulse >= 0 && data.pulse <= 300 &&
+             data.spO2 is number && data.spO2 >= 0 && data.spO2 <= 100 &&
+             data.recorded_at is timestamp &&
+             data.recorded_by == request.auth.uid;
+    }
+
+    // ---- MATCH RULES ----
+
+    // 0. User Metadata
     match /users/{userId} {
-      allow read, write: if isMasterAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow read: if isMasterAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow write: if isMasterAdmin(); // Locked down; only system/admin can link orgs
     }
 
-    // ---- RULES ----
-
-    // 1. Organizations: Members can read. Only admins can update. Master Admin can do everything.
+    // 1. Organizations
     match /organizations/{orgId} {
-      allow read: if isMasterAdmin() || isOrgMember(orgId);
-      allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
-      allow create: if isMasterAdmin(); // Only Owner can create new Client Organizations
-      
-      // 2. Staff: Users can read all staff in their org, but only edit their own or admins edit all.
+      allow read: if isOrgMember(orgId);
+      allow update: if isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']);
+      allow create: if isMasterAdmin(); 
+
+      // 2. Staff: Scoped by OrgId
       match /staff/{staffId} {
-        allow read: if isMasterAdmin() || isOrgMember(orgId);
-        allow write: if isMasterAdmin() || (isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(orgId, ['admin', 'FACILITY_ADMIN'])));
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(['admin', 'FACILITY_ADMIN']));
       }
 
-      // 3. Facilities: Members can read all. Admins can edit.
+      // 3. Facilities
       match /facilities/{facilityId} {
-        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId));
-        allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
-        
-        // Enforce 1-3 facility limit
-        allow create: if isMasterAdmin() || (
-          isOrgMember(orgId) && 
-          hasRole(orgId, ['admin', 'FACILITY_ADMIN']) && 
-          get(/databases/$(database)/documents/organizations/$(orgId)).data.max_facilities > 
-          request.resource.data.current_facility_count // This assumes we pass current count or use a better way
-        );
+        allow read: if isOrgMember(orgId) && hasFacilityAccess(facilityId);
+        allow write: if isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']);
       }
 
-      // 4. Patients: Members can read. Only nurses/admins can edit.
+      // 4. Patients: Deeply Scoped
       match /patients/{patientId} {
-        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, resource.data.facility_id));
-        allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && hasFacilityAccess(orgId, request.resource.data.facility_id));
+        allow read: if isOrgMember(orgId) && hasFacilityAccess(resource.data.facility_id);
+        allow write: if isOrgMember(orgId) && 
+                       hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && 
+                       hasFacilityAccess(request.resource.data.facility_id);
 
-        // 5. Clinical Data (Medications, MAR, Orders, Handoffs)
+        // 5. Clinical Data (Sub-collections)
+        match /vital_signs/{vitalId} {
+          allow read: if isOrgMember(orgId) && hasFacilityAccess(get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
+          allow create: if isOrgMember(orgId) && hasRole(['nurse', 'physician']) && isValidVital(request.resource.data);
+          allow update, delete: if false; // IMMUTABLE CLINICAL RECORDS
+        }
+
+        // Catch-all for other clinical sub-collections
         match /{clinicalData=**} {
-          allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasFacilityAccess(orgId, get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id));
-          allow write: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'nurse', 'physician', 'FACILITY_ADMIN']));
+           allow read: if isOrgMember(orgId) && hasFacilityAccess(get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
+           allow write: if isOrgMember(orgId) && hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']);
         }
       }
 
-      // 6. Audit Logs: Append-only. No deletion.
+      // 6. Audit Logs: Global Append-Only
       match /audit_logs/{logId} {
-        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(orgId, ['admin', 'FACILITY_ADMIN']));
-        allow create: if isMasterAdmin() || isOrgMember(orgId);
-        allow update, delete: if false; // IMMUTABLE
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
+        allow create: if isOrgMember(orgId);
+        allow update, delete: if false; 
       }
+    }
+
+    // Global Audit Logs (Outside Org scope for system-wide auditing)
+    match /audit_logs/{logId} {
+      allow read: if isMasterAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
     }
 
     // Default deny

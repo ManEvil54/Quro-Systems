@@ -83,6 +83,16 @@ export interface Patient {
   photo_url?: string;
   is_active: boolean;
   is_active_monitoring: boolean;
+  current_vitals?: {
+    pulse?: number;
+    systolic?: number;
+    diastolic?: number;
+    temperature?: number;
+    spO2?: number;
+    is_alert: boolean;
+    recorded_at: string;
+    recorded_by_name?: string;
+  };
   respiratory_state?: RespiratoryState;
   enteral_state?: EnteralState;
   created_at: string;
@@ -175,12 +185,14 @@ export interface Medication {
   updated_at: string;
 }
 
+export type MARAction = 'given' | 'held' | 'refused' | 'npo' | 'absent';
+
 export interface MAREntry {
   id: string;
   org_id: string;
   patient_id: string;
   medication_id: string;
-  action: 'given' | 'held' | 'refused' | 'npo' | 'absent';
+  action: MARAction;
   delay_reason?: string;
   administered_by: string;
   witnessed_by?: string; // For narcotics/insulin
@@ -378,5 +390,30 @@ export interface TreatmentEntry {
   scheduled_time: string;
   actual_time: string;
   notes?: string;
+  created_at: string;
+}
+export interface HandoffEntry {
+  id: string;
+  org_id: string;
+  facility_id: string | null;
+  patient_id: string;
+  outgoing_nurse_id: string;
+  outgoing_nurse_name: string;
+  incoming_nurse_id?: string;
+  shift_type: Shift;
+  situation: string;
+  assessment: string;
+  recommendation: string;
+  vitals_summary?: {
+    bp?: string;
+    pulse?: string;
+    temp?: string;
+    o2?: string;
+    glucose?: string;
+  };
+  significant_events: string[];
+  pending_tasks: string[];
+  is_signed_off: boolean;
+  signed_at?: string;
   created_at: string;
 }

@@ -6,18 +6,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
+  ChevronLeft,
+  ChevronRight,
   Check, 
-  X, 
-  AlertCircle,
-  Clock,
-  MoreHorizontal,
   Pill
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
-import type { Medication, MarEntry, MarAction } from '@/lib/firebase/types';
+import type { Medication, MARAction } from '@/lib/firebase/types';
 
 interface Props {
   patientId: string;
@@ -28,20 +24,41 @@ export default function MARGrid({ patientId }: Props) {
   const { entries, loading: marLoading, logAdministration } = useMAR(patientId);
   
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const currentYear = new Date().getFullYear();
+  const [logging, setLogging] = useState<{ medId: string, date: string, time: string } | null>(null);
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
 
+  const handleLog = async (med: Medication, date: string, time: string) => {
+    try {
+      await logAdministration({
+        medication_id: med.id,
+        scheduled_date: date,
+        scheduled_time: time,
+        action: 'given'
+      });
+      
+      setLogging(null);
+    } catch (err) {
+      const error = err as Error;
+      if (error.message === 'CLINICAL_ERROR_ALREADY_GIVEN') {
+        alert('Medication already documented for this slot.');
+      } else {
+        alert(`Error: ${error.message}`);
+      }
+    }
+  };
+
   // Map entries to a quick lookup object: [medId][date][time] -> action
   const entryMap = useMemo(() => {
-    const map: Record<string, Record<string, Record<string, MarAction>>> = {};
+    const map: Record<string, Record<string, Record<string, MARAction>>> = {};
     entries.forEach(entry => {
       if (!map[entry.medication_id]) map[entry.medication_id] = {};
       if (!map[entry.medication_id][entry.scheduled_date]) map[entry.medication_id][entry.scheduled_date] = {};
-      map[entry.medication_id][entry.scheduled_date][entry.scheduled_time] = entry.action || 'see_notes';
+      map[entry.medication_id][entry.scheduled_date][entry.scheduled_time] = entry.action || 'absent';
     });
     return map;
   }, [entries]);
@@ -105,9 +122,12 @@ export default function MARGrid({ patientId }: Props) {
                         {med.dosage} · {med.route} · {med.frequency}
                       </p>
                       <div className="flex gap-1 mt-1">
-                        {med.frequency_times.map(t => (
+                        {(med.frequency_times || []).map(t => (
                           <span key={t} className="text-[9px] font-mono font-bold bg-slate-100 text-slate-500 px-1 rounded">{t}</span>
                         ))}
+                        {med.is_psychotropic && (
+                          <span className="text-[8px] font-black bg-red-500 text-white px-1.5 rounded-full uppercase tracking-widest animate-pulse">High Alert</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -118,17 +138,21 @@ export default function MARGrid({ patientId }: Props) {
                   return (
                     <td key={day} className="p-1 border-r border-slate-50 align-top">
                       <div className="flex flex-col gap-1 items-center">
-                        {med.frequency_times.map(time => {
+                        {(med.frequency_times || []).map(time => {
                           const action = entryMap[med.id]?.[dateStr]?.[time];
                           return (
                             <button
                               key={time}
                               title={`${time} - Click to log`}
+                              onClick={() => !action && handleLog(med, dateStr, time)}
+                              disabled={!!action}
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
                                 action === 'given' ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20' :
                                 action === 'refused' ? 'bg-red-500 text-white' :
                                 action === 'held' ? 'bg-amber-500 text-white' :
-                                'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                logging?.medId === med.id && logging?.date === dateStr && logging?.time === time
+                                  ? 'bg-amber-500 text-white animate-pulse'
+                                  : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                               }`}
                             >
                               {action === 'given' ? <Check size={10} /> : 
@@ -153,6 +177,7 @@ export default function MARGrid({ patientId }: Props) {
           No medications listed for this month.
         </div>
       )}
+
     </div>
   );
 }

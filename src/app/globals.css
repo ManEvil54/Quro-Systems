@@ -604,3 +604,50 @@ body {
     page-break-before: always;
   }
 }
+/* ============================================================
+   CLINICAL UX: High-Performance Interactions
+   Zero-Latency Feedback · Pulse Vitality · Data Shimmers
+   ============================================================ */
+
+@keyframes vital-heart-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(13, 148, 136, 0)); }
+  15% { transform: scale(1.25); filter: drop-shadow(0 0 4px rgba(13, 148, 136, 0.4)); }
+  30% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(13, 148, 136, 0)); }
+  45% { transform: scale(1.15); filter: drop-shadow(0 0 2px rgba(13, 148, 136, 0.2)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(13, 148, 136, 0)); }
+}
+
+@keyframes vital-update-flash {
+  0% { color: #14b8a6; text-shadow: 0 0 12px rgba(20, 184, 166, 0.8); transform: scale(1.1); }
+  100% { color: inherit; text-shadow: none; transform: scale(1); }
+}
+
+@keyframes critical-card-ripple {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.animate-vital-pulse {
+  animation: vital-heart-pulse 1.8s ease-in-out infinite;
+}
+
+.animate-vital-update {
+  animation: vital-update-flash 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.critical-ripple {
+  animation: critical-card-ripple 2s infinite;
+}
+
+.vital-grid-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vital-grid-glass:hover {
+  border-color: rgba(20, 184, 166, 0.4);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);
+}

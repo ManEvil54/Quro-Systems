@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient, VitalSign, HandoverNote, Bed } from '@/lib/firebase/types';
+import type { Patient, HandoverNote, Bed } from '@/lib/firebase/types';
 
 export interface DashboardBed {
   id: string;
@@ -52,7 +52,6 @@ export function useDashboard(facilityId: string) {
     let roomsUnsubscribe = () => {};
     let bedsUnsubscribe = () => {};
     let patientsUnsubscribe = () => {};
-    let vitalsUnsubscribes: (() => void)[] = [];
     let alertsUnsubscribe = () => {};
 
     // 1. Listen to Rooms (to get room names)
@@ -78,13 +77,11 @@ export function useDashboard(facilityId: string) {
         patientsUnsubscribe = onSnapshot(patientsQuery, (patientsSnap) => {
           const patientList = patientsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Patient[];
           
-          // Clear old vitals listeners when patient list changes
-          vitalsUnsubscribes.forEach(unsub => unsub());
-          vitalsUnsubscribes = [];
-
-          // Construct initial beds state
-          const initialBeds: DashboardBed[] = bedList.map(bed => {
+          // Construct final beds state with denormalized vitals
+          const updatedBeds: DashboardBed[] = bedList.map(bed => {
             const patient = patientList.find(p => p.bed_id === bed.id);
+            const latest = patient?.current_vitals;
+            
             return {
               id: bed.id,
               bed_name: bed.name,
@@ -95,10 +92,10 @@ export function useDashboard(facilityId: string) {
                 id: patient.id,
                 initials: `${patient.first_name[0]}${patient.last_name[0]}`,
                 mrn: patient.mrn,
-                status: patient.is_active_monitoring ? 'Critical' : 'Stable',
-                hr: null,
-                bp: null,
-                temp: null,
+                status: (latest?.is_alert || patient.is_active_monitoring) ? 'Critical' : 'Stable',
+                hr: latest?.pulse || null,
+                bp: latest?.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
+                temp: latest?.temperature || null,
                 is_active_monitoring: patient.is_active_monitoring,
                 code_status: patient.code_status,
                 diagnoses: patient.diagnoses
@@ -106,37 +103,8 @@ export function useDashboard(facilityId: string) {
             };
           });
 
-          setBeds(initialBeds);
+          setBeds(updatedBeds);
           setLoading(false);
-
-          // 4. Listen to Vitals for each patient
-          patientList.forEach(patient => {
-            const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patient.id, 'vital_signs');
-            const vitalsQuery = query(vitalsRef, orderBy('recorded_at', 'desc'), limit(1));
-            
-            const vUnsub = onSnapshot(vitalsQuery, (vSnapshot) => {
-              if (!vSnapshot.empty) {
-                const latest = vSnapshot.docs[0].data() as VitalSign;
-                setBeds(prev => prev.map(dbed => {
-                  if (dbed.patient?.id === patient.id) {
-                    const isCritical = latest.is_alert || patient.is_active_monitoring;
-                    return {
-                      ...dbed,
-                      patient: {
-                        ...dbed.patient,
-                        hr: latest.pulse || null,
-                        bp: latest.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
-                        temp: latest.temperature || null,
-                        status: isCritical ? 'Critical' : 'Stable'
-                      }
-                    } as DashboardBed;
-                  }
-                  return dbed;
-                }));
-              }
-            });
-            vitalsUnsubscribes.push(vUnsub);
-          });
         });
       });
     });
@@ -157,7 +125,6 @@ export function useDashboard(facilityId: string) {
       roomsUnsubscribe();
       bedsUnsubscribe();
       patientsUnsubscribe();
-      vitalsUnsubscribes.forEach(unsub => unsub());
       alertsUnsubscribe();
     };
   }, [organization?.id, facilityId]);

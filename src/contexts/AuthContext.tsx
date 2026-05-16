@@ -86,12 +86,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Helper: Load standard user data
   const loadUserData = async (user: User, orgId: string) => {
-    const staffDoc = await getDoc(doc(db, 'organizations', orgId, 'staff', user.uid));
+    // Parallel Data Hydration: Eliminate "Cold Start" sequential fetching
+    const [staffDoc, orgDoc] = await Promise.all([
+      getDoc(doc(db, 'organizations', orgId, 'staff', user.uid)),
+      getDoc(doc(db, 'organizations', orgId))
+    ]);
+
     const staffData = staffDoc.exists()
       ? ({ id: staffDoc.id, ...staffDoc.data() } as Staff)
       : null;
 
-    const orgDoc = await getDoc(doc(db, 'organizations', orgId));
     const orgData = orgDoc.exists() 
       ? { id: orgDoc.id, name: orgDoc.data().name } 
       : { id: orgId, name: 'Quro Facility' };
@@ -219,38 +223,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          let userMetaDoc = await getDoc(doc(db, 'users', user.uid));
-          
-          // AUTO-LINK Demo User if record is missing
-          if (!userMetaDoc.exists() && user.email === 'demo@qurosystems.com') {
-            console.log("🔗 Auto-linking demo user...");
-            const ORG_ID = 'mq-demo-org';
-            const FACILITY_ID = 'platinum-health-hub';
-            
-            await setDoc(doc(db, 'users', user.uid), {
-              org_id: ORG_ID,
-              email: user.email,
-              role: 'FACILITY_ADMIN'
-            });
-            
-            await setDoc(doc(db, 'organizations', ORG_ID, 'staff', user.uid), {
-              id: user.uid,
-              auth_id: user.uid,
-              org_id: ORG_ID,
-              facility_id: FACILITY_ID,
-              first_name: 'Demo',
-              last_name: 'Clinical User',
-              initials: 'DCU',
-              role: 'FACILITY_ADMIN',
-              email: user.email,
-              is_active: true,
-              is_onboarded: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-            userMetaDoc = await getDoc(doc(db, 'users', user.uid));
-          }
+          // ADVERSARIAL AUDIT: Client-side "Auto-Linking" has been DEPRECATED.
+          // Provisioning must happen via secure server-side triggers or invitation flows.
+          // This prevents unauthorized escalation of privileges.
+          const userMetaDoc = await getDoc(doc(db, 'users', user.uid));
 
           if (!userMetaDoc.exists()) {
             setState(prev => ({ ...prev, user, loading: false }));
