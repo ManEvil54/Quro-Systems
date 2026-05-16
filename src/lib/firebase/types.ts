@@ -78,6 +78,7 @@ export interface Patient {
   mrn: string;
   first_name: string;
   last_name: string;
+  full_name: string;
   date_of_birth: string;
   gender: 'male' | 'female' | 'other' | 'undisclosed';
   ssn_last_four?: string;

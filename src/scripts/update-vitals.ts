@@ -151,7 +151,7 @@ async function updateVitals() {
         spO2: data.spO2,
         resp: data.resp,
         glucose: data.glucose,
-        pain: data.pain,
+        pain_level: data.pain,
         weight: data.weight,
         is_alert: data.is_critical,
         status_note: data.status_note,
@@ -175,7 +175,7 @@ async function updateVitals() {
           spO2: updatePayload.spO2,
           resp: updatePayload.resp,
           glucose: updatePayload.glucose,
-          pain: updatePayload.pain,
+          pain_level: updatePayload.pain_level,
           weight: updatePayload.weight,
           is_alert: updatePayload.is_alert,
           recorded_at: new Date().toISOString(), // Use ISO for denormalized field consistency

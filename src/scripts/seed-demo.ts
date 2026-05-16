@@ -89,6 +89,15 @@ async function seed() {
       created_at: new Date().toISOString()
     });
 
+    // 1b. Create SYSTEM Organization (for infrastructure personnel)
+    console.log('Creating system operations node: SYSTEM');
+    await setDoc(doc(db, 'organizations', 'SYSTEM'), {
+      id: 'SYSTEM',
+      name: 'Quro Global Operations',
+      is_active: true,
+      created_at: new Date().toISOString()
+    });
+
     // 1. Create Facility
     console.log(`Creating facility: ${FACILITY_ID}`);
     const facilityRef = doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID);
@@ -468,6 +477,27 @@ async function seed() {
       org_id: ORG_ID,
       email: 'demo@qurosystems.com',
       role: 'FACILITY_ADMIN'
+    });
+
+    // 8b. Seed a System Tech for the Master Console demo
+    const techId = 'demo-tech-specialist';
+    await setDoc(doc(db, 'organizations', 'SYSTEM', 'staff', techId), {
+      id: techId,
+      org_id: 'SYSTEM',
+      first_name: 'Tech',
+      last_name: 'Specialist',
+      initials: 'TS',
+      email: 'tech@qurosystems.com',
+      role: 'APP_TECH',
+      is_active: true,
+      is_onboarded: true,
+      created_at: new Date().toISOString()
+    });
+
+    await setDoc(doc(db, 'users', techId), {
+      org_id: 'SYSTEM',
+      email: 'tech@qurosystems.com',
+      role: 'APP_TECH'
     });
 
     console.log('🚀 MASTER DEMO SEEDING COMPLETE WITH CLINICAL FIDELITY!');

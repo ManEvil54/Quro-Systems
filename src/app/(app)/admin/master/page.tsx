@@ -148,8 +148,28 @@ export default function MasterConsolePage() {
     const confirm = window.confirm(`Activate Ghost Mode for ${orgName}?\n\nThis will grant you full clinical access to their facilities for support purposes. All actions will be logged in the system audit trail.`);
     if (confirm) {
       await impersonate(orgId);
+      // Auto-redirect to dashboard to verify environment state
+      window.location.href = '/dashboard';
     }
   };
+
+  async function toggleOrgStatus(orgId: string, currentStatus: boolean) {
+    try {
+      await setDoc(doc(db, 'organizations', orgId), { is_active: !currentStatus }, { merge: true });
+      fetchData();
+    } catch (err) {
+      console.error('Error toggling org status:', err);
+    }
+  }
+
+  async function toggleTechStatus(techId: string, currentStatus: boolean) {
+    try {
+      await setDoc(doc(db, 'organizations', 'SYSTEM', 'staff', techId), { is_active: !currentStatus }, { merge: true });
+      fetchData();
+    } catch (err) {
+      console.error('Error toggling tech status:', err);
+    }
+  }
 
   const filteredItems = activeTab === 'infrastructure' 
     ? organizations.filter(org => org.name.toLowerCase().includes(searchQuery.toLowerCase()) || org.slug.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -294,11 +314,17 @@ export default function MasterConsolePage() {
                     </div>
                     <div className="flex items-center gap-4">
                       <button 
+                        onClick={() => toggleOrgStatus(org.id, org.is_active)}
+                        className={`px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${org.is_active ? 'bg-white text-slate-400 border-slate-100 hover:text-rose-600 hover:bg-rose-50' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}
+                      >
+                        {org.is_active ? 'Deactivate' : 'Reactivate'}
+                      </button>
+                      <button 
                         onClick={() => handleImpersonate(org.id, org.name)}
-                        className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all flex items-center gap-3 shadow-sm active:scale-95"
+                        className="px-8 py-4 bg-slate-900 text-white border border-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:border-rose-600 transition-all flex items-center gap-3 shadow-sm active:scale-95"
                       >
                         <Ghost size={16} />
-                        Enter Infrastructure
+                        Ghost Mode
                       </button>
                     </div>
                   </div>
@@ -326,7 +352,13 @@ export default function MasterConsolePage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${tech.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                      <button 
+                        onClick={() => toggleTechStatus(tech.id, tech.is_active)}
+                        className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tech.is_active ? 'bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'}`}
+                      >
+                         {tech.is_active ? 'Revoke Access' : 'Restore Authority'}
+                      </button>
+                      <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${tech.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                          {tech.is_active ? 'ACTIVE AUTHORITY' : 'REVOKED'}
                       </div>
                     </div>
@@ -489,4 +521,3 @@ export default function MasterConsolePage() {
     </ProtectedRoute>
   );
 }
-
