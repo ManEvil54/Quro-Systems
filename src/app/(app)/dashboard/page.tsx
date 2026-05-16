@@ -241,28 +241,20 @@ export default function DashboardPage() {
 
   const beds = rawBeds;
 
-  const handleVitalsSubmit = async (data: {
-    patient_id: string;
-    pulse?: number;
-    systolic?: number;
-    diastolic?: number;
-    temperature?: number;
-    o2_saturation?: number;
-    recorded_at: string;
-  }) => {
-    if (!organization?.id || !data.patient_id) return;
+  const handleVitalsSubmit = async (data: Record<string, string | number | boolean | null>) => {
+    const patientId = data.patient_id as string;
+    if (!organization?.id || !patientId) return;
     
-    const patientId = data.patient_id;
     const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'vital_signs');
     const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
 
     const vitalData = {
-      pulse: data.pulse,
-      systolic: data.systolic,
-      diastolic: data.diastolic,
-      temperature: data.temperature,
-      spO2: data.o2_saturation,
-      recorded_at: data.recorded_at,
+      pulse: data.pulse as number,
+      systolic: data.systolic as number,
+      diastolic: data.diastolic as number,
+      temperature: data.temperature as number,
+      spO2: data.o2_saturation as number,
+      recorded_at: data.recorded_at as string,
       recorded_by: staff?.id || 'system',
       created_at: serverTimestamp()
     };
