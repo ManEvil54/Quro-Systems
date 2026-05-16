@@ -49,6 +49,58 @@ const criticalVitals: Record<string, CriticalVital> = {
     "weight": 162.4,
     "is_critical": true,
     "status_note": "Enteral residual >150mL; feeding paused per protocol. Nausea reported."
+  },
+  "Chen, Robert": {
+    "heart_rate": 78,
+    "systolic": 138,
+    "diastolic": 84,
+    "temp": 98.6,
+    "spO2": 98,
+    "resp": 16,
+    "glucose": 118,
+    "pain": 0,
+    "weight": 182.2,
+    "is_critical": false,
+    "status_note": "Stable. Blood glucose within target range."
+  },
+  "Vance, Eleanor": {
+    "heart_rate": 72,
+    "systolic": 118,
+    "diastolic": 74,
+    "temp": 98.4,
+    "spO2": 97,
+    "resp": 14,
+    "glucose": 95,
+    "pain": 2,
+    "weight": 124.8,
+    "is_critical": false,
+    "status_note": "Alert and oriented x2. Resting comfortably."
+  },
+  "Jenkins, Sarah": {
+    "heart_rate": 82,
+    "systolic": 130,
+    "diastolic": 82,
+    "temp": 98.8,
+    "spO2": 99,
+    "resp": 18,
+    "glucose": 104,
+    "pain": 1,
+    "weight": 142.6,
+    "is_critical": false,
+    "status_note": "Reported mild joint pain in hands. PRN administered."
+  },
+  "Dumont, Victor": {
+    "heart_rate": 70,
+    "systolic": 122,
+    "diastolic": 78,
+    "temp": 98.4,
+    "spO2": 96,
+    "resp": 16,
+    "glucose": 98,
+    "pain": 3,
+    "weight": 175.2,
+    "is_critical": false,
+    "status_note": "Sleeping soundly. Comfort measures maintained."
   }
 };
 

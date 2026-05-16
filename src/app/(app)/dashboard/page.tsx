@@ -19,7 +19,7 @@ import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
 import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
 
 import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
@@ -241,15 +241,40 @@ export default function DashboardPage() {
 
   const beds = rawBeds;
 
-  const handleVitalsSubmit = async (data: Record<string, string | number | boolean | null>) => {
-    if (!organization?.id) return;
+  const handleVitalsSubmit = async (data: Record<string, any>) => {
+    if (!organization?.id || !data.patient_id) return;
     
-    await addDoc(collection(db, 'organizations', organization.id, 'vitals'), {
-      ...data,
-      org_id: organization.id,
+    const patientId = data.patient_id;
+    const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'vital_signs');
+    const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
+
+    const vitalData = {
+      pulse: data.pulse,
+      systolic: data.systolic,
+      diastolic: data.diastolic,
+      temperature: data.temperature,
+      spO2: data.o2_saturation,
+      recorded_at: data.recorded_at,
       recorded_by: staff?.id || 'system',
       created_at: serverTimestamp()
-    });
+    };
+
+    // 1. Add to historical subcollection
+    await addDoc(vitalsRef, vitalData);
+
+    // 2. Update denormalized field on Patient for real-time dashboard updates
+    await setDoc(patientRef, {
+      current_vitals: {
+        pulse: vitalData.pulse,
+        systolic: vitalData.systolic,
+        diastolic: vitalData.diastolic,
+        temperature: vitalData.temperature,
+        spO2: vitalData.spO2,
+        recorded_at: vitalData.recorded_at,
+        recorded_by_name: staff ? `${staff.first_name} ${staff.last_name}` : 'System'
+      },
+      updated_at: serverTimestamp()
+    }, { merge: true });
   };
 
   const { isImpersonating } = useAuth();

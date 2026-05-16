@@ -316,6 +316,26 @@ async function seed() {
         }
         const vDoc = doc(vitalsRef);
         await setDoc(vDoc, { id: vDoc.id, ...vitalData });
+
+        // DENORMALIZATION: Update the Patient document with the LATEST vital sign
+        if (isLatest) {
+          await setDoc(patientRef, {
+            current_vitals: {
+              pulse: vitalData.pulse,
+              systolic: vitalData.systolic,
+              diastolic: vitalData.diastolic,
+              temperature: vitalData.temperature,
+              spO2: vitalData.spO2,
+              resp: vitalData.resp,
+              glucose: vitalData.glucose,
+              pain_level: vitalData.pain_level,
+              weight: vitalData.weight,
+              is_alert: vitalData.is_alert,
+              recorded_at: vitalData.recorded_at,
+              recorded_by_name: 'System Seeding Engine'
+            }
+          }, { merge: true });
+        }
       }
 
       // 5. Seed Medications & MAR
@@ -415,6 +435,16 @@ async function seed() {
         created_at: new Date().toISOString()
       });
     }
+
+    // 7b. Intelligence Summaries (for the Global Intelligence Bar)
+    console.log('🧠 Creating intelligence summaries...');
+    const intelRef = collection(db, 'organizations', ORG_ID, 'intelligence_summaries');
+    await setDoc(doc(intelRef), {
+      high_risk_trends: "Respiratory infection risk flagged for Arthur Morgan; thick yellow secretions noted.",
+      clinical_tasks: "Enteral residual >150mL for Margaret Thompson; feeding paused per protocol.",
+      compliance_gaps: "All high-acuity RT/GT charting complete for the current shift.",
+      created_at: new Date().toISOString()
+    });
 
     // 8. Demo Staff
     const demoStaffId = 'demo-staff-member'; 

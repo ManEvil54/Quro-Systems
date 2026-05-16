@@ -63,12 +63,34 @@ export function useVitals(patientId: string) {
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const vitalsRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'vital_signs');
-    return await addDoc(vitalsRef, {
+    const patientRef = doc(db, 'organizations', staff.org_id, 'patients', patientId);
+    
+    // 1. Add to history
+    await addDoc(vitalsRef, {
       ...data,
       org_id: staff.org_id,
       patient_id: patientId,
       recorded_by: staff.id,
       created_at: serverTimestamp(),
+    });
+
+    // 2. Update denormalized field on Patient
+    return await updateDoc(patientRef, {
+      current_vitals: {
+        pulse: data.pulse || null,
+        systolic: data.systolic || null,
+        diastolic: data.diastolic || null,
+        temperature: data.temperature || null,
+        spO2: data.spO2 || null,
+        resp: data.resp || null,
+        glucose: data.glucose || null,
+        pain_level: data.pain_level || null,
+        weight: data.weight || null,
+        is_alert: data.is_alert || false,
+        recorded_at: data.recorded_at,
+        recorded_by_name: `${staff.first_name} ${staff.last_name}`
+      },
+      updated_at: serverTimestamp()
     });
   };
 

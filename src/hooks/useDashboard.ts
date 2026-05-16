@@ -107,6 +107,7 @@ export function useDashboard(facilityId: string) {
                 glucose: latest?.glucose || null,
                 pain: latest?.pain_level || null,
                 weight: latest?.weight || null,
+                full_name: patient.full_name,
                 is_active_monitoring: patient.is_active_monitoring,
                 code_status: patient.code_status,
                 diagnoses: patient.diagnoses
