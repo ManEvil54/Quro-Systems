@@ -99,6 +99,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // 7. Demo Leads: Public Append-Only Lead Capture
+    match /demo_leads/{leadId} {
+      allow create: if true; 
+      allow read, update, delete: if isMasterAdmin();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

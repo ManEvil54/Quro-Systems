@@ -4,30 +4,58 @@
 // ============================================================
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import QuroLogo from '@/components/brand/QuroLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Shield, Activity, Mail, CheckCircle2 } from 'lucide-react';
+import { db } from '@/lib/firebase/client';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const emailRef = useRef<HTMLInputElement>(null);
   const isDemoMode = searchParams.get('demo') === 'true';
-  const { signIn, loading, error, clearError } = useAuth();
+  const { signIn, loading, error, clearError, staff } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Redirect based on role after hydration
+  React.useEffect(() => {
+    if (!loading && staff) {
+      const isOwner = ['APP_OWNER', 'APP_TECH'].includes(staff.role);
+      if (isOwner) {
+        router.push('/admin/master');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [loading, staff, router]);
+
   const handleDemoAccess = async () => {
+    if (!email || !email.includes('@')) {
+      emailRef.current?.focus();
+      return;
+    }
+    
     setSubmitting(true);
     try {
-      setEmail('demo@qurosystems.com');
-      setPassword('QuroDemo2026!');
+      // CAPTURE LEAD: Persist the email to our CRM/Follow-up collection
+      await addDoc(collection(db, 'demo_leads'), {
+        email: email,
+        captured_at: serverTimestamp(),
+        source: isDemoMode ? 'platinum_experience' : 'direct_demo',
+        status: 'new'
+      });
+
+      // We still log into the master demo account to provide the high-fidelity experience,
+      // but we require the lead's email first.
       clearError();
       await signIn('demo@qurosystems.com', 'QuroDemo2026!');
-      router.push('/dashboard');
+      // Redirection is handled by the useEffect above
     } catch (err) {
       console.error('Demo access error:', err);
     } finally {
@@ -41,7 +69,7 @@ function LoginContent() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      router.push('/dashboard');
+      // Redirection is handled by the useEffect above
     } catch {
     } finally {
       setSubmitting(false);
@@ -128,6 +156,7 @@ function LoginContent() {
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
                   <input
+                    ref={emailRef}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -185,21 +214,21 @@ function LoginContent() {
                 className={`w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl ${
                   isDemoMode 
                     ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-500/20 animate-pulse' 
-                    : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 shadow-slate-200/50'
+                    : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 shadow-slate-200/50 hover:border-teal-500/30 group/demo'
                 }`}
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Activity size={18} className="text-teal-500" />
-                    Explore Platinum Health Hub
+                    <Activity size={18} className={isDemoMode ? 'text-white' : 'text-teal-500 group-hover/demo:scale-110 transition-transform'} />
+                    {isDemoMode ? 'Start Platinum Experience' : 'Explore Platinum Health Hub'}
                   </>
                 )}
               </button>
               
               <p className="mt-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Instant Access · No Credit Card Required
+                {email ? 'Ready to synchronize' : 'Enter your email above for instant access'}
               </p>
             </div>
 

@@ -26,7 +26,7 @@ import { db } from '@/lib/firebase/client';
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
-  const { user, organization, staff, activeFacility } = useAuth();
+  const { user, organization, staff, activeFacility, isImpersonating } = useAuth();
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);

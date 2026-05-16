@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Activity, Pill, FileText, UserPlus, ShieldAlert, Wind, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, Activity, Pill, FileText, UserPlus, ShieldAlert, Wind, Droplets, ChevronDown, ChevronUp, Thermometer } from 'lucide-react';
 import Link from 'next/link';
 import type { DashboardBed } from '@/hooks/useDashboard';
 
