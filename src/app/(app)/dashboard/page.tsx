@@ -264,34 +264,9 @@ export default function DashboardPage() {
     }, { merge: true });
   };
 
-  const { isImpersonating } = useAuth();
-
   return (
     <div className={`animate-in fade-in duration-700 min-h-screen bg-slate-50/30 ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
       
-      {/* Ghost Mode Advanced Tools - Sticky Top */}
-      {isImpersonating && (
-        <div className="no-print p-6 bg-rose-500 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="flex items-center gap-4">
-            <ShieldAlert size={24} />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Ghost Mode Active</p>
-              <h3 className="text-xl font-black uppercase tracking-tight">System Diagnostic Override</h3>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="px-4 py-2 bg-black/20 rounded-xl text-center">
-              <p className="text-[8px] font-black uppercase tracking-widest mb-1 opacity-70">Latency</p>
-              <p className="text-sm font-bold">0.02ms</p>
-            </div>
-            <div className="px-4 py-2 bg-black/20 rounded-xl text-center">
-              <p className="text-[8px] font-black uppercase tracking-widest mb-1 opacity-70">Sync</p>
-              <p className="text-sm font-bold">100%</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {staff?.role === 'SURVEYOR' && (
         <div className="no-print p-4 bg-amber-500 text-white flex items-center justify-between gap-6 shadow-xl">
           <div className="flex items-center gap-4 px-4">
