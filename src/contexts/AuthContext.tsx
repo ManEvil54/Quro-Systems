@@ -203,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 first_name: customRole === 'APP_OWNER' ? 'System' : 'Tech',
                 last_name: customRole === 'APP_OWNER' ? 'Owner' : 'Specialist',
                 initials: customRole === 'APP_OWNER' ? 'ROOT' : 'TECH',
-                role: customRole as any,
+                role: customRole as StaffRole,
                 credential: 'DEVELOPER',
                 email: user.email || '',
                 phone: null,

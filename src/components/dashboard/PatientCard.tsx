@@ -196,7 +196,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               <div className="flex gap-2 mt-3">
                 {(patient.diagnoses?.some((d: string) => d.includes('COPD') || d.includes('Pneumonia') || d.includes('Respiratory')) || patient.id === 'arthur-morgan') && (
                   <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); !readOnly && onRTClick?.(patient); }}
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation(); 
+                      if (!readOnly) onRTClick?.(patient); 
+                    }}
                     disabled={readOnly}
                     className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all group/rt ${
                       readOnly ? 'bg-slate-800/20 border border-slate-700/30 cursor-default opacity-50' : 'bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20'
@@ -208,7 +212,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
                 )}
                 {(patient.diagnoses?.some((d: string) => d.includes('PEG') || d.includes('Dysphagia') || d.includes('Diabetes')) || patient.id === 'margaret-thompson') && (
                   <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); !readOnly && onGTClick?.(patient); }}
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation(); 
+                      if (!readOnly) onGTClick?.(patient); 
+                    }}
                     disabled={readOnly}
                     className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all group/gt ${
                       readOnly ? 'bg-slate-800/20 border border-slate-700/30 cursor-default opacity-50' : 'bg-quro-teal/10 border border-quro-teal/20 hover:bg-quro-teal/20'

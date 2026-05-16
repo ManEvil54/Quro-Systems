@@ -241,7 +241,15 @@ export default function DashboardPage() {
 
   const beds = rawBeds;
 
-  const handleVitalsSubmit = async (data: Record<string, any>) => {
+  const handleVitalsSubmit = async (data: {
+    patient_id: string;
+    pulse?: number;
+    systolic?: number;
+    diastolic?: number;
+    temperature?: number;
+    o2_saturation?: number;
+    recorded_at: string;
+  }) => {
     if (!organization?.id || !data.patient_id) return;
     
     const patientId = data.patient_id;
