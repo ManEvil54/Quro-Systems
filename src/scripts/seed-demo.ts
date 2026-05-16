@@ -88,16 +88,6 @@ async function seed() {
       subscription_status: 'active',
       created_at: new Date().toISOString()
     });
-
-    // 1b. Create SYSTEM Organization (for infrastructure personnel)
-    console.log('Creating system operations node: SYSTEM');
-    await setDoc(doc(db, 'organizations', 'SYSTEM'), {
-      id: 'SYSTEM',
-      name: 'Quro Global Operations',
-      is_active: true,
-      created_at: new Date().toISOString()
-    });
-
     // 1. Create Facility
     console.log(`Creating facility: ${FACILITY_ID}`);
     const facilityRef = doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID);
@@ -108,6 +98,15 @@ async function seed() {
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
+    });
+
+    // 1b. Create SYSTEM Organization (for infrastructure personnel)
+    console.log('Creating system operations node: SYSTEM');
+    await setDoc(doc(db, 'organizations', 'SYSTEM'), {
+      id: 'SYSTEM',
+      name: 'Quro Global Operations',
+      is_active: true,
+      created_at: new Date().toISOString()
     });
 
     // 2. Create Rooms & Beds (Exactly 6 beds for the Boutique experience)
