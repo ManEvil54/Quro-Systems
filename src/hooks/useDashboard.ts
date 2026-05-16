@@ -23,6 +23,11 @@ export interface DashboardBed {
     hr: number | null;
     bp: string | null;
     temp: number | null;
+    spo2: number | null;
+    resp: number | null;
+    glucose: number | null;
+    pain: number | null;
+    weight: number | null;
     is_active_monitoring: boolean;
     code_status?: string;
     diagnoses?: string[];
@@ -96,6 +101,11 @@ export function useDashboard(facilityId: string) {
                 hr: latest?.pulse || null,
                 bp: latest?.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
                 temp: latest?.temperature || null,
+                spo2: latest?.spO2 || null,
+                resp: latest?.resp || patient.respiratory_state?.vent_settings?.rate || null,
+                glucose: latest?.glucose || null,
+                pain: latest?.pain_level || null,
+                weight: latest?.weight || null,
                 is_active_monitoring: patient.is_active_monitoring,
                 code_status: patient.code_status,
                 diagnoses: patient.diagnoses

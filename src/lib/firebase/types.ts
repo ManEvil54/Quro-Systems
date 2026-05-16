@@ -89,6 +89,10 @@ export interface Patient {
     diastolic?: number;
     temperature?: number;
     spO2?: number;
+    resp?: number;
+    glucose?: number;
+    pain_level?: number;
+    weight?: number;
     is_alert: boolean;
     recorded_at: string;
     recorded_by_name?: string;

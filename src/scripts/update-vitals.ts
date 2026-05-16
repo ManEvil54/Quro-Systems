@@ -15,6 +15,10 @@ interface CriticalVital {
   diastolic: number;
   temp: number;
   spO2: number;
+  resp: number;
+  glucose: number;
+  pain: number;
+  weight: number;
   is_critical: boolean;
   status_note: string;
 }
@@ -26,6 +30,10 @@ const criticalVitals: Record<string, CriticalVital> = {
     "diastolic": 92,
     "temp": 101.4,
     "spO2": 88,
+    "resp": 28,
+    "glucose": 156,
+    "pain": 7,
+    "weight": 198.5,
     "is_critical": true,
     "status_note": "Respiratory distress; thick yellow secretions noted. O2 saturation dropping."
   },
@@ -35,6 +43,10 @@ const criticalVitals: Record<string, CriticalVital> = {
     "diastolic": 65,
     "temp": 98.9,
     "spO2": 95,
+    "resp": 20,
+    "glucose": 112,
+    "pain": 4,
+    "weight": 162.4,
     "is_critical": true,
     "status_note": "Enteral residual >150mL; feeding paused per protocol. Nausea reported."
   }
@@ -85,6 +97,10 @@ async function updateVitals() {
         diastolic: data.diastolic,
         temperature: data.temp,
         spO2: data.spO2,
+        resp: data.resp,
+        glucose: data.glucose,
+        pain: data.pain,
+        weight: data.weight,
         is_alert: data.is_critical,
         status_note: data.status_note,
         recorded_at: serverTimestamp(),
@@ -105,6 +121,10 @@ async function updateVitals() {
           diastolic: updatePayload.diastolic,
           temperature: updatePayload.temperature,
           spO2: updatePayload.spO2,
+          resp: updatePayload.resp,
+          glucose: updatePayload.glucose,
+          pain: updatePayload.pain,
+          weight: updatePayload.weight,
           is_alert: updatePayload.is_alert,
           recorded_at: new Date().toISOString(), // Use ISO for denormalized field consistency
           recorded_by_name: ACTOR_NAME

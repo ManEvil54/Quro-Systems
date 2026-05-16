@@ -115,9 +115,37 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           </div>
 
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">RR</span>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+              {patient.resp || '--'}
+            </span>
+          </div>
+
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
             <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">SpO2</span>
-            <span className={`font-bold text-quro-teal ${isBoutique ? 'text-lg' : 'text-sm'}`}>
-              98%
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.spo2 && patient.spo2 < 92 ? 'text-red-500 animate-pulse' : 'text-quro-teal'}`}>
+              {patient.spo2 ? `${patient.spo2}%` : '--'}
+            </span>
+          </div>
+
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Pain</span>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.pain && patient.pain > 4 ? 'text-amber-500' : 'text-slate-200'}`}>
+              {patient.pain !== null ? `${patient.pain}/10` : '--'}
+            </span>
+          </div>
+
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Glucose</span>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.glucose && (patient.glucose > 200 || patient.glucose < 70) ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+              {patient.glucose || '--'}
+            </span>
+          </div>
+
+          <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
+            <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Weight</span>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} text-slate-200`}>
+              {patient.weight ? `${patient.weight} lbs` : '--'}
             </span>
           </div>
         </div>
