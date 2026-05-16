@@ -26,7 +26,7 @@ import { db } from '@/lib/firebase/client';
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
-  const { organization, staff, activeFacility: authActiveFacility } = useAuth();
+  const { user, organization, staff, activeFacility: authActiveFacility } = useAuth();
   const [activeFacility, setActiveFacility] = useState<string | null>(authActiveFacility?.id || null);
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
@@ -64,7 +64,7 @@ export default function DashboardPage() {
 
   const viewType = 'boutique';
   
-  const isDemoOrg = organization?.id === 'mq-demo-org';
+  const isDemoUser = user?.email === 'demo@qurosystems.com';
   
   const { beds: facilityBeds, alerts } = useDashboard(activeFacility || '');
   
@@ -225,7 +225,7 @@ export default function DashboardPage() {
   // Data Source Logic: Prioritize Live Firestore data (facilityBeds)
   const rawBeds = (facilityBeds.length > 0) 
     ? facilityBeds 
-    : (isDemoOrg && activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
+    : (isDemoUser && activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
         bed_name: `Bed ${i + 1}`,
         room_name: 'Unassigned',

@@ -24,7 +24,7 @@ interface IntelligenceSummary {
 }
 
 export default function GlobalIntelligenceBar() {
-  const { organization } = useAuth();
+  const { user, organization } = useAuth();
   const [summary, setSummary] = useState<IntelligenceSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,9 +42,9 @@ export default function GlobalIntelligenceBar() {
       if (!snapshot.empty) {
         setSummary(snapshot.docs[0].data() as IntelligenceSummary);
       } else {
-        const isDemoOrg = organization?.id === 'mq-demo-org';
+        const isDemoUser = user?.email === 'demo@qurosystems.com';
         
-        if (isDemoOrg) {
+        if (isDemoUser) {
           setSummary({
             high_risk_trends: "Respiratory infection risk flagged for Arthur Morgan; thick yellow secretions noted.",
             clinical_tasks: "Enteral residual >150mL for Margaret Thompson; feeding paused per protocol.",
