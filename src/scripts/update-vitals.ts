@@ -24,7 +24,7 @@ interface CriticalVital {
 }
 
 const criticalVitals: Record<string, CriticalVital> = {
-  "Arthur Morgan": {
+  "Morgan, Arthur": {
     "heart_rate": 112,
     "systolic": 145,
     "diastolic": 92,
@@ -37,7 +37,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "is_critical": true,
     "status_note": "Respiratory distress; thick yellow secretions noted. O2 saturation dropping."
   },
-  "Margaret Thompson": {
+  "Thompson, Margaret": {
     "heart_rate": 98,
     "systolic": 110,
     "diastolic": 65,

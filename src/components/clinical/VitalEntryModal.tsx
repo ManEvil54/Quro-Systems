@@ -33,9 +33,9 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
     diastolic: '',
     pulse: '',
     temperature: '',
-    respiratory_rate: '',
-    o2_saturation: '',
-    blood_glucose: '',
+    resp: '',
+    spO2: '',
+    glucose: '',
     weight: '',
     pain_level: '0',
     notes: '',
@@ -54,12 +54,14 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
 
     const sys = Number(form.systolic);
     const dia = Number(form.diastolic);
-    const o2 = Number(form.o2_saturation);
-    const glu = Number(form.blood_glucose);
+    const o2 = Number(form.spO2);
+    const glu = Number(form.glucose);
+    const respRate = Number(form.resp);
 
     if (sys > 160 || sys < 90) { is_alert = true; alert_message += 'Abnormal BP. '; }
     if (o2 < 92 && o2 > 0) { is_alert = true; alert_message += 'Low O2. '; }
     if (glu > 250 || (glu < 70 && glu > 0)) { is_alert = true; alert_message += 'Critical Glucose. '; }
+    if (respRate > 24 || respRate < 10) { is_alert = true; alert_message += 'Abnormal Resp. '; }
 
     try {
       await onSubmit({
@@ -68,9 +70,9 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
         diastolic: form.diastolic ? Number(form.diastolic) : null,
         pulse: form.pulse ? Number(form.pulse) : null,
         temperature: form.temperature ? Number(form.temperature) : null,
-        respiratory_rate: form.respiratory_rate ? Number(form.respiratory_rate) : null,
-        o2_saturation: form.o2_saturation ? Number(form.o2_saturation) : null,
-        blood_glucose: form.blood_glucose ? Number(form.blood_glucose) : null,
+        resp: form.resp ? Number(form.resp) : null,
+        spO2: form.spO2 ? Number(form.spO2) : null,
+        glucose: form.glucose ? Number(form.glucose) : null,
         weight: form.weight ? Number(form.weight) : null,
         pain_level: Number(form.pain_level),
         is_alert,
@@ -124,15 +126,19 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
             </div>
             <div>
               <label className="label flex items-center gap-2"><Wind size={12} className="text-blue-500" /> O2 Sat (%)</label>
-              <input type="number" placeholder="98" className="input" value={form.o2_saturation} onChange={e => setForm({...form, o2_saturation: e.target.value})} />
+              <input type="number" placeholder="98" className="input" value={form.spO2} onChange={e => setForm({...form, spO2: e.target.value})} />
+            </div>
+            <div>
+              <label className="label flex items-center gap-2"><Wind size={12} className="text-purple-500" /> Resp Rate</label>
+              <input type="number" placeholder="16" className="input" value={form.resp} onChange={e => setForm({...form, resp: e.target.value})} />
             </div>
             <div>
               <label className="label flex items-center gap-2"><Thermometer size={12} className="text-amber-500" /> Temp (°F)</label>
               <input type="number" step="0.1" placeholder="98.6" className="input" value={form.temperature} onChange={e => setForm({...form, temperature: e.target.value})} />
             </div>
             <div>
-              <label className="label flex items-center gap-2"><Droplets size={12} className="text-purple-500" /> Glucose (mg/dL)</label>
-              <input type="number" placeholder="110" className="input" value={form.blood_glucose} onChange={e => setForm({...form, blood_glucose: e.target.value})} />
+              <label className="label flex items-center gap-2"><Droplets size={12} className="text-rose-500" /> Glucose (mg/dL)</label>
+              <input type="number" placeholder="110" className="input" value={form.glucose} onChange={e => setForm({...form, glucose: e.target.value})} />
             </div>
             <div>
               <label className="label flex items-center gap-2"><Weight size={12} className="text-slate-500" /> Weight (lbs)</label>

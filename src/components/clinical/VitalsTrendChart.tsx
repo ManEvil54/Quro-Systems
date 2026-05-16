@@ -83,8 +83,36 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
       name: 'SpO2', 
       color: '#10b981', 
       icon: <Wind size={14} />, 
-      points: getPoints(v => v.o2sat, 85, 100),
+      points: getPoints(v => v.spO2, 85, 100),
       suffix: '%'
+    },
+    {
+      name: 'Resp',
+      color: '#8b5cf6',
+      icon: <Wind size={14} />,
+      points: getPoints(v => v.resp, 10, 35),
+      suffix: '/min'
+    },
+    {
+      name: 'Glucose',
+      color: '#ec4899',
+      icon: <Droplets size={14} />,
+      points: getPoints(v => v.glucose, 60, 300),
+      suffix: 'mg/dL'
+    },
+    {
+      name: 'Pain',
+      color: '#f97316',
+      icon: <Activity size={14} />,
+      points: getPoints(v => v.pain_level, 0, 10),
+      suffix: '/10'
+    },
+    {
+      name: 'Weight',
+      color: '#64748b',
+      icon: <Activity size={14} />,
+      points: getPoints(v => v.weight, 80, 350),
+      suffix: 'lbs'
     }
   ];
 
@@ -103,7 +131,7 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2 max-w-[60%]">
           {streams.map(s => (
             <div key={s.name} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -183,7 +211,7 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
         </svg>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         {streams.map(s => {
           const latest = s.points[s.points.length - 1]?.val;
           const prev = s.points[s.points.length - 2]?.val;

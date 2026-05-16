@@ -154,7 +154,7 @@ export interface VitalSign {
   resp?: number;
   systolic?: number;
   diastolic?: number;
-  o2sat?: number;
+  spO2?: number;
   weight?: number;
   glucose?: number;
   pain_level?: number;
@@ -181,7 +181,7 @@ export interface Medication {
   end_date?: string | null;
   status: MedStatus;
   requires_vitals?: boolean;
-  vital_type?: 'bp' | 'hr' | 'glucose' | 'o2sat';
+  vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2';
   is_psychotropic?: boolean;
   special_instructions?: string;
   order_id?: string;

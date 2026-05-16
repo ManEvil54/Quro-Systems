@@ -64,37 +64,60 @@ export default function VitalHistory({ patientId }: Props) {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {v.systolic && (
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Blood Pressure</p>
-                  <p className="text-sm font-bold text-slate-900">{v.systolic}/{v.diastolic}</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pulse</p>
+                <div className="flex items-baseline gap-1">
+                  <p className={`text-sm font-black ${v.pulse && (v.pulse > 100 || v.pulse < 60) ? 'text-rose-500' : 'text-slate-900'}`}>{v.pulse || '--'}</p>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">bpm</span>
                 </div>
-              )}
-              {v.pulse && (
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Heart Rate</p>
-                  <p className="text-sm font-bold text-slate-900">{v.pulse} <span className="text-[10px] font-medium text-slate-500">BPM</span></p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">BP</p>
+                <p className="text-sm font-black text-slate-900">
+                  {v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : '--'}
+                </p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Temp</p>
+                <p className="text-sm font-black text-slate-900">{v.temperature ? `${v.temperature.toFixed(1)}°F` : '--'}</p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Resp</p>
+                <div className="flex items-baseline gap-1">
+                  <p className={`text-sm font-black ${v.resp && (v.resp > 20 || v.resp < 12) ? 'text-rose-500' : 'text-slate-900'}`}>{v.resp || '--'}</p>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">/min</span>
                 </div>
-              )}
-              {v.o2_saturation && (
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">O2 Sat</p>
-                  <p className="text-sm font-bold text-slate-900">{v.o2_saturation}%</p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">SpO2</p>
+                <p className={`text-sm font-black ${v.spO2 && v.spO2 < 92 ? 'text-rose-500' : 'text-slate-900'}`}>{v.spO2 ? `${v.spO2}%` : '--'}</p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Glucose</p>
+                <div className="flex items-baseline gap-1">
+                  <p className={`text-sm font-black ${v.glucose && (v.glucose > 200 || v.glucose < 70) ? 'text-rose-500' : 'text-slate-900'}`}>{v.glucose || '--'}</p>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">mg/dL</span>
                 </div>
-              )}
-              {v.temperature && (
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Temp</p>
-                  <p className="text-sm font-bold text-slate-900">{v.temperature}°F</p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pain</p>
+                <p className={`text-sm font-black ${v.pain_level && v.pain_level > 5 ? 'text-amber-500' : 'text-slate-900'}`}>{v.pain_level !== undefined ? `${v.pain_level}/10` : '--'}</p>
+              </div>
+
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 group hover:border-quro-teal/30 transition-all">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Weight</p>
+                <div className="flex items-baseline gap-1">
+                  <p className="text-sm font-black text-slate-900">{v.weight || '--'}</p>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">lbs</span>
                 </div>
-              )}
-              {v.blood_glucose && (
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Glucose</p>
-                  <p className="text-sm font-bold text-slate-900">{v.blood_glucose} <span className="text-[10px] font-medium text-slate-500">mg/dL</span></p>
-                </div>
-              )}
+              </div>
             </div>
 
             {v.notes && (
