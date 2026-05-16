@@ -1,4 +1,14 @@
-export type StaffRole = 'SUPER_ADMIN' | 'FACILITY_ADMIN' | 'admin' | 'physician' | 'nurse' | 'cna' | 'pharmacist' | 'billing';
+export type StaffRole = 
+  | 'APP_OWNER'      // Quro System Owner - Full platform control
+  | 'APP_TECH'       // Quro Technical Staff - Troubleshooting & Facility Access
+  | 'CLIENT_ADMIN'   // Client/Organization Owner - Manage Org, Facilities, & Staff
+  | 'SURVEYOR'       // Regulatory Auditor - Read-only access to Client/Facilities
+  | 'FACILITY_ADMIN' // Local Facility Manager
+  | 'nurse'          // Clinician
+  | 'physician'      // Clinician
+  | 'cna'            // Clinician
+  | 'pharmacist'     // Support
+  | 'billing';       // Support
 export type MedRoute = 'PO' | 'SL' | 'IM' | 'IV' | 'SC' | 'PR' | 'TOP' | 'INH' | 'OPH' | 'OTC' | 'NGT' | 'PATCH';
 export type MedFrequency = 'QD' | 'BID' | 'TID' | 'QID' | 'Q4H' | 'Q6H' | 'Q8H' | 'Q12H' | 'QHS' | 'QAM' | 'QPM' | 'PRN' | 'STAT' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
 export type MedStatus = 'active' | 'discontinued' | 'on_hold' | 'completed' | 'signed';

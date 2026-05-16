@@ -305,6 +305,21 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {staff?.role === 'SURVEYOR' && (
+        <div className="no-print p-4 bg-amber-500 text-white flex items-center justify-between gap-6 shadow-xl">
+          <div className="flex items-center gap-4 px-4">
+            <ShieldAlert size={20} />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Audit Session Active</p>
+              <h3 className="text-sm font-black uppercase tracking-tight">Read-Only Surveyor Access</h3>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 pr-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest bg-black/10 px-3 py-1 rounded-full">State Inspection Mode</span>
+          </div>
+        </div>
+      )}
+
       <div className="p-8 max-w-[1600px] mx-auto">
         {/* Facility Switcher — Restored to Horizontal Tabs */}
         <div className="flex gap-4 mb-10 overflow-x-auto pb-4 scrollbar-hide">
@@ -372,6 +387,7 @@ export default function DashboardPage() {
               isCritical={bed.patient?.status === 'Critical'}
               viewType={viewType}
               showDiagnostics={isImpersonating}
+              readOnly={staff?.role === 'SURVEYOR'}
               onVitalsClick={(p: DashboardPatient) => setSelectedPatientForVitals(p)}
               onRTClick={(p: DashboardPatient) => setSelectedPatientForRT(p)}
               onGTClick={(p: DashboardPatient) => setSelectedPatientForGT(p)}

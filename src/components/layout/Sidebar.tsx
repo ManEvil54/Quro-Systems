@@ -45,8 +45,10 @@ export default function Sidebar() {
         const snap = await getDocs(q);
         const allFacilities = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Facility));
         
-        // Filter by staff access
-        const accessible = staff?.role === 'SUPER_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin'
+        const isSystemAdmin = staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH';
+        const isOrgAdmin = staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN';
+
+        const accessible = isSystemAdmin || isOrgAdmin
           ? allFacilities
           : allFacilities.filter(f => staff?.assigned_facility_ids?.includes(f.id) || staff?.facility_id === f.id);
         
@@ -204,7 +206,7 @@ export default function Sidebar() {
         })}
 
         {/* Client Admin Links (Manager / DON) */}
-        {(staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin') && (
+        {(staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN') && (
           <div className="pt-6 mt-6 border-t border-white/5">
             <p className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Management</p>
             <Link
@@ -238,13 +240,13 @@ export default function Sidebar() {
         )}
 
         {/* Master Admin Links */}
-        {staff?.role === 'SUPER_ADMIN' && (
+        {(staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH') && (
           <div className="pt-6 mt-6 border-t border-white/5">
-            <p className="px-3 mb-2 text-[10px] font-black text-amber-500 uppercase tracking-widest">Master Console</p>
+            <p className="px-3 mb-2 text-[10px] font-black text-rose-500 uppercase tracking-widest">Master Console</p>
             <Link
               href="/admin/master"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                pathname === '/admin/master' ? 'bg-white/5 text-amber-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                pathname === '/admin/master' ? 'bg-white/5 text-rose-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <ShieldAlert size={18} />
@@ -276,7 +278,7 @@ export default function Sidebar() {
       <div className="px-4 py-6 border-t border-white/5 bg-black/20">
         <div className="flex items-center gap-3 px-2">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-xl ${
-            staff?.role === 'SUPER_ADMIN' ? 'bg-amber-500 text-slate-900' : 'bg-teal-500 text-white'
+            (staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH') ? 'bg-rose-500 text-white' : 'bg-teal-500 text-white'
           }`}>
             {staff?.initials || user?.displayName?.charAt(0) || 'U'}
           </div>

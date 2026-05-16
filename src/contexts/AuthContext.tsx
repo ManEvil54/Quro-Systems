@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Log the impersonation (HIPAA Audit Trail)
       await addDoc(collection(db, 'audit_logs'), {
-        action: 'SUPER_ADMIN_IMPERSONATION_START',
+        action: 'SYSTEM_ADMIN_IMPERSONATION_START',
         user_id: user.uid,
         target_org_id: orgId,
         target_staff_id: staffId || 'ALL',
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization: orgData,
         isImpersonating: true,
         impersonatedDonName: staffData ? `${staffData.first_name} ${staffData.last_name}` : orgData.name,
-        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...' } : null, // Will be refined on first switch
+        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...' } : null, 
         loading: false,
         error: null
       });
@@ -183,8 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const idTokenResult = await user.getIdTokenResult();
           const customRole = idTokenResult.claims.role as string;
+          const isSystemAdmin = customRole === 'APP_OWNER' || customRole === 'APP_TECH';
 
-          if (customRole === 'SUPER_ADMIN') {
+          if (isSystemAdmin) {
             const impersonationData = sessionStorage.getItem('quro_impersonation');
             if (impersonationData) {
               const { orgId, staffId } = JSON.parse(impersonationData);
@@ -199,10 +200,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 auth_id: user.uid,
                 org_id: 'SYSTEM',
                 facility_id: null,
-                first_name: 'System',
-                last_name: 'Root',
-                initials: 'ROOT',
-                role: 'SUPER_ADMIN',
+                first_name: customRole === 'APP_OWNER' ? 'System' : 'Tech',
+                last_name: customRole === 'APP_OWNER' ? 'Owner' : 'Specialist',
+                initials: customRole === 'APP_OWNER' ? 'ROOT' : 'TECH',
+                role: customRole as any,
                 credential: 'DEVELOPER',
                 email: user.email || '',
                 phone: null,
@@ -296,7 +297,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const impersonate = async (orgId: string, staffId?: string) => {
     if (!state.user) return;
     const idTokenResult = await state.user.getIdTokenResult();
-    if (idTokenResult.claims.role !== 'SUPER_ADMIN') return;
+    const role = idTokenResult.claims.role;
+    if (role !== 'APP_OWNER' && role !== 'APP_TECH') return;
     
     setState(prev => ({ ...prev, loading: true }));
     await performImpersonation(state.user, orgId, staffId);

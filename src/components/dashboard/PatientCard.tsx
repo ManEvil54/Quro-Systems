@@ -10,12 +10,13 @@ interface PatientCardProps {
   isCritical: boolean;
   viewType: 'boutique' | 'enterprise';
   showDiagnostics?: boolean;
+  readOnly?: boolean;
   onVitalsClick?: (patient: DashboardPatient) => void;
   onRTClick?: (patient: DashboardPatient) => void;
   onGTClick?: (patient: DashboardPatient) => void;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, onVitalsClick, onRTClick, onGTClick }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, readOnly, onVitalsClick, onRTClick, onGTClick }) => {
   const isBoutique = viewType === 'boutique';
   const { patient } = bed;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -87,14 +88,16 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
         {/* Vitals Bento Grid — Tap area for Quick Entry */}
         <div 
           onClick={(e) => {
-            if (onVitalsClick) {
+            if (onVitalsClick && !readOnly) {
               e.preventDefault();
               e.stopPropagation();
               onVitalsClick(patient);
             }
           }}
-          className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 cursor-pointer ${
-            isCritical ? 'bg-red-950/20 border-red-500/30' : 'bg-black/20 border-white/5 hover:border-quro-teal/40 hover:bg-quro-teal/10'
+          className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all duration-500 ${
+            !readOnly ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'
+          } ${
+            isCritical ? 'bg-red-950/20 border-red-500/30' : 'bg-black/20 border-white/5 ' + (!readOnly ? 'hover:border-quro-teal/40 hover:bg-quro-teal/10' : '')
           } ${isBoutique ? 'mt-4' : ''}`}
         >
           {/* Top Row: Pulse & BP (Always Visible) */}
@@ -193,20 +196,26 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               <div className="flex gap-2 mt-3">
                 {(patient.diagnoses?.some((d: string) => d.includes('COPD') || d.includes('Pneumonia') || d.includes('Respiratory')) || patient.id === 'arthur-morgan') && (
                   <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRTClick?.(patient); }}
-                    className="flex-1 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-500/20 transition-all group/rt"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); !readOnly && onRTClick?.(patient); }}
+                    disabled={readOnly}
+                    className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all group/rt ${
+                      readOnly ? 'bg-slate-800/20 border border-slate-700/30 cursor-default opacity-50' : 'bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20'
+                    }`}
                   >
-                    <Wind size={12} className="text-cyan-500 group-hover/rt:animate-pulse" />
-                    <span className="text-[8px] font-black text-cyan-500 uppercase tracking-widest">Respiratory</span>
+                    <Wind size={12} className={`${readOnly ? 'text-slate-500' : 'text-cyan-500 group-hover/rt:animate-pulse'}`} />
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${readOnly ? 'text-slate-500' : 'text-cyan-500'}`}>Respiratory</span>
                   </button>
                 )}
                 {(patient.diagnoses?.some((d: string) => d.includes('PEG') || d.includes('Dysphagia') || d.includes('Diabetes')) || patient.id === 'margaret-thompson') && (
                   <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGTClick?.(patient); }}
-                    className="flex-1 py-2 bg-quro-teal/10 border border-quro-teal/20 rounded-xl flex items-center justify-center gap-2 hover:bg-quro-teal/20 transition-all group/gt"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); !readOnly && onGTClick?.(patient); }}
+                    disabled={readOnly}
+                    className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all group/gt ${
+                      readOnly ? 'bg-slate-800/20 border border-slate-700/30 cursor-default opacity-50' : 'bg-quro-teal/10 border border-quro-teal/20 hover:bg-quro-teal/20'
+                    }`}
                   >
-                    <Droplets size={12} className="text-quro-teal group-hover/gt:animate-bounce" />
-                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Enteral</span>
+                    <Droplets size={12} className={`${readOnly ? 'text-slate-500' : 'text-quro-teal group-hover/gt:animate-bounce'}`} />
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${readOnly ? 'text-slate-500' : 'text-emerald-500'}`}>Enteral</span>
                   </button>
                 )}
               </div>
