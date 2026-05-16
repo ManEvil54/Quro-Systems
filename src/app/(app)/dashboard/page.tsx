@@ -26,8 +26,7 @@ import { db } from '@/lib/firebase/client';
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
-  const { user, organization, staff, activeFacility: authActiveFacility } = useAuth();
-  const [activeFacility, setActiveFacility] = useState<string | null>(authActiveFacility?.id || null);
+  const { user, organization, staff, activeFacility } = useAuth();
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
@@ -55,18 +54,11 @@ export default function DashboardPage() {
     is_paused: false
   });
   
-  // Zero-Click Sync: Ensure local state matches auth context
-  React.useEffect(() => {
-    if (authActiveFacility?.id && authActiveFacility.id !== activeFacility) {
-      setActiveFacility(authActiveFacility.id);
-    }
-  }, [authActiveFacility?.id]);
-
   const viewType = 'boutique';
   
   const isDemoUser = user?.email === 'demo@qurosystems.com';
   
-  const { beds: facilityBeds, alerts } = useDashboard(activeFacility || '');
+  const { beds: facilityBeds, alerts } = useDashboard(activeFacility?.id || '');
   
   // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
   const mockPatients: DashboardBed[] = [
@@ -225,7 +217,7 @@ export default function DashboardPage() {
   // Data Source Logic: Prioritize Live Firestore data (facilityBeds)
   const rawBeds = (facilityBeds.length > 0) 
     ? facilityBeds 
-    : (isDemoUser && activeFacility === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
+    : (isDemoUser && activeFacility?.id === 'platinum-health-hub' ? mockPatients : Array.from({ length: 6 }, (_, i) => ({
         id: `empty-${i}`,
         bed_name: `Bed ${i + 1}`,
         room_name: 'Unassigned',
@@ -317,7 +309,7 @@ export default function DashboardPage() {
 
       <div className="p-8 max-w-[1600px] mx-auto">
         {/* Facility Selection Header */}
-        {!activeFacility && (
+        {!activeFacility?.id && (
           <div className="mb-10 p-10 bg-white rounded-[3rem] border border-dashed border-slate-200 text-center space-y-4">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
                <Building2 size={32} className="text-slate-300" />
@@ -337,7 +329,7 @@ export default function DashboardPage() {
             </h1>
             <p className="text-slate-500 text-xs font-black tracking-widest uppercase flex items-center gap-3 opacity-70">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              {authActiveFacility?.name || 'Active Monitoring Console'}
+              {activeFacility?.name || 'Active Monitoring Console'}
             </p>
           </div>
           

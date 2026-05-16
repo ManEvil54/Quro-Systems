@@ -64,7 +64,7 @@ export default function GlobalIntelligenceBar() {
     });
 
     return () => unsubscribe();
-  }, [organization?.id]);
+  }, [organization?.id, user?.email]);
 
   if (loading) return null;
 
