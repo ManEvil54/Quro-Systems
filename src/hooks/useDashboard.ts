@@ -11,6 +11,7 @@ import type { Patient, HandoverNote, Bed } from '@/lib/firebase/types';
 export interface DashboardBed {
   id: string;
   bed_name: string;
+  name?: string; // Standardize for Bed object
   room_name: string;
   room_id: string;
   status: 'available' | 'occupied' | 'maintenance' | 'reserved';
