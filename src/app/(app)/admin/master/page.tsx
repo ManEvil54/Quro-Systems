@@ -20,7 +20,8 @@ import {
   UserPlus,
   Mail,
   ShieldCheck,
-  Cpu
+  Cpu,
+  Trash2
 } from 'lucide-react';
 import { 
   collection, 
@@ -29,7 +30,8 @@ import {
   orderBy, 
   addDoc, 
   doc,
-  setDoc
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -40,12 +42,14 @@ export default function MasterConsolePage() {
   const { impersonate } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [systemStaff, setSystemStaff] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'infrastructure' | 'personnel'>('infrastructure');
+  const [demoLeads, setDemoLeads] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'infrastructure' | 'personnel' | 'leads'>('infrastructure');
   const [stats, setStats] = useState({
     totalOrganizations: 0,
     totalFacilities: 0,
     activeTechs: 0,
-    syncHealth: 99.9
+    syncHealth: 99.9,
+    capturedLeads: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,12 +91,19 @@ export default function MasterConsolePage() {
       const staffSnap = await getDocs(staffQuery);
       const staff = staffSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
       setSystemStaff(staff);
+
+      // 3. Fetch Demo Leads
+      const leadsQuery = query(collection(db, 'demo_leads'), orderBy('captured_at', 'desc'));
+      const leadsSnap = await getDocs(leadsQuery);
+      const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDemoLeads(leads);
       
       setStats({
         totalOrganizations: orgs.length,
         totalFacilities: orgs.reduce((acc, org) => acc + (org.max_facilities || 0), 0),
         activeTechs: staff.filter(s => s.is_active).length,
-        syncHealth: 99.9
+        syncHealth: 99.9,
+        capturedLeads: leads.length
       });
     } catch (err) {
       console.error('Error fetching master data:', err);
@@ -171,9 +182,22 @@ export default function MasterConsolePage() {
     }
   }
 
+  async function handleDeleteLead(leadId: string) {
+    const confirm = window.confirm('Are you sure you want to delete this lead? This action cannot be undone.');
+    if (!confirm) return;
+    try {
+      await deleteDoc(doc(db, 'demo_leads', leadId));
+      fetchData();
+    } catch (err) {
+      console.error('Error deleting lead:', err);
+    }
+  }
+
   const filteredItems = activeTab === 'infrastructure' 
     ? organizations.filter(org => org.name.toLowerCase().includes(searchQuery.toLowerCase()) || org.slug.toLowerCase().includes(searchQuery.toLowerCase()))
-    : systemStaff.filter(s => `${s.first_name} ${s.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) || s.email.toLowerCase().includes(searchQuery.toLowerCase()));
+    : activeTab === 'personnel'
+    ? systemStaff.filter(s => `${s.first_name} ${s.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) || s.email.toLowerCase().includes(searchQuery.toLowerCase()))
+    : demoLeads.filter(l => l.email?.toLowerCase().includes(searchQuery.toLowerCase()) || l.source?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <ProtectedRoute allowedRoles={['APP_OWNER', 'APP_TECH']}>
@@ -214,20 +238,26 @@ export default function MasterConsolePage() {
                >
                  Personnel
                </button>
+               <button 
+                 onClick={() => setActiveTab('leads')}
+                 className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'leads' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+               >
+                 Demo Leads
+               </button>
             </div>
             
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500 transition-colors" size={18} />
               <input 
                 type="text" 
-                placeholder={activeTab === 'infrastructure' ? "Search Client Mesh..." : "Search Tech Roster..."} 
+                placeholder={activeTab === 'infrastructure' ? "Search Client Mesh..." : activeTab === 'personnel' ? "Search Tech Roster..." : "Search Leads..."} 
                 className="pl-14 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-xs font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-teal-500/5 focus:border-teal-500/30 transition-all w-80 shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {activeTab === 'infrastructure' ? (
+            {activeTab === 'infrastructure' && (
               <button 
                 onClick={() => setIsAddingOrg(true)}
                 className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black tracking-widest uppercase hover:bg-teal-600 hover:scale-[1.02] transition-all flex items-center gap-3 shadow-2xl shadow-slate-900/20 active:scale-95"
@@ -235,7 +265,8 @@ export default function MasterConsolePage() {
                 <Zap size={18} className="text-teal-400" />
                 Provision Client
               </button>
-            ) : (
+            )}
+            {activeTab === 'personnel' && (
               <button 
                 onClick={() => setIsAddingTech(true)}
                 className="px-10 py-5 bg-teal-600 text-white rounded-[2rem] text-xs font-black tracking-widest uppercase hover:bg-teal-700 hover:scale-[1.02] transition-all flex items-center gap-3 shadow-2xl shadow-teal-900/20 active:scale-95"
@@ -251,8 +282,8 @@ export default function MasterConsolePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { label: 'Network Nodes', value: stats.totalOrganizations, icon: Building2, color: 'text-teal-500', bg: 'bg-teal-50' },
-            { label: 'Cluster Health', value: `${stats.syncHealth}%`, icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
             { label: 'Personnel Access', value: stats.activeTechs, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+            { label: 'Captured Leads', value: stats.capturedLeads, icon: Mail, color: 'text-amber-500', bg: 'bg-amber-50' },
             { label: 'Encrypted State', value: 'Verified', icon: Lock, color: 'text-slate-900', bg: 'bg-slate-100' },
           ].map((stat, i) => (
             <div key={i} className="glass-card p-8 group hover:border-teal-500/20 transition-all">
@@ -273,10 +304,18 @@ export default function MasterConsolePage() {
         <div className="glass-card overflow-hidden">
           <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
             <h3 className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-3 text-lg">
-              {activeTab === 'infrastructure' ? <Database size={20} className="text-teal-500" /> : <Cpu size={20} className="text-teal-500" />}
-              {activeTab === 'infrastructure' ? 'Infrastructure Roster' : 'System Operations Team'}
+              {activeTab === 'infrastructure' && <Database size={20} className="text-teal-500" />}
+              {activeTab === 'personnel' && <Cpu size={20} className="text-teal-500" />}
+              {activeTab === 'leads' && <Mail size={20} className="text-teal-500" />}
+              {activeTab === 'infrastructure' && 'Infrastructure Roster'}
+              {activeTab === 'personnel' && 'System Operations Team'}
+              {activeTab === 'leads' && 'Demo Lead Capture Roster'}
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{filteredItems.length} Active {activeTab === 'infrastructure' ? 'Organizations' : 'Personnel'}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {activeTab === 'infrastructure' && `${filteredItems.length} Active Organizations`}
+              {activeTab === 'personnel' && `${filteredItems.length} Active Personnel`}
+              {activeTab === 'leads' && `${filteredItems.length} Captured Leads`}
+            </span>
           </div>
           
           <div className="p-4">
@@ -329,7 +368,7 @@ export default function MasterConsolePage() {
                     </div>
                   </div>
                 ))
-              ) : (
+              ) : activeTab === 'personnel' ? (
                 (filteredItems as Staff[]).map((tech) => (
                   <div key={tech.id} className="flex items-center justify-between p-6 bg-white rounded-[2rem] border border-slate-100 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-900/5 transition-all group">
                     <div className="flex items-center gap-6">
@@ -361,6 +400,42 @@ export default function MasterConsolePage() {
                       <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${tech.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                          {tech.is_active ? 'ACTIVE AUTHORITY' : 'REVOKED'}
                       </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                (filteredItems as any[]).map((lead) => (
+                  <div key={lead.id} className="flex items-center justify-between p-6 bg-white rounded-[2rem] border border-slate-100 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-900/5 transition-all group animate-in fade-in duration-300">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 font-black text-xl group-hover:bg-amber-100 transition-all">
+                        @
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-900 text-xl tracking-tight">{lead.email}</h4>
+                        <div className="flex items-center gap-4 mt-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-slate-500">
+                             <span className="text-[10px] font-bold uppercase">
+                                Source: <span className="text-slate-800">{lead.source === 'platinum_experience' ? 'Platinum Experience' : 'Direct Demo'}</span>
+                             </span>
+                          </div>
+                          <span className="w-1 h-1 rounded-full bg-slate-200" />
+                          <div className="text-[10px] text-teal-600 uppercase tracking-widest font-black flex items-center gap-1.5">
+                             Captured {lead.captured_at ? new Date(lead.captured_at.seconds * 1000).toLocaleString() : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                         {lead.status || 'Active Access'}
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteLead(lead.id)}
+                        className="p-3 bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 rounded-xl transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                        title="Delete Lead"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))

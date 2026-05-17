@@ -2508,9 +2508,7 @@ export default function PatientChartPage() {
         </div>
       </div>
 
-    {/* ============================================================ */}
-    {/* eMAR COMPLIANCE MODALS */}
-    {/* ============================================================ */}
+
 
     {/* 1. Re-Authentication PIN Modal */}
     {showPinModal && (

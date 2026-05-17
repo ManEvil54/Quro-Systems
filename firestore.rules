@@ -12,7 +12,7 @@ service cloud.firestore {
 
     // Check if user is a Master Admin (Uses system-level claim)
     function isMasterAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN';
+      return isAuthenticated() && (request.auth.token.role == 'SUPER_ADMIN' || request.auth.token.role == 'APP_OWNER' || request.auth.token.role == 'APP_TECH');
     }
 
     // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck
