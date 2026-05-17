@@ -20,7 +20,8 @@ import {
   LayoutGrid,
   Bed as BedIcon,
   Home,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';

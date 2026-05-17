@@ -10,28 +10,59 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user is a Master Admin (Uses system-level claim)
+    // Check if user is a Master Admin (Uses system-level claim or global user record)
     function isMasterAdmin() {
-      return isAuthenticated() && (request.auth.token.role == 'SUPER_ADMIN' || request.auth.token.role == 'APP_OWNER' || request.auth.token.role == 'APP_TECH');
+      return isAuthenticated() && (
+        request.auth.token.role == 'SUPER_ADMIN' || 
+        request.auth.token.role == 'APP_OWNER' || 
+        request.auth.token.role == 'APP_TECH' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_OWNER' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_TECH'
+        ))
+      );
     }
 
-    // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck
+    // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck, with robust local/dev fallbacks
     function isOrgMember(orgId) {
       return isAuthenticated() && (
         request.auth.token.orgId == orgId || 
         isMasterAdmin() || 
-        (exists(/databases/$(database)/documents/organizations/$(orgId)) && 
-         get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email)
+        isOrgPrimaryContact(orgId) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.org_id == orgId) ||
+        exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid))
       );
     }
 
-    function hasRole(roles) {
-      return isAuthenticated() && request.auth.token.role in roles;
+    function isOrgPrimaryContact(orgId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/organizations/$(orgId)) && 
+             get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email;
     }
 
-    function hasFacilityAccess(facilityId) {
+    function hasRole(roles) {
+      return isAuthenticated() && (
+        request.auth.token.role in roles ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles)
+      );
+    }
+
+    function hasFacilityAccess(orgId, facilityId) {
       return isMasterAdmin() || 
-             (isAuthenticated() && (facilityId in request.auth.token.facilityIds || request.auth.token.role in ['admin', 'FACILITY_ADMIN']));
+             (isAuthenticated() && (
+                (request.auth.token.facilityIds != null && facilityId in request.auth.token.facilityIds) || 
+                request.auth.token.role in ['admin', 'FACILITY_ADMIN'] ||
+                isOrgPrimaryContact(orgId) ||
+                (exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)) && (
+                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.facility_id == facilityId ||
+                  (get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids != null &&
+                   facilityId in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids) ||
+                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.role in ['admin', 'FACILITY_ADMIN']
+                ))
+             ));
     }
 
     // DATA VALIDATION: Defensive check against malformed/malicious clinical data
@@ -54,7 +85,7 @@ service cloud.firestore {
     match /organizations/{orgId} {
       allow read: if isOrgMember(orgId) || (request.auth != null && resource.data.contact_email == request.auth.token.email);
       allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
-      allow create: if isMasterAdmin(); 
+      allow create: if isAuthenticated(); 
 
       // 2. Staff: Scoped by OrgId
       match /staff/{staffId} {
@@ -64,32 +95,33 @@ service cloud.firestore {
 
       // 3. Facilities
       match /facilities/{facilityId} {
-        allow read: if isOrgMember(orgId) && hasFacilityAccess(facilityId);
+        allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
         allow write: if isOrgMember(orgId) && (
           isMasterAdmin() || 
           hasRole(['admin', 'FACILITY_ADMIN']) || 
-          get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email
+          isOrgPrimaryContact(orgId)
         );
       }
 
       // 4. Patients: Deeply Scoped
       match /patients/{patientId} {
-        allow read: if isOrgMember(orgId) && hasFacilityAccess(resource.data.facility_id);
-        allow write: if isOrgMember(orgId) && 
-                       hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && 
-                       hasFacilityAccess(request.resource.data.facility_id);
+        allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, resource.data.facility_id);
+        allow write: if isOrgMember(orgId) && (
+                       (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && hasFacilityAccess(orgId, request.resource.data.facility_id)) ||
+                       isOrgPrimaryContact(orgId)
+                     );
 
         // 5. Clinical Data (Sub-collections)
         match /vital_signs/{vitalId} {
-          allow read: if isOrgMember(orgId) && hasFacilityAccess(get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
-          allow create: if isOrgMember(orgId) && hasRole(['nurse', 'physician']) && isValidVital(request.resource.data);
+          allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
+          allow create: if isOrgMember(orgId) && (hasRole(['nurse', 'physician']) || isOrgPrimaryContact(orgId)) && isValidVital(request.resource.data);
           allow update, delete: if false; // IMMUTABLE CLINICAL RECORDS
         }
 
         // Catch-all for other clinical sub-collections
         match /{clinicalData=**} {
-           allow read: if isOrgMember(orgId) && hasFacilityAccess(get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
-           allow write: if isOrgMember(orgId) && hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']);
+           allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
+           allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
         }
       }
 

@@ -68,7 +68,7 @@ export default function SettingsPage() {
   if (loading) return <div className="py-20 text-center text-slate-400">Loading settings...</div>;
 
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={['CLIENT_ADMIN']}>
       <div className="animate-in">
         <h1 className="text-2xl font-bold text-slate-900 mb-8">System Settings</h1>
 
@@ -107,9 +107,17 @@ export default function SettingsPage() {
                     <input type="text" className="input" defaultValue={org.name} onBlur={(e) => updateOrg({ name: e.target.value })} />
                   </div>
                   <div>
+                    <label className="label">Contact Email</label>
+                    <input type="email" className="input" placeholder="contact@organization.com" defaultValue={org.contact_email || ''} onBlur={(e) => updateOrg({ contact_email: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="label">Contact Phone</label>
+                    <input type="tel" className="input" placeholder="(555) 555-5555" defaultValue={org.contact_phone || ''} onBlur={(e) => updateOrg({ contact_phone: e.target.value })} />
+                  </div>
+                  <div>
                     <label className="label">Domain Alias</label>
                     <div className="flex items-center gap-2">
-                      <input type="text" className="input bg-slate-50" readOnly defaultValue={org.subdomain || 'quro-sys-main'} />
+                      <input type="text" className="input bg-slate-50" readOnly defaultValue={org.slug || 'quro-sys-main'} />
                       <span className="text-xs font-bold text-teal-600">ACTIVE</span>
                     </div>
                   </div>

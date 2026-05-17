@@ -61,6 +61,7 @@ export interface Facility {
   org_id: string;
   name: string;
   max_patients?: number;
+  bed_count?: number | null;
   phone?: string;
   fax?: string;
   administrator_id?: string;
@@ -94,6 +95,8 @@ export interface Patient {
   photo_url?: string;
   is_active: boolean;
   is_active_monitoring: boolean;
+  monitoring_start?: string | null;
+  monitoring_reason?: string | null;
   current_vitals?: {
     pulse?: number;
     systolic?: number;
@@ -110,8 +113,33 @@ export interface Patient {
   };
   respiratory_state?: RespiratoryState;
   enteral_state?: EnteralState;
+  insurance_info?: InsuranceInfo;
+  pharmacy_info?: PharmacyInfo;
+  family_members?: FamilyMember[];
   created_at: string;
   updated_at: string;
+}
+
+export interface InsuranceInfo {
+  provider_name?: string;
+  policy_number?: string;
+  group_number?: string;
+  phone?: string;
+}
+
+export interface PharmacyInfo {
+  name?: string;
+  phone?: string;
+  address?: string;
+  fax?: string;
+}
+
+export interface FamilyMember {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+  is_emergency_contact?: boolean;
 }
 
 export interface RespiratoryState {
@@ -171,6 +199,7 @@ export interface VitalSign {
   pain_level?: number;
   notes?: string;
   is_alert: boolean;
+  alert_message?: string;
   recorded_at: string;
   created_at: string;
 }
@@ -187,15 +216,22 @@ export interface Medication {
   frequency: MedFrequency;
   frequency_times?: string[];
   indication?: string;
-  prescriber_id?: string;
+  prescriber_id?: string | null;
+  prescriber_name?: string | null;
+  pharmacy_name?: string | null;
+  rx_number?: string | null;
   start_date: string;
   end_date?: string | null;
   status: MedStatus;
   requires_vitals?: boolean;
-  vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2';
+  vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2' | null;
+  vital_threshold_low?: number | null;
+  vital_threshold_high?: number | null;
   is_psychotropic?: boolean;
+  psychotropic_monitoring?: string[];
   special_instructions?: string;
-  order_id?: string;
+  order_id?: string | null;
+  order_type?: 'direct' | 'e-rx';
   created_at: string;
   updated_at: string;
 }
@@ -254,6 +290,7 @@ export interface ProviderOrder {
   status: OrderStatus;
   signed_at?: string;
   acknowledged_at?: string;
+  faxed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -273,6 +310,14 @@ export interface HandoverNote {
   general_notes?: string;
   is_urgent: boolean;
   created_at: string;
+}
+
+export interface HandoverAck {
+  id: string;
+  org_id: string;
+  handover_note_id: string;
+  acknowledged_by: string;
+  acknowledged_at: string;
 }
 
 export interface ProgressNote {
@@ -430,5 +475,14 @@ export interface HandoffEntry {
   pending_tasks: string[];
   is_signed_off: boolean;
   signed_at?: string;
+  created_at: string;
+}
+
+export interface StaffInvitation {
+  id: string;
+  email: string;
+  role: string;
+  facility_id: string;
+  status: 'pending' | 'accepted';
   created_at: string;
 }

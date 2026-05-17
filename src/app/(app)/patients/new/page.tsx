@@ -11,7 +11,8 @@ import {
   Plus,
   X,
   Home,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -34,19 +35,20 @@ export default function NewPatientPage() {
     mrn: '',
     first_name: '',
     last_name: '',
+    full_name: '',
     date_of_birth: '',
     gender: 'undisclosed',
     ssn_last_four: '',
     admission_date: new Date().toISOString().split('T')[0],
     discharge_date: null,
     insurance_info: {},
-    emergency_contacts: {},
+    family_members: [],
     allergies: [],
     diagnoses: [],
     code_status: 'full',
     diet: '',
-    physician_id: null,
-    photo_url: null,
+    physician_id: undefined,
+    photo_url: undefined,
     room_number: '',
     is_active: true,
     is_active_monitoring: false,
@@ -94,7 +96,10 @@ export default function NewPatientPage() {
     setError(null);
 
     try {
-      await admitPatient(form);
+      await admitPatient({
+        ...form,
+        full_name: `${form.first_name} ${form.last_name}`.trim()
+      });
       router.push('/patients');
     } catch (err: any) {
       setError(err.message || 'Failed to admit patient. Please check all fields.');
@@ -104,15 +109,16 @@ export default function NewPatientPage() {
 
   const addTag = (field: 'allergies' | 'diagnoses', value: string, setter: (v: string) => void) => {
     if (!value.trim()) return;
-    if (form[field].includes(value.trim())) return;
-    setForm(prev => ({ ...prev, [field]: [...prev[field], value.trim()] }));
+    const currentList = form[field] || [];
+    if (currentList.includes(value.trim())) return;
+    setForm(prev => ({ ...prev, [field]: [...(prev[field] || []), value.trim()] }));
     setter('');
   };
 
   const removeTag = (field: 'allergies' | 'diagnoses', index: number) => {
     setForm(prev => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
+      [field]: (prev[field] || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -198,15 +204,18 @@ export default function NewPatientPage() {
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
-              <select 
-                className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] p-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
-                value={form.gender || ''} onChange={e => setForm({...form, gender: e.target.value as any})}
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="undisclosed">Undisclosed</option>
-              </select>
+              <div className="relative">
+                <select 
+                  className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-4 pr-10 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
+                  value={form.gender || ''} onChange={e => setForm({...form, gender: e.target.value as any})}
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="undisclosed">Undisclosed</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+              </div>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">SSN (Last 4)</label>
@@ -223,7 +232,7 @@ export default function NewPatientPage() {
                 <Home className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <select 
                   required 
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-12 pr-4 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
+                  className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-12 pr-10 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
                   value={form.facility_id || ''} onChange={e => setForm({...form, facility_id: e.target.value})}
                 >
                   <option value="">Select a house...</option>
@@ -231,6 +240,7 @@ export default function NewPatientPage() {
                     <option key={f.id} value={f.id}>{f.name} ({f.bed_count} Beds)</option>
                   ))}
                 </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
               </div>
             </div>
             <div className="space-y-1">
@@ -299,13 +309,13 @@ export default function NewPatientPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {form.allergies.map((a, i) => (
+                  {(form.allergies || []).map((a, i) => (
                     <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-700 text-[10px] font-black rounded-lg border border-rose-100 uppercase tracking-wider">
                       {a}
                       <button type="button" onClick={() => removeTag('allergies', i)} className="hover:text-rose-900"><X size={14} /></button>
                     </span>
                   ))}
-                  {form.allergies.length === 0 && <p className="text-[10px] text-slate-400 italic ml-1">No allergies documented yet.</p>}
+                  {(form.allergies || []).length === 0 && <p className="text-[10px] text-slate-400 italic ml-1">No allergies documented yet.</p>}
                 </div>
               </div>
 
@@ -325,13 +335,13 @@ export default function NewPatientPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {form.diagnoses.map((d, i) => (
+                  {(form.diagnoses || []).map((d, i) => (
                     <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-700 text-[10px] font-black rounded-lg border border-teal-100 uppercase tracking-wider">
                       {d}
                       <button type="button" onClick={() => removeTag('diagnoses', i)} className="hover:text-teal-900"><X size={14} /></button>
                     </span>
                   ))}
-                  {form.diagnoses.length === 0 && <p className="text-[10px] text-slate-400 italic ml-1">No diagnoses documented yet.</p>}
+                  {(form.diagnoses || []).length === 0 && <p className="text-[10px] text-slate-400 italic ml-1">No diagnoses documented yet.</p>}
                 </div>
               </div>
             </div>

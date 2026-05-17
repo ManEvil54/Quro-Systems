@@ -67,10 +67,10 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
     }
   };
 
-  const addTime = () => setForm(f => ({ ...f, frequency_times: [...f.frequency_times, '09:00'] }));
-  const removeTime = (idx: number) => setForm(f => ({ ...f, frequency_times: f.frequency_times.filter((_, i) => i !== idx) }));
+  const addTime = () => setForm(f => ({ ...f, frequency_times: [...(f.frequency_times || []), '09:00'] }));
+  const removeTime = (idx: number) => setForm(f => ({ ...f, frequency_times: (f.frequency_times || []).filter((_, i) => i !== idx) }));
   const updateTime = (idx: number, val: string) => {
-    const newTimes = [...form.frequency_times];
+    const newTimes = [...(form.frequency_times || [])];
     newTimes[idx] = val;
     setForm(f => ({ ...f, frequency_times: newTimes }));
   };
@@ -166,13 +166,13 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
             <div>
               <label className="label">Administration Times</label>
               <div className="flex flex-wrap gap-2">
-                {form.frequency_times.map((time, i) => (
+                {(form.frequency_times || []).map((time, i) => (
                   <div key={i} className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg pl-3 pr-1 py-1 shadow-sm">
                     <input 
                       type="time" className="border-none p-0 text-sm focus:ring-0 w-20"
                       value={time} onChange={e => updateTime(i, e.target.value)}
                     />
-                    {form.frequency_times.length > 1 && (
+                    {(form.frequency_times || []).length > 1 && (
                       <button type="button" onClick={() => removeTime(i)} className="p-1 text-slate-300 hover:text-red-500">
                         <X size={14} />
                       </button>
@@ -206,11 +206,11 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
               <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                 <div>
                   <label className="label">Vital Type</label>
-                  <select className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value})}>
-                    <option value="BP">Blood Pressure</option>
-                    <option value="HR">Heart Rate</option>
-                    <option value="Glucose">Blood Glucose</option>
-                    <option value="O2">O2 Saturation</option>
+                  <select className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value as any})}>
+                    <option value="bp">Blood Pressure</option>
+                    <option value="hr">Heart Rate</option>
+                    <option value="glucose">Blood Glucose</option>
+                    <option value="spO2">O2 Saturation</option>
                   </select>
                 </div>
                 <div>

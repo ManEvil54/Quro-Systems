@@ -35,7 +35,9 @@ import {
   Shield,
   Send,
   Archive,
-  Search
+  Search,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import { usePatient } from '@/hooks/usePatient';
@@ -58,7 +60,7 @@ export default function PatientChartPage() {
   const router = useRouter();
   const id = params.id as string;
   const { activeFacility } = useAuth();
-  const { patient, loading: patientLoading, error } = usePatient(id);
+  const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
   const { medications, loading: medsLoading, addMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
   useHandover();
@@ -81,6 +83,90 @@ export default function PatientChartPage() {
   const [effectivenessComment, setEffectivenessComment] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [isSigningOff, setIsSigningOff] = useState(false);
+
+  // Facesheet Editing State
+  const [showPhysicianModal, setShowPhysicianModal] = useState(false);
+  const [tempPhysician, setTempPhysician] = useState('');
+
+  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
+  const [tempInsurance, setTempInsurance] = useState({
+    provider_name: '',
+    policy_number: '',
+    group_number: '',
+    phone: '',
+  });
+
+  const [showPharmacyModal, setShowPharmacyModal] = useState(false);
+  const [tempPharmacy, setTempPharmacy] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    fax: '',
+  });
+
+  const [showFamilyModal, setShowFamilyModal] = useState(false);
+  const [editingFamilyMemberIndex, setEditingFamilyMemberIndex] = useState<number | null>(null);
+  const [tempFamilyMember, setTempFamilyMember] = useState({
+    name: '',
+    relationship: '',
+    phone: '',
+    email: '',
+    is_emergency_contact: false,
+  });
+
+  const handleSavePhysician = async () => {
+    try {
+      await updatePatient({ attending_physician: tempPhysician });
+      setShowPhysicianModal(false);
+    } catch (err) {
+      console.error('Failed to update physician:', err);
+    }
+  };
+
+  const handleSaveInsurance = async () => {
+    try {
+      await updatePatient({ insurance_info: tempInsurance });
+      setShowInsuranceModal(false);
+    } catch (err) {
+      console.error('Failed to update insurance:', err);
+    }
+  };
+
+  const handleSavePharmacy = async () => {
+    try {
+      await updatePatient({ pharmacy_info: tempPharmacy });
+      setShowPharmacyModal(false);
+    } catch (err) {
+      console.error('Failed to update pharmacy:', err);
+    }
+  };
+
+  const handleSaveFamilyMember = async () => {
+    try {
+      const currentList = patient?.family_members || [];
+      let updatedList = [...currentList];
+      if (editingFamilyMemberIndex !== null) {
+        updatedList[editingFamilyMemberIndex] = tempFamilyMember;
+      } else {
+        updatedList.push(tempFamilyMember);
+      }
+      await updatePatient({ family_members: updatedList });
+      setShowFamilyModal(false);
+    } catch (err) {
+      console.error('Failed to update family members:', err);
+    }
+  };
+
+  const handleDeleteFamilyMember = async (index: number) => {
+    if (!window.confirm('Are you sure you want to delete this family contact?')) return;
+    try {
+      const currentList = patient?.family_members || [];
+      const updatedList = currentList.filter((_, i) => i !== index);
+      await updatePatient({ family_members: updatedList });
+    } catch (err) {
+      console.error('Failed to delete family member:', err);
+    }
+  };
 
   // Orders State
   const [isAddingOrder, setIsAddingOrder] = useState(false);
@@ -594,7 +680,19 @@ export default function PatientChartPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Physician</p>
-                    <p className="text-lg font-black text-quro-teal">Dr. Demo Physician (Attending)</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-black text-slate-900">{patient.attending_physician || 'Unassigned'}</p>
+                      <button 
+                        onClick={() => {
+                          setTempPhysician(patient.attending_physician || '');
+                          setShowPhysicianModal(true);
+                        }}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
+                        title="Edit Physician"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -634,6 +732,221 @@ export default function PatientChartPage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Insurance & Pharmacy Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Insurance Details */}
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <Shield size={18} className="text-emerald-500" />
+                      Insurance Coverage
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setTempInsurance({
+                          provider_name: patient.insurance_info?.provider_name || '',
+                          policy_number: patient.insurance_info?.policy_number || '',
+                          group_number: patient.insurance_info?.group_number || '',
+                          phone: patient.insurance_info?.phone || '',
+                        });
+                        setShowInsuranceModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                    >
+                      <Edit2 size={12} />
+                      Edit Info
+                    </button>
+                  </div>
+                  
+                  {patient.insurance_info?.provider_name ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Provider Name</p>
+                        <p className="text-sm font-black text-slate-900">{patient.insurance_info.provider_name}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Policy / Member ID</p>
+                          <p className="text-sm font-bold text-slate-700">{patient.insurance_info.policy_number}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Group Number</p>
+                          <p className="text-sm font-bold text-slate-700">{patient.insurance_info.group_number || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Payer Support Phone</p>
+                        <p className="text-sm font-bold text-slate-700">{patient.insurance_info.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                      <p className="text-sm font-bold text-slate-400">No Insurance Information Configured</p>
+                      <button
+                        onClick={() => {
+                          setTempInsurance({ provider_name: '', policy_number: '', group_number: '', phone: '' });
+                          setShowInsuranceModal(true);
+                        }}
+                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
+                      >
+                        Add Insurance
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Preferred Pharmacy */}
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <Pill size={18} className="text-quro-teal" />
+                      Preferred Pharmacy
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setTempPharmacy({
+                          name: patient.pharmacy_info?.name || '',
+                          phone: patient.pharmacy_info?.phone || '',
+                          address: patient.pharmacy_info?.address || '',
+                          fax: patient.pharmacy_info?.fax || '',
+                        });
+                        setShowPharmacyModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                    >
+                      <Edit2 size={12} />
+                      Edit Info
+                    </button>
+                  </div>
+
+                  {patient.pharmacy_info?.name ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pharmacy Name</p>
+                        <p className="text-sm font-black text-slate-900">{patient.pharmacy_info.name}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
+                          <p className="text-sm font-bold text-slate-700">{patient.pharmacy_info.phone}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Fax Number</p>
+                          <p className="text-sm font-bold text-slate-700">{patient.pharmacy_info.fax || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Address</p>
+                        <p className="text-sm font-bold text-slate-700">{patient.pharmacy_info.address || 'N/A'}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                      <p className="text-sm font-bold text-slate-400">No Pharmacy Assigned</p>
+                      <button
+                        onClick={() => {
+                          setTempPharmacy({ name: '', phone: '', address: '', fax: '' });
+                          setShowPharmacyModal(true);
+                        }}
+                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
+                      >
+                        Assign Pharmacy
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Family & Emergency Contacts */}
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <User size={18} className="text-blue-500" />
+                    Family Contacts & Emergency Contacts
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setEditingFamilyMemberIndex(null);
+                      setTempFamilyMember({
+                        name: '',
+                        relationship: '',
+                        phone: '',
+                        email: '',
+                        is_emergency_contact: false,
+                      });
+                      setShowFamilyModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white hover:bg-black rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                  >
+                    <Plus size={12} />
+                    Add Family Member
+                  </button>
+                </div>
+
+                {patient.family_members && patient.family_members.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {patient.family_members.map((member, i) => (
+                      <div key={i} className="p-6 bg-slate-50 border border-slate-100 rounded-3xl relative group hover:border-slate-300 transition-all">
+                        {member.is_emergency_contact && (
+                          <span className="absolute top-6 right-6 px-2.5 py-1 bg-rose-500 text-white rounded-lg text-[8px] font-black uppercase tracking-wider shadow-sm">
+                            Primary Emergency Contact
+                          </span>
+                        )}
+                        <div className="space-y-3">
+                          <div>
+                            <span className="text-[9px] font-black text-quro-teal uppercase tracking-widest block mb-0.5">{member.relationship}</span>
+                            <h4 className="text-lg font-black text-slate-900">{member.name}</h4>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-600">
+                            <div className="flex items-center gap-2">
+                              <Phone size={12} className="text-slate-400" />
+                              <span>{member.phone}</span>
+                            </div>
+                            {member.email && (
+                              <div className="flex items-center gap-2">
+                                <Send size={12} className="text-slate-400" />
+                                <span className="lowercase">{member.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6 pt-4 border-t border-slate-200/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setEditingFamilyMemberIndex(i);
+                              setTempFamilyMember({
+                                name: member.name || '',
+                                relationship: member.relationship || '',
+                                phone: member.phone || '',
+                                email: member.email || '',
+                                is_emergency_contact: member.is_emergency_contact || false
+                              });
+                              setShowFamilyModal(true);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[9px] font-black uppercase text-slate-600 hover:text-quro-teal hover:border-quro-teal transition-all"
+                          >
+                            <Edit2 size={10} />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteFamilyMember(i)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[9px] font-black uppercase text-slate-600 hover:text-rose-500 hover:border-rose-500 transition-all"
+                          >
+                            <Trash2 size={10} />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                    <p className="text-sm font-bold text-slate-400">No Family Contacts or Emergency Contacts Configured</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -2744,6 +3057,288 @@ export default function PatientChartPage() {
             >
               Finalize PRN Outcome
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 5. Attending Physician Edit Modal */}
+    {showPhysicianModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+              <Stethoscope size={40} className="text-quro-teal" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Attending Physician</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Manage the admitting & attending doctor</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Physician Name</label>
+              <input 
+                type="text"
+                placeholder="Dr. Jane Doe, MD"
+                value={tempPhysician}
+                onChange={(e) => setTempPhysician(e.target.value)}
+                className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowPhysicianModal(false)}
+                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSavePhysician}
+                className="flex-1 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 6. Insurance Coverage Edit Modal */}
+    {showInsuranceModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+              <Shield size={40} className="text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Insurance Coverage</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Edit payer and policy specifications</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Provider Name</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. Medicare / Blue Cross"
+                  value={tempInsurance.provider_name}
+                  onChange={(e) => setTempInsurance(prev => ({ ...prev, provider_name: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy / Member ID</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. 123456789"
+                  value={tempInsurance.policy_number}
+                  onChange={(e) => setTempInsurance(prev => ({ ...prev, policy_number: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Group Number</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. G-98765"
+                  value={tempInsurance.group_number}
+                  onChange={(e) => setTempInsurance(prev => ({ ...prev, group_number: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payer Support Phone</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. (800) 555-0199"
+                  value={tempInsurance.phone}
+                  onChange={(e) => setTempInsurance(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowInsuranceModal(false)}
+                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveInsurance}
+                className="flex-1 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 7. Pharmacy Edit Modal */}
+    {showPharmacyModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+              <Pill size={40} className="text-quro-teal" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Preferred Pharmacy</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Manage resident pharmaceutical provider</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pharmacy Name</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. CVS Pharmacy #1043"
+                  value={tempPharmacy.name}
+                  onChange={(e) => setTempPharmacy(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. (555) 012-3456"
+                  value={tempPharmacy.phone}
+                  onChange={(e) => setTempPharmacy(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fax Number</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. (555) 012-3457"
+                  value={tempPharmacy.fax}
+                  onChange={(e) => setTempPharmacy(prev => ({ ...prev, fax: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pharmacy Address</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. 100 Main St, Metropolis, NY"
+                  value={tempPharmacy.address}
+                  onChange={(e) => setTempPharmacy(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowPharmacyModal(false)}
+                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSavePharmacy}
+                className="flex-1 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 8. Family Contact Modal */}
+    {showFamilyModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-lg bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+              <User size={40} className="text-blue-500" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+              {editingFamilyMemberIndex !== null ? 'Edit Family Contact' : 'Add Family Contact'}
+            </h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Manage emergency & representative contacts</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={tempFamilyMember.name}
+                  onChange={(e) => setTempFamilyMember(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Relationship</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. Spouse / Son / Guardian"
+                  value={tempFamilyMember.relationship}
+                  onChange={(e) => setTempFamilyMember(prev => ({ ...prev, relationship: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. (555) 012-3456"
+                  value={tempFamilyMember.phone}
+                  onChange={(e) => setTempFamilyMember(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email (Optional)</label>
+                <input 
+                  type="email"
+                  placeholder="e.g. name@example.com"
+                  value={tempFamilyMember.email}
+                  onChange={(e) => setTempFamilyMember(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
+                />
+              </div>
+              <div className="col-span-2 flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl mt-2">
+                <input 
+                  id="primary_emergency_contact"
+                  type="checkbox"
+                  checked={tempFamilyMember.is_emergency_contact}
+                  onChange={(e) => setTempFamilyMember(prev => ({ ...prev, is_emergency_contact: e.target.checked }))}
+                  className="w-5 h-5 rounded text-slate-900 border-slate-300 focus:ring-slate-950 focus:ring-2 focus:ring-offset-2"
+                />
+                <label htmlFor="primary_emergency_contact" className="text-xs font-black uppercase text-slate-700 tracking-wider cursor-pointer select-none">
+                  Designate as Primary Emergency Contact
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowFamilyModal(false)}
+                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveFamilyMember}
+                className="flex-1 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       </div>

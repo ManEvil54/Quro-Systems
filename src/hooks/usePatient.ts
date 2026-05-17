@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Patient } from '@/lib/firebase/types';
@@ -40,5 +40,14 @@ export function usePatient(patientId: string) {
     return () => unsubscribe();
   }, [organization?.id, patientId]);
 
-  return { patient, loading, error };
+  const updatePatient = async (data: Partial<Patient>) => {
+    if (!organization?.id || !patientId) throw new Error('Not authenticated');
+    const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
+    return await updateDoc(patientRef, {
+      ...data,
+      updated_at: new Date().toISOString()
+    });
+  };
+
+  return { patient, loading, error, updatePatient };
 }

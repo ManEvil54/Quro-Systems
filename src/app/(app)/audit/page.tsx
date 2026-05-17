@@ -62,7 +62,7 @@ export default function AuditTrailPage() {
   }, [staff?.org_id, selectedFacility]);
 
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={['CLIENT_ADMIN']}>
       <div className="animate-in">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>

@@ -74,12 +74,12 @@ export function checkVitalThresholds(vital: Partial<VitalSign>): { isAlert: bool
     alerts.push(`Pulse ${vital.pulse} bpm out of range`);
   if (vital.temperature && (vital.temperature > 101.5 || vital.temperature < 96.0))
     alerts.push(`Temp ${vital.temperature}°F out of range`);
-  if (vital.o2_saturation && vital.o2_saturation < 92)
-    alerts.push(`O2 Sat ${vital.o2_saturation}% below threshold`);
-  if (vital.respiratory_rate && (vital.respiratory_rate > 24 || vital.respiratory_rate < 10))
-    alerts.push(`RR ${vital.respiratory_rate}/min out of range`);
-  if (vital.blood_glucose && (vital.blood_glucose > 300 || vital.blood_glucose < 70))
-    alerts.push(`Blood Glucose ${vital.blood_glucose} mg/dL out of range`);
+  if (vital.spO2 && vital.spO2 < 92)
+    alerts.push(`O2 Sat ${vital.spO2}% below threshold`);
+  if (vital.resp && (vital.resp > 24 || vital.resp < 10))
+    alerts.push(`RR ${vital.resp}/min out of range`);
+  if (vital.glucose && (vital.glucose > 300 || vital.glucose < 70))
+    alerts.push(`Blood Glucose ${vital.glucose} mg/dL out of range`);
 
   return {
     isAlert: alerts.length > 0,

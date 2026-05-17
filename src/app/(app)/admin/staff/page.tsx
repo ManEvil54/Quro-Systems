@@ -237,7 +237,7 @@ export default function StaffManagementPage() {
                 </td>
                 <td className="px-8 py-5">
                   <div className="flex flex-wrap gap-2">
-                    {s.role === 'admin' || s.role === 'FACILITY_ADMIN' ? (
+                    {s.role === 'CLIENT_ADMIN' || s.role === 'FACILITY_ADMIN' || s.role === 'APP_OWNER' || s.role === 'APP_TECH' ? (
                       <span className="text-[10px] font-black text-slate-400 uppercase italic">Global Access</span>
                     ) : s.assigned_facility_ids && s.assigned_facility_ids.length > 0 ? (
                       s.assigned_facility_ids.map(fid => {
@@ -347,7 +347,7 @@ export default function StaffManagementPage() {
                   >
                     <option value="nurse">Nurse (RN / LVN)</option>
                     <option value="physician">Doctor / Prescriber</option>
-                    <option value="admin">Administrator / Manager</option>
+                    <option value="CLIENT_ADMIN">Administrator / Manager</option>
                     <option value="cna">CNA / Caregiver</option>
                   </select>
                 </div>
