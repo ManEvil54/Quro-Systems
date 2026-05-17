@@ -229,7 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // This prevents unauthorized escalation of privileges.
           const userMetaDoc = await getDoc(doc(db, 'users', user.uid));
 
-          if (!userMetaDoc.exists()) {
+          if (!userMetaDoc.exists() || !userMetaDoc.data()?.org_id) {
             setState(prev => ({ ...prev, user, loading: false }));
             return;
           }
@@ -272,7 +272,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
-      await setDoc(doc(db, 'staff', credential.user.uid), {
+      await setDoc(doc(db, 'users', credential.user.uid), {
         auth_id: credential.user.uid,
         org_id: '',
         facility_id: null,
@@ -284,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         phone: null,
         is_active: true,
+        is_onboarded: false,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });

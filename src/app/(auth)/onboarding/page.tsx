@@ -4,23 +4,21 @@
 // ============================================================
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import QuroLogo from '@/components/brand/QuroLogo';
 import {
   Building2,
   Home,
-  MapPin,
-  Phone,
-  FileText,
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
   Plus,
   X,
+  Sparkles,
 } from 'lucide-react';
 
 interface FacilityForm {
@@ -32,9 +30,12 @@ interface FacilityForm {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [checkingProvision, setCheckingProvision] = useState(true);
+  const [preProvisionedOrgId, setPreProvisionedOrgId] = useState('');
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
   // Org form
   const [orgName, setOrgName] = useState('');
@@ -47,6 +48,42 @@ export default function OnboardingPage() {
   const [facilities, setFacilities] = useState<FacilityForm[]>([
     { name: '', type: 'clhf', phone: '', fax: '' },
   ]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.email) {
+      setCheckingProvision(false);
+      return;
+    }
+
+    const checkPreProvisioned = async () => {
+      try {
+        const q = query(
+          collection(db, 'organizations'),
+          where('contact_email', '==', user.email)
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const orgDoc = querySnapshot.docs[0];
+          const orgData = orgDoc.data();
+          setOrgName(orgData.name || '');
+          setOrgEmail(orgData.contact_email || user.email);
+          setOrgPhone(orgData.contact_phone || '');
+          setOrgAddress(orgData.address || { street: '', city: '', state: '', zip: '' });
+          setOrgLicense(orgData.license_number || '');
+          setPreProvisionedOrgId(orgDoc.id);
+          setStep(2);
+          setShowSuccessBanner(true);
+        }
+      } catch (err) {
+        console.error('Error checking pre-provisioned organization:', err);
+      } finally {
+        setCheckingProvision(false);
+      }
+    };
+
+    checkPreProvisioned();
+  }, [user, authLoading]);
 
   const addFacility = () => {
     if (facilities.length >= 3) return;
@@ -66,26 +103,37 @@ export default function OnboardingPage() {
     if (!user) return;
     setSubmitting(true);
     try {
-      const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const orgRef = doc(collection(db, 'organizations'));
-      const orgId = orgRef.id;
+      // Get temporary user details
+      const userMetaDoc = await getDoc(doc(db, 'users', user.uid));
+      const tempUserData = userMetaDoc.exists() ? userMetaDoc.data() : null;
 
-      // Create organization
-      await setDoc(orgRef, {
-        name: orgName,
-        slug,
-        contact_email: orgEmail,
-        contact_phone: orgPhone,
-        address: orgAddress,
-        license_number: orgLicense || null,
-        max_facilities: 3,
-        subscription_tier: 'standard',
-        is_active: true,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      });
+      let orgId = preProvisionedOrgId;
+
+      if (!orgId) {
+        // Self-serve organization creation
+        const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const orgRef = doc(collection(db, 'organizations'));
+        orgId = orgRef.id;
+
+        await setDoc(orgRef, {
+          name: orgName,
+          slug,
+          contact_email: orgEmail,
+          contact_phone: orgPhone,
+          address: orgAddress,
+          license_number: orgLicense || null,
+          max_facilities: 3,
+          subscription_tier: 'standard',
+          is_active: true,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        });
+      }
 
       // Create facilities
+      const facilityIds: string[] = [];
+      let firstFacilityId = '';
+
       for (const f of facilities) {
         if (!f.name) continue;
         const facilityRef = doc(collection(db, 'organizations', orgId, 'facilities'));
@@ -103,13 +151,46 @@ export default function OnboardingPage() {
           created_at: serverTimestamp(),
           updated_at: serverTimestamp(),
         });
+        facilityIds.push(facilityRef.id);
+        if (!firstFacilityId) {
+          firstFacilityId = facilityRef.id;
+        }
       }
 
-      // Link staff to org
-      await updateDoc(doc(db, 'staff', user.uid), {
+      // Link user globally
+      await setDoc(doc(db, 'users', user.uid), {
         org_id: orgId,
-        updated_at: serverTimestamp(),
+        email: user.email,
+        role: tempUserData?.role || 'FACILITY_ADMIN',
+        is_onboarded: true,
+        updated_at: serverTimestamp()
+      }, { merge: true });
+
+      // Create organization staff profile
+      await setDoc(doc(db, 'organizations', orgId, 'staff', user.uid), {
+        auth_id: user.uid,
+        org_id: orgId,
+        facility_id: firstFacilityId || null,
+        assigned_facility_ids: facilityIds,
+        first_name: tempUserData?.first_name || user.displayName?.split(' ')[0] || '',
+        last_name: tempUserData?.last_name || user.displayName?.split(' ')[1] || '',
+        initials: tempUserData?.initials || '',
+        role: tempUserData?.role || 'FACILITY_ADMIN',
+        credential: tempUserData?.credential || '',
+        email: user.email,
+        phone: tempUserData?.phone || null,
+        is_active: true,
+        is_onboarded: true,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
       });
+
+      // Cleanup legacy root staff record if present
+      try {
+        await deleteDoc(doc(db, 'staff', user.uid));
+      } catch (e) {
+        // Ignored
+      }
 
       router.push('/dashboard');
     } catch (err) {
@@ -119,6 +200,29 @@ export default function OnboardingPage() {
     }
   };
 
+  if (authLoading || checkingProvision) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12"
+        style={{
+          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+          backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(13,148,136,0.04) 0%, transparent 50%)',
+        }}
+      >
+        <div className="w-full max-w-md text-center">
+          <div className="flex justify-center mb-6">
+            <QuroLogo size={48} showText={false} />
+          </div>
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-teal-500/20 animate-pulse" />
+            <div className="absolute inset-0 rounded-full border-4 border-teal-500 border-t-transparent animate-spin" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 tracking-tight">Verifying Provisioned Workspace...</h3>
+          <p className="text-sm text-slate-500 mt-2">Checking your secure organizational credentials</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12"
       style={{
@@ -126,7 +230,7 @@ export default function OnboardingPage() {
         backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(13,148,136,0.04) 0%, transparent 50%)',
       }}
     >
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl animate-in">
         <div className="flex justify-center mb-8">
           <QuroLogo size={44} showText variant="full" />
         </div>
@@ -145,6 +249,26 @@ export default function OnboardingPage() {
             </div>
           ))}
         </div>
+
+        {/* Success Banner for Pre-Provisioned Orgs */}
+        {showSuccessBanner && (
+          <div className="p-5 mb-6 rounded-2xl border border-teal-100 bg-teal-50/65 text-teal-900 shadow-sm animate-in">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center flex-shrink-0 text-white shadow-sm">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 flex items-center gap-1.5">
+                  Pre-Provisioned Access Verified!
+                </h3>
+                <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                  Welcome, <strong>{user?.displayName || 'Administrator'}</strong>! Your organization, <strong className="text-teal-700">&ldquo;{orgName}&rdquo;</strong>, was pre-provisioned by Quro Administration.
+                  Please define your clinical facilities below to activate your workspace.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="glass-card p-8">
           {/* Step 1: Organization Info */}
@@ -205,13 +329,15 @@ export default function OnboardingPage() {
           {/* Step 2: Facility Setup */}
           {step === 2 && (
             <div className="animate-in">
-              <button type="button" onClick={() => setStep(1)}
-                className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors">
-                <ArrowLeft size={14} /> Back
-              </button>
+              {!preProvisionedOrgId && (
+                <button type="button" onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors">
+                  <ArrowLeft size={14} /> Back
+                </button>
+              )}
 
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center animate-pulse">
                   <Home size={20} className="text-white" />
                 </div>
                 <div>

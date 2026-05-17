@@ -42,7 +42,7 @@ service cloud.firestore {
     // 0. User Metadata
     match /users/{userId} {
       allow read: if isMasterAdmin() || (request.auth != null && request.auth.uid == userId);
-      allow write: if isMasterAdmin(); // Locked down; only system/admin can link orgs
+      allow write: if isMasterAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
     // 1. Organizations
