@@ -28,7 +28,7 @@ const roles: { value: StaffRole; label: string; icon: React.ElementType; desc: s
   { value: 'nurse', label: 'Nurse', icon: HeartPulse, desc: 'Administer meds, chart vitals', credential: 'RN / LVN' },
   { value: 'cna', label: 'CNA', icon: UserCog, desc: 'Vitals, ADLs, patient care', credential: 'CNA' },
   { value: 'pharmacist', label: 'Pharmacist', icon: Pill, desc: 'Fill orders, verify meds', credential: 'PharmD' },
-  { value: 'admin', label: 'Administrator', icon: Shield, desc: 'Manage facility & staff', credential: '' },
+  { value: 'FACILITY_ADMIN', label: 'Administrator', icon: Shield, desc: 'Manage facility & staff', credential: '' },
 ];
 
 export default function RegisterPage() {

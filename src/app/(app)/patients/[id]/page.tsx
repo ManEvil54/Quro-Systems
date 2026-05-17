@@ -44,7 +44,6 @@ import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
-import { useHandover } from '@/hooks/useHandover';
 import { useNotes } from '@/hooks/useNotes';
 import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,7 +66,6 @@ export default function PatientChartPage() {
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
   const { medications, loading: medsLoading, addMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
-  useHandover();
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
@@ -942,7 +940,7 @@ export default function PatientChartPage() {
               </div>
 
               {/* Family & Emergency Contacts */}
-              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+              <div id="family-section" className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
                     <User size={18} className="text-blue-500" />
@@ -2548,12 +2546,45 @@ export default function PatientChartPage() {
             <Phone className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5" />
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
             <div className="space-y-6">
-              <div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Representative</p>
-                <p className="text-lg font-black text-white">Jane Thompson</p>
-                <p className="text-xs font-medium text-slate-400">555-0123 • Daughter</p>
-              </div>
-              <button className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-white">
+              {patient?.family_members && patient.family_members.length > 0 ? (
+                patient.family_members.map((member: any, idx: number) => (
+                  <div key={idx} className="border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                      {member.is_emergency_contact ? 'Primary Emergency Contact' : `Contact #${idx + 1}`}
+                    </p>
+                    <p className="text-base font-black text-white">{member.name}</p>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">
+                      {member.relationship} • {member.phone}
+                    </p>
+                    {member.email && (
+                      <p className="text-[10px] text-slate-500 lowercase mt-0.5">{member.email}</p>
+                    )}
+                  </div>
+                ))
+              ) : patient?.emergency_contact ? (
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Emergency Contact</p>
+                  <p className="text-base font-black text-white">{patient.emergency_contact}</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Primary Representative</p>
+                  <p className="text-lg font-black text-white italic opacity-40">None Listed</p>
+                  <p className="text-xs font-medium text-slate-400 mt-1">Please add a family contact in the facesheet.</p>
+                </div>
+              )}
+              <button 
+                onClick={() => {
+                  setActiveTab('facesheet');
+                  setTimeout(() => {
+                    const el = document.getElementById('family-section');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }, 100);
+                }}
+                className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-white"
+              >
                 View All Contacts
               </button>
             </div>

@@ -24,7 +24,7 @@ interface AuthContextType {
   loading: boolean;
   isImpersonating: boolean;
   impersonatedDonName: string | null;
-  activeFacility: { id: string; name: string } | null;
+  activeFacility: { id: string; name: string; bed_count?: number | null } | null;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (data: {
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     organization: { id: string, name: string, max_facilities?: number } | null;
     isImpersonating: boolean;
     impersonatedDonName: string | null;
-    activeFacility: { id: string, name: string } | null;
+    activeFacility: { id: string, name: string, bed_count?: number | null } | null;
     loading: boolean;
     error: string | null;
   }>({
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = facilityDoc.data();
         setState(prev => ({ 
           ...prev, 
-          activeFacility: { id: facilityId, name: data.name } 
+          activeFacility: { id: facilityId, name: data.name, bed_count: data.bed_count } 
         }));
         localStorage.setItem(`quro_active_facility_${state.organization.id}`, facilityId);
       }
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedFacilityId) {
       const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', storedFacilityId));
       if (facDoc.exists()) {
-        activeFacility = { id: facDoc.id, name: facDoc.data().name };
+        activeFacility = { id: facDoc.id, name: facDoc.data().name, bed_count: facDoc.data().bed_count };
       }
     }
 
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (facId) {
         const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', facId));
         if (facDoc.exists()) {
-          activeFacility = { id: facDoc.id, name: facDoc.data().name };
+          activeFacility = { id: facDoc.id, name: facDoc.data().name, bed_count: facDoc.data().bed_count };
         }
       }
     }
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization: orgData,
         isImpersonating: true,
         impersonatedDonName: staffData ? `${staffData.first_name} ${staffData.last_name}` : orgData.name,
-        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...' } : null, 
+        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...', bed_count: null } : null, 
         loading: false,
         error: null
       });
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const idTokenResult = await user.getIdTokenResult();
           const customRole = idTokenResult.claims.role as string;
-          const isSystemAdmin = customRole === 'APP_OWNER' || customRole === 'APP_TECH';
+          const isSystemAdmin = customRole === 'APP_OWNER' || customRole === 'APP_TECH' || customRole === 'SUPER_ADMIN';
 
           if (isSystemAdmin) {
             const impersonationData = sessionStorage.getItem('quro_impersonation');
@@ -193,6 +193,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return;
             }
 
+            const isOwner = customRole === 'APP_OWNER' || customRole === 'SUPER_ADMIN';
+
             setState({ 
               user, 
               staff: {
@@ -200,9 +202,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 auth_id: user.uid,
                 org_id: 'SYSTEM',
                 facility_id: null,
-                first_name: customRole === 'APP_OWNER' ? 'System' : 'Tech',
-                last_name: customRole === 'APP_OWNER' ? 'Owner' : 'Specialist',
-                initials: customRole === 'APP_OWNER' ? 'ROOT' : 'TECH',
+                first_name: isOwner ? 'System' : 'Tech',
+                last_name: isOwner ? 'Owner' : 'Specialist',
+                initials: isOwner ? 'ROOT' : 'TECH',
                 role: customRole as StaffRole,
                 credential: 'DEVELOPER',
                 email: user.email || '',
@@ -299,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!state.user) return;
     const idTokenResult = await state.user.getIdTokenResult();
     const role = idTokenResult.claims.role;
-    if (role !== 'APP_OWNER' && role !== 'APP_TECH') return;
+    if (role !== 'APP_OWNER' && role !== 'APP_TECH' && role !== 'SUPER_ADMIN') return;
     
     setState(prev => ({ ...prev, loading: true }));
     await performImpersonation(state.user, orgId, staffId);

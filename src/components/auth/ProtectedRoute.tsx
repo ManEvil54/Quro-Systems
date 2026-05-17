@@ -42,8 +42,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   // Not authenticated
   if (!user) return null;
 
-  // Role check — SUPER_ADMIN has global bypass
-  if (allowedRoles && staff && staff.role !== 'SUPER_ADMIN' && !allowedRoles.includes(staff.role)) {
+  // Role check — APP_OWNER has global bypass
+  if (allowedRoles && staff && staff.role !== 'APP_OWNER' && !allowedRoles.includes(staff.role)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="glass-card p-8 text-center max-w-sm">

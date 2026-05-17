@@ -9,7 +9,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient, Medication, MarEntry } from '@/lib/firebase/types';
+import type { Patient, Medication, MAREntry } from '@/lib/firebase/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Edit2, Save, Plus, Trash2, Printer } from 'lucide-react';
 
@@ -20,7 +20,7 @@ export default function MARPrintPage() {
   
   const [patient, setPatient] = useState<Patient | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [marEntries, setMarEntries] = useState<MarEntry[]>([]);
+  const [marEntries, setMarEntries] = useState<MAREntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [customRows, setCustomRows] = useState<string[]>([]);
@@ -74,7 +74,7 @@ export default function MARPrintPage() {
         const marRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'mar_entries');
         const marQuery = query(marRef, where('scheduled_date', '>=', start), where('scheduled_date', '<=', end));
         const marSnap = await getDocs(marQuery);
-        setMarEntries(marSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MarEntry)));
+        setMarEntries(marSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MAREntry)));
 
         setLoading(false);
         
@@ -144,12 +144,12 @@ export default function MARPrintPage() {
         <tbody>
           {medList.map((med) => (
             <React.Fragment key={med.id}>
-              {med.frequency_times.map((time, timeIdx) => (
+              {(med.frequency_times || []).map((time, timeIdx) => (
                 <tr key={`${med.id}-${time}`} className="h-8">
                   {timeIdx === 0 && (
                     <td 
                       className="border border-black p-1.5 align-top font-bold" 
-                      rowSpan={med.frequency_times.length + (med.requires_vitals ? 1 : 0)}
+                      rowSpan={(med.frequency_times?.length || 0) + (med.requires_vitals ? 1 : 0)}
                     >
                       <div className="uppercase">{med.generic_name}</div>
                       <div className="text-[8px] font-normal">

@@ -45,6 +45,7 @@ service cloud.firestore {
     function hasRole(roles) {
       return isAuthenticated() && (
         request.auth.token.role in roles ||
+        isMasterAdmin() ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles)
       );
@@ -101,6 +102,20 @@ service cloud.firestore {
           hasRole(['admin', 'FACILITY_ADMIN']) || 
           isOrgPrimaryContact(orgId)
         );
+
+        match /rooms/{roomId} {
+          allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
+          allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
+            hasRole(['admin', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+          );
+        }
+
+        match /beds/{bedId} {
+          allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
+          allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
+            hasRole(['admin', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+          );
+        }
       }
 
       // 4. Patients: Deeply Scoped
@@ -130,6 +145,35 @@ service cloud.firestore {
         allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
         allow create: if isOrgMember(orgId);
         allow update, delete: if false; 
+      }
+
+      match /audit_log/{logId} {
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
+        allow create: if isOrgMember(orgId);
+        allow update, delete: if false; 
+      }
+
+      // 7. Handover Notes & Acknowledgemts
+      match /handover_notes/{noteId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+
+        match /acks/{ackId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId);
+        }
+      }
+
+      // 8. Incidents (falls monitoring)
+      match /incidents/{incidentId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+      }
+
+      // 9. Invitations
+      match /invitations/{invitationId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
       }
     }
 
