@@ -13,6 +13,7 @@ import {
   doc, 
   addDoc, 
   deleteDoc,
+  updateDoc,
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
@@ -80,5 +81,22 @@ export function useBeds(facilityId: string) {
     return await deleteDoc(doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', bedId));
   };
 
-  return { rooms, beds, loading, addRoom, addBed, deleteBed };
+  const deleteRoom = async (roomId: string) => {
+    if (!organization?.id || !facilityId) return;
+    // Delete room
+    await deleteDoc(doc(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms', roomId));
+    // Find and delete all beds in this room
+    const roomBeds = beds.filter(b => b.room_id === roomId);
+    for (const bed of roomBeds) {
+      await deleteDoc(doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', bed.id));
+    }
+  };
+
+  const renameRoom = async (roomId: string, newName: string) => {
+    if (!organization?.id || !facilityId) return;
+    const roomRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms', roomId);
+    return await updateDoc(roomRef, { name: newName });
+  };
+
+  return { rooms, beds, loading, addRoom, addBed, deleteBed, deleteRoom, renameRoom };
 }

@@ -18,14 +18,40 @@ import {
   ChevronRight,
   MoreVertical,
   Building,
-  ClipboardList
+  ClipboardList,
+  X,
+  Loader2
 } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import FacilityBedsManager from '@/components/settings/FacilityBedsManager';
 
 export default function SettingsPage() {
   const { org, facilities, invitations, loading, updateOrg, addFacility, inviteStaff } = useSettings();
   const [activeTab, setActiveTab] = useState<'general' | 'facilities' | 'staff' | 'clinical'>('general');
+  const [editingFacility, setEditingFacility] = useState<any | null>(null);
+  const [showAddHouseModal, setShowAddHouseModal] = useState(false);
+  const [newHouseName, setNewHouseName] = useState('');
+  const [isSavingNewHouse, setIsSavingNewHouse] = useState(false);
+
+  const handleCreateHouse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHouseName.trim()) return;
+    setIsSavingNewHouse(true);
+    try {
+      await addFacility({
+        name: newHouseName.trim(),
+        is_active: true,
+        updated_at: new Date().toISOString()
+      });
+      setNewHouseName('');
+      setShowAddHouseModal(false);
+    } catch (err) {
+      console.error('Error creating facility/house:', err);
+    } finally {
+      setIsSavingNewHouse(false);
+    }
+  };
 
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'nurse', facilityId: '' });
   const [isInviting, setIsInviting] = useState(false);
@@ -135,7 +161,10 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-slate-900">Manage Houses</h3>
-                  <button className="btn-secondary flex items-center gap-2 text-xs py-1.5 px-3">
+                  <button 
+                    onClick={() => setShowAddHouseModal(true)}
+                    className="btn-secondary flex items-center gap-2 text-xs py-1.5 px-3"
+                  >
                     <Plus size={14} />
                     <span>Add New House</span>
                   </button>
@@ -143,13 +172,17 @@ export default function SettingsPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {facilities.map((fac) => (
-                    <div key={fac.id} className="glass-card p-5 flex items-center justify-between group">
+                    <div 
+                      key={fac.id} 
+                      onClick={() => setEditingFacility(fac)}
+                      className="glass-card p-5 flex items-center justify-between group cursor-pointer hover:border-teal-500 hover:shadow-lg transition-all"
+                    >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
                           <Home size={24} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{fac.name}</p>
+                          <p className="font-bold text-slate-900 group-hover:text-teal-600 transition-colors">{fac.name}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded uppercase tracking-tighter">
                               Max 25 Beds
@@ -158,9 +191,10 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
-                      <button className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical size={18} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-slate-400 group-hover:text-teal-600 transition-colors">Manage Beds</span>
+                        <ChevronRight size={16} className="text-slate-400 group-hover:text-teal-600 transition-colors transform group-hover:translate-x-1 duration-200" />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -381,6 +415,69 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add House Modal */}
+      {showAddHouseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setShowAddHouseModal(false)}
+          />
+          <div className="relative bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Add New House</h3>
+              <button 
+                onClick={() => setShowAddHouseModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateHouse} className="space-y-4">
+              <div>
+                <label className="label text-[10px] uppercase font-bold text-slate-500">House Name</label>
+                <input 
+                  type="text" 
+                  className="input text-sm py-2 px-3 focus:ring-teal-500" 
+                  placeholder="e.g. Hope House" 
+                  value={newHouseName}
+                  onChange={(e) => setNewHouseName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddHouseModal(false)}
+                  className="btn-secondary text-xs px-4 py-2"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSavingNewHouse || !newHouseName.trim()}
+                  className="btn-primary shimmer-btn text-xs px-4 py-2 flex items-center gap-1.5"
+                >
+                  {isSavingNewHouse ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  <span>Create House</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Facility Beds Manager Drawer */}
+      {editingFacility && org && (
+        <FacilityBedsManager 
+          facility={editingFacility}
+          orgId={org.id}
+          onClose={() => setEditingFacility(null)}
+          onRenameFacility={(newName) => {
+            setEditingFacility((prev: any) => prev ? { ...prev, name: newName } : null);
+          }}
+        />
+      )}
     </ProtectedRoute>
   );
 }

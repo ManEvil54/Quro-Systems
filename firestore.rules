@@ -55,13 +55,13 @@ service cloud.firestore {
       return isMasterAdmin() || 
              (isAuthenticated() && (
                 (request.auth.token.facilityIds != null && facilityId in request.auth.token.facilityIds) || 
-                request.auth.token.role in ['admin', 'FACILITY_ADMIN'] ||
+                request.auth.token.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN'] ||
                 isOrgPrimaryContact(orgId) ||
                 (exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)) && (
                   get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.facility_id == facilityId ||
                   (get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids != null &&
                    facilityId in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids) ||
-                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.role in ['admin', 'FACILITY_ADMIN']
+                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']
                 ))
              ));
     }
@@ -85,13 +85,13 @@ service cloud.firestore {
     // 1. Organizations
     match /organizations/{orgId} {
       allow read: if isOrgMember(orgId) || (request.auth != null && resource.data.contact_email == request.auth.token.email);
-      allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
+      allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']));
       allow create: if isAuthenticated(); 
 
       // 2. Staff: Scoped by OrgId
       match /staff/{staffId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(['admin', 'FACILITY_ADMIN']));
+        allow write: if isOrgMember(orgId) && (request.auth.uid == staffId || hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']));
       }
 
       // 3. Facilities
@@ -99,21 +99,21 @@ service cloud.firestore {
         allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
         allow write: if isOrgMember(orgId) && (
           isMasterAdmin() || 
-          hasRole(['admin', 'FACILITY_ADMIN']) || 
+          hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']) || 
           isOrgPrimaryContact(orgId)
         );
 
         match /rooms/{roomId} {
           allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
           allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
-            hasRole(['admin', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
           );
         }
 
         match /beds/{bedId} {
           allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
           allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
-            hasRole(['admin', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
           );
         }
       }
@@ -122,7 +122,7 @@ service cloud.firestore {
       match /patients/{patientId} {
         allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, resource.data.facility_id);
         allow write: if isOrgMember(orgId) && (
-                       (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) && hasFacilityAccess(orgId, request.resource.data.facility_id)) ||
+                       (hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) && hasFacilityAccess(orgId, request.resource.data.facility_id)) ||
                        isOrgPrimaryContact(orgId)
                      );
 
@@ -136,19 +136,19 @@ service cloud.firestore {
         // Catch-all for other clinical sub-collections
         match /{clinicalData=**} {
            allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, get(/databases/$(database)/documents/organizations/$(orgId)/patients/$(patientId)).data.facility_id);
-           allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+           allow write: if isOrgMember(orgId) && (hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
         }
       }
 
       // 6. Audit Logs: Global Append-Only
       match /audit_logs/{logId} {
-        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']));
         allow create: if isOrgMember(orgId);
         allow update, delete: if false; 
       }
 
       match /audit_log/{logId} {
-        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
+        allow read: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']));
         allow create: if isOrgMember(orgId);
         allow update, delete: if false; 
       }
@@ -156,7 +156,7 @@ service cloud.firestore {
       // 7. Handover Notes & Acknowledgemts
       match /handover_notes/{noteId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
 
         match /acks/{ackId} {
           allow read: if isOrgMember(orgId);
@@ -167,13 +167,13 @@ service cloud.firestore {
       // 8. Incidents (falls monitoring)
       match /incidents/{incidentId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
       }
 
       // 9. Invitations
       match /invitations/{invitationId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+        allow write: if isOrgMember(orgId) && (hasRole(['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
       }
     }
 
