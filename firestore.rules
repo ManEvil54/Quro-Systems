@@ -17,7 +17,12 @@ service cloud.firestore {
 
     // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck
     function isOrgMember(orgId) {
-      return isAuthenticated() && (request.auth.token.orgId == orgId || isMasterAdmin());
+      return isAuthenticated() && (
+        request.auth.token.orgId == orgId || 
+        isMasterAdmin() || 
+        (exists(/databases/$(database)/documents/organizations/$(orgId)) && 
+         get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email)
+      );
     }
 
     function hasRole(roles) {
@@ -47,8 +52,8 @@ service cloud.firestore {
 
     // 1. Organizations
     match /organizations/{orgId} {
-      allow read: if isOrgMember(orgId);
-      allow update: if isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']);
+      allow read: if isOrgMember(orgId) || (request.auth != null && resource.data.contact_email == request.auth.token.email);
+      allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']));
       allow create: if isMasterAdmin(); 
 
       // 2. Staff: Scoped by OrgId
@@ -60,7 +65,11 @@ service cloud.firestore {
       // 3. Facilities
       match /facilities/{facilityId} {
         allow read: if isOrgMember(orgId) && hasFacilityAccess(facilityId);
-        allow write: if isOrgMember(orgId) && hasRole(['admin', 'FACILITY_ADMIN']);
+        allow write: if isOrgMember(orgId) && (
+          isMasterAdmin() || 
+          hasRole(['admin', 'FACILITY_ADMIN']) || 
+          get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email
+        );
       }
 
       // 4. Patients: Deeply Scoped
