@@ -6,7 +6,9 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { 
   initializeFirestore, 
-  persistentLocalCache 
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -28,8 +30,24 @@ const app = getApps().length
 
 // Safely export services (will be undefined during build if config is missing)
 export const auth = app ? getAuth(app) : ({} as any);
+
+// Safely configure Firestore cache with multi-tab support and graceful memory fallback
+let localCacheConfig;
+try {
+  if (typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined') {
+    localCacheConfig = persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    });
+  } else {
+    localCacheConfig = memoryLocalCache();
+  }
+} catch (e) {
+  console.warn('Firestore offline cache initialization failed, falling back to memoryLocalCache:', e);
+  localCacheConfig = memoryLocalCache();
+}
+
 export const db = app ? initializeFirestore(app, {
-  localCache: persistentLocalCache({}),
+  localCache: localCacheConfig,
   experimentalForceLongPolling: true,
 }) : ({} as any);
 
