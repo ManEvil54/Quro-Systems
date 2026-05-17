@@ -116,6 +116,7 @@ export interface Patient {
   insurance_info?: InsuranceInfo;
   pharmacy_info?: PharmacyInfo;
   family_members?: FamilyMember[];
+  emergency_contact?: string;
   mar_custom_rows?: string[];
   mar_special_notes?: string;
   created_at: string;
