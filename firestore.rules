@@ -13,24 +13,29 @@ service cloud.firestore {
     // Check if user is a Master Admin (Uses system-level claim or global user record)
     function isMasterAdmin() {
       return isAuthenticated() && (
-        request.auth.token.role == 'SUPER_ADMIN' || 
-        request.auth.token.role == 'APP_OWNER' || 
-        request.auth.token.role == 'APP_TECH' ||
+        ('role' in request.auth.token && (
+          request.auth.token.role == 'SUPER_ADMIN' || 
+          request.auth.token.role == 'APP_OWNER' || 
+          request.auth.token.role == 'APP_TECH'
+        )) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_OWNER' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_TECH'
+          'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data && (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_OWNER' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'APP_TECH'
+          )
         ))
       );
     }
 
-    // ADVERSARIAL FIX: Use Custom Claims to eliminate the 10-get() limit bottleneck, with robust local/dev fallbacks
+    // Custom Claims scope with robust local/dev fallbacks
     function isOrgMember(orgId) {
       return isAuthenticated() && (
-        request.auth.token.orgId == orgId || 
+        ('orgId' in request.auth.token && request.auth.token.orgId == orgId) || 
         isMasterAdmin() || 
         isOrgPrimaryContact(orgId) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         'org_id' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.org_id == orgId) ||
         exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid))
       );
@@ -39,14 +44,17 @@ service cloud.firestore {
     function isOrgPrimaryContact(orgId) {
       return isAuthenticated() && 
              exists(/databases/$(database)/documents/organizations/$(orgId)) && 
+             'contact_email' in get(/databases/$(database)/documents/organizations/$(orgId)).data &&
+             'email' in request.auth.token &&
              get(/databases/$(database)/documents/organizations/$(orgId)).data.contact_email == request.auth.token.email;
     }
 
     function hasRole(roles) {
       return isAuthenticated() && (
-        request.auth.token.role in roles ||
+        ('role' in request.auth.token && request.auth.token.role in roles) ||
         isMasterAdmin() ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles)
       );
     }
@@ -54,14 +62,17 @@ service cloud.firestore {
     function hasFacilityAccess(orgId, facilityId) {
       return isMasterAdmin() || 
              (isAuthenticated() && (
-                (request.auth.token.facilityIds != null && facilityId in request.auth.token.facilityIds) || 
-                request.auth.token.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN'] ||
+                ('facilityIds' in request.auth.token && request.auth.token.facilityIds != null && facilityId in request.auth.token.facilityIds) || 
+                ('role' in request.auth.token && request.auth.token.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']) ||
                 isOrgPrimaryContact(orgId) ||
                 (exists(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)) && (
-                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.facility_id == facilityId ||
-                  (get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids != null &&
-                   facilityId in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids) ||
-                  get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']
+                   ('facility_id' in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data &&
+                    get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.facility_id == facilityId) ||
+                   ('assigned_facility_ids' in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data &&
+                    get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids != null &&
+                    facilityId in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.assigned_facility_ids) ||
+                   ('role' in get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data &&
+                    get(/databases/$(database)/documents/organizations/$(orgId)/staff/$(request.auth.uid)).data.role in ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN'])
                 ))
              ));
     }

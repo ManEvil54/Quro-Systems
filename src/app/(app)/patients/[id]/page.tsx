@@ -56,6 +56,7 @@ import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
 import TreatmentPortal from '@/components/clinical/TreatmentPortal';
 import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
 import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
+import CarePlanManager from '@/components/clinical/CarePlanManager';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
@@ -78,7 +79,7 @@ export default function PatientChartPage() {
   const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
   const [savingRoom, setSavingRoom] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'trends' | 'compliance'>('facesheet');
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'careplan' | 'trends' | 'compliance'>('facesheet');
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
@@ -667,6 +668,7 @@ export default function PatientChartPage() {
                 { id: 'vitals', icon: Activity, label: 'Clinical Vitals' },
                 { id: 'trends', icon: TrendingUp, label: 'Trends' },
                 { id: 'orders', icon: Stethoscope, label: 'Orders', badge: 'New' },
+                { id: 'careplan', icon: FileText, label: 'Preliminary Care Plan', badge: 'AI' },
                 { id: 'charting', icon: FileText, label: 'Shift Charting' },
                 { id: 'compliance', icon: ShieldCheck, label: 'Surveyor Review' },
               ].map((tab) => (
@@ -1028,6 +1030,12 @@ export default function PatientChartPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'careplan' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <CarePlanManager patient={patient} />
             </div>
           )}
 

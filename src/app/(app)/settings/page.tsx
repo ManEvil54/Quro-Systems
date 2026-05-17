@@ -94,7 +94,7 @@ export default function SettingsPage() {
   if (loading) return <div className="py-20 text-center text-slate-400">Loading settings...</div>;
 
   return (
-    <ProtectedRoute allowedRoles={['CLIENT_ADMIN']}>
+    <ProtectedRoute allowedRoles={['CLIENT_ADMIN', 'FACILITY_ADMIN', 'admin']}>
       <div className="animate-in">
         <h1 className="text-2xl font-bold text-slate-900 mb-8">System Settings</h1>
 

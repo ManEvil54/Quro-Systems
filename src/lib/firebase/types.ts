@@ -2,6 +2,7 @@ export type StaffRole =
   | 'APP_OWNER'      // Quro System Owner - Full platform control
   | 'APP_TECH'       // Quro Technical Staff - Troubleshooting & Facility Access
   | 'CLIENT_ADMIN'   // Client/Organization Owner - Manage Org, Facilities, & Staff
+  | 'admin'          // Administrative role
   | 'SURVEYOR'       // Regulatory Auditor - Read-only access to Client/Facilities
   | 'FACILITY_ADMIN' // Local Facility Manager
   | 'nurse'          // Clinician
@@ -489,3 +490,27 @@ export interface StaffInvitation {
   status: 'pending' | 'accepted';
   created_at: string;
 }
+
+export interface CarePlanCard {
+  id: 'respiratory' | 'skin' | 'adl';
+  title: string;
+  problem_statement: string;
+  goals: string[];
+  interventions: string[];
+  schedule: string;
+}
+
+export interface CarePlan {
+  id?: string;
+  org_id: string;
+  patient_id: string;
+  status: 'draft' | 'active' | 'archived';
+  cards: CarePlanCard[];
+  disclaimer: string;
+  created_at: any;
+  updated_at: any;
+  signed_by?: string | null;
+  signed_by_name?: string | null;
+  signed_at?: string | null;
+}
+

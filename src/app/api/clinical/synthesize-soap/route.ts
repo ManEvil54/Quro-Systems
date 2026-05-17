@@ -1,4 +1,4 @@
-import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
 
 /**
@@ -10,13 +10,10 @@ import { NextResponse } from 'next/server';
 const PROJECT_ID = 'quro-13d98';
 const LOCATION = 'us-central1';
 
-const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-const generativeModel = vertexAI.getGenerativeModel({
-  model: 'gemini-1.5-flash',
-  generationConfig: {
-    maxOutputTokens: 1024,
-    temperature: 0.2, // Low temperature for high clinical precision
-  },
+const ai = new GoogleGenAI({
+  vertexai: true,
+  project: PROJECT_ID,
+  location: LOCATION,
 });
 
 const SYSTEM_PROMPT = `
@@ -48,14 +45,16 @@ export async function POST(req: Request) {
 
     const prompt = `Dictation to synthesize:\n\n"${transcript}"`;
 
-    const result = await generativeModel.generateContent({
-      contents: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT + '\n' + prompt }] }
-      ],
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: SYSTEM_PROMPT + '\n' + prompt,
+      config: {
+        temperature: 0.2,
+        maxOutputTokens: 1024,
+      },
     });
 
-    const response = await result.response;
-    const formattedNote = response.candidates?.[0]?.content?.parts?.[0]?.text || 'Failed to generate note.';
+    const formattedNote = response.text || 'Failed to generate note.';
 
     return NextResponse.json({ formattedNote });
   } catch (err) {
