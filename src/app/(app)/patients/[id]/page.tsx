@@ -37,7 +37,8 @@ import {
   Archive,
   Search,
   Edit2,
-  Trash2
+  Trash2,
+  Bed as BedIcon
 } from 'lucide-react';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import { usePatient } from '@/hooks/usePatient';
@@ -48,6 +49,9 @@ import { useNotes } from '@/hooks/useNotes';
 import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
+import { useBeds } from '@/hooks/useBeds';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
 import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
 import TreatmentPortal from '@/components/clinical/TreatmentPortal';
@@ -59,7 +63,7 @@ export default function PatientChartPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { activeFacility } = useAuth();
+  const { activeFacility, staff, organization } = useAuth();
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
   const { medications, loading: medsLoading, addMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
@@ -67,8 +71,15 @@ export default function PatientChartPage() {
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
-  const { staff } = useAuth();
   
+  const { rooms, beds, loading: bedsLoading } = useBeds(patient?.facility_id || activeFacility?.id || '');
+
+  // Room Assignment State
+  const [showRoomModal, setShowRoomModal] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
+  const [savingRoom, setSavingRoom] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'trends' | 'compliance'>('facesheet');
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
@@ -120,6 +131,60 @@ export default function PatientChartPage() {
       setShowPhysicianModal(false);
     } catch (err) {
       console.error('Failed to update physician:', err);
+    }
+  };
+
+  const handleSaveRoomAssignment = async () => {
+    if (!organization?.id || !patient) return;
+    setSavingRoom(true);
+    try {
+      const facilityId = patient.facility_id || activeFacility?.id;
+      if (!facilityId) throw new Error('Facility ID not found');
+
+      // 1. If patient has a previous bed, release it
+      if (patient.bed_id) {
+        const prevBedRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', patient.bed_id);
+        await updateDoc(prevBedRef, {
+          patient_id: null,
+          status: 'available'
+        });
+      }
+
+      if (selectedRoomId && selectedBedId) {
+        const room = rooms.find(r => r.id === selectedRoomId);
+        const bed = beds.find(b => b.id === selectedBedId);
+        const roomName = room ? room.name : '';
+        const bedName = bed ? bed.name : '';
+        const roomNumberString = bedName ? `${roomName} - ${bedName}` : roomName;
+
+        // 2. Set new bed to occupied
+        const newBedRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', selectedBedId);
+        await updateDoc(newBedRef, {
+          patient_id: patient.id,
+          status: 'occupied'
+        });
+
+        // 3. Update patient's assignment
+        await updatePatient({
+          room_id: selectedRoomId,
+          bed_id: selectedBedId,
+          room_number: roomNumberString
+        });
+      } else {
+        // Clearing assignment
+        await updatePatient({
+          room_id: null as any,
+          bed_id: null as any,
+          room_number: ''
+        });
+      }
+
+      setShowRoomModal(false);
+    } catch (err) {
+      console.error('Failed to update room assignment:', err);
+      alert('Error updating room assignment');
+    } finally {
+      setSavingRoom(false);
     }
   };
 
@@ -689,6 +754,23 @@ export default function PatientChartPage() {
                         }}
                         className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
                         title="Edit Physician"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Room & Bed</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-black text-slate-900">{patient.room_number || 'Unassigned'}</p>
+                      <button 
+                        onClick={() => {
+                          setSelectedRoomId(patient.room_id || null);
+                          setSelectedBedId(patient.bed_id || null);
+                          setShowRoomModal(true);
+                        }}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
+                        title="Assign Room & Bed"
                       >
                         <Edit2 size={14} />
                       </button>
@@ -3098,6 +3180,154 @@ export default function PatientChartPage() {
                 className="flex-1 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Room & Bed Assignment Modal */}
+    {showRoomModal && (
+      <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-2xl bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+          <div className="text-center mb-6 flex-shrink-0">
+            <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-4 shadow-xl">
+              <BedIcon size={40} className="text-quro-teal" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Room & Bed Assignment</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Assign resident to a room and bed</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 min-h-0">
+            {bedsLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mb-4"></div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Loading rooms and census...</p>
+              </div>
+            ) : rooms.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-sm font-bold text-slate-500">No rooms configured in this facility.</p>
+                <p className="text-xs font-bold text-slate-400 mt-1">Please configure facility rooms under Admin settings.</p>
+              </div>
+            ) : (
+              <>
+                {/* Room Selector */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Room</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {rooms.map((room) => {
+                      const isSelected = selectedRoomId === room.id;
+                      return (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedRoomId(room.id);
+                            setSelectedBedId(null);
+                          }}
+                          className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all text-center ${
+                            isSelected
+                              ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                              : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200'
+                          }`}
+                        >
+                          <div className="text-xs uppercase tracking-widest font-black opacity-60 mb-1">Room</div>
+                          <div className="text-base font-black">{room.name}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bed Selector */}
+                {selectedRoomId && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Bed</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {beds
+                        .filter((bed) => bed.room_id === selectedRoomId)
+                        .map((bed) => {
+                          const isCurrent = patient.bed_id === bed.id;
+                          const isOccupied = bed.status === 'occupied' && bed.patient_id && bed.patient_id !== patient.id;
+                          const isSelected = selectedBedId === bed.id;
+
+                          return (
+                            <button
+                              key={bed.id}
+                              type="button"
+                              disabled={isOccupied || savingRoom}
+                              onClick={() => setSelectedBedId(bed.id)}
+                              className={`p-5 rounded-2xl border-2 font-bold text-left transition-all relative ${
+                                isSelected
+                                  ? 'bg-quro-teal/10 text-quro-teal border-quro-teal shadow-md shadow-quro-teal/5'
+                                  : isCurrent
+                                  ? 'bg-slate-900 text-white border-slate-900'
+                                  : isOccupied
+                                  ? 'bg-slate-50 text-slate-400 border-slate-100 opacity-60 cursor-not-allowed'
+                                  : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="text-xs uppercase tracking-widest font-black opacity-60 mb-1">Bed</div>
+                                  <div className="text-base font-black">{bed.name}</div>
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                  isCurrent
+                                    ? 'bg-slate-800 text-white'
+                                    : isOccupied
+                                    ? 'bg-rose-100 text-rose-700'
+                                    : isSelected
+                                    ? 'bg-quro-teal text-white'
+                                    : 'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                  {isCurrent ? 'Current' : isOccupied ? 'Occupied' : isSelected ? 'Selected' : 'Available'}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      {beds.filter((bed) => bed.room_id === selectedRoomId).length === 0 && (
+                        <p className="text-xs font-bold text-slate-400 italic col-span-2">No beds configured in this room.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex gap-4 mt-auto flex-shrink-0">
+            {patient.bed_id && (
+              <button
+                type="button"
+                disabled={savingRoom}
+                onClick={() => {
+                  setSelectedRoomId(null);
+                  setSelectedBedId(null);
+                }}
+                className="px-6 py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Clear Room
+              </button>
+            )}
+            <div className="flex-1 flex gap-3 justify-end">
+              <button
+                type="button"
+                disabled={savingRoom}
+                onClick={() => setShowRoomModal(false)}
+                className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingRoom || (selectedRoomId !== null && selectedBedId === null)}
+                onClick={handleSaveRoomAssignment}
+                className="px-8 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all disabled:opacity-30 disabled:pointer-events-none"
+              >
+                {savingRoom ? 'Saving...' : 'Save Assignment'}
               </button>
             </div>
           </div>
