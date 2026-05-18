@@ -98,7 +98,7 @@ export function useDashboard(facilityId: string) {
                 id: patient.id,
                 initials: `${patient.first_name[0]}${patient.last_name[0]}`,
                 mrn: patient.mrn,
-                status: (latest?.is_alert || patient.is_active_monitoring) ? 'Serious' : 'Stable',
+                status: latest?.is_alert ? 'Serious' : 'Stable',
                 hr: latest?.pulse || null,
                 bp: latest?.systolic ? `${latest.systolic}/${latest.diastolic}` : null,
                 temp: latest?.temperature || null,

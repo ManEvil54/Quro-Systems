@@ -57,11 +57,15 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
     const o2 = Number(form.spO2);
     const glu = Number(form.glucose);
     const respRate = Number(form.resp);
+    const pulseRate = Number(form.pulse);
+    const temp = Number(form.temperature);
 
-    if (sys > 160 || sys < 90 || dia > 100 || dia < 50) { is_alert = true; alert_message += 'Abnormal BP. '; }
+    if (sys > 160 || (sys < 90 && sys > 0) || dia > 100 || (dia < 50 && dia > 0)) { is_alert = true; alert_message += 'Abnormal BP. '; }
     if (o2 < 92 && o2 > 0) { is_alert = true; alert_message += 'Low O2. '; }
     if (glu > 250 || (glu < 70 && glu > 0)) { is_alert = true; alert_message += 'Serious Glucose. '; }
-    if (respRate > 24 || respRate < 10) { is_alert = true; alert_message += 'Abnormal Resp. '; }
+    if (respRate > 24 || (respRate < 10 && respRate > 0)) { is_alert = true; alert_message += 'Abnormal Resp. '; }
+    if (pulseRate > 110 || (pulseRate < 50 && pulseRate > 0)) { is_alert = true; alert_message += 'Abnormal Pulse. '; }
+    if (temp > 100.4 || (temp < 96.0 && temp > 0)) { is_alert = true; alert_message += 'Abnormal Temp. '; }
 
     try {
       await onSubmit({

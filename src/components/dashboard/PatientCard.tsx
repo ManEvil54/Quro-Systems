@@ -61,7 +61,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
                 <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isSerious ? 'text-orange-400' : 'text-quro-teal'}`}>
                   {bed.room_name} • {bed.bed_name}
                 </p>
-                <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isSerious ? 'text-white' : 'text-slate-100'}`}>
+                <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isSerious ? 'text-slate-900' : 'text-slate-100'}`}>
                   {patient.full_name || `Patient ${patient.initials}`}
                 </p>
               </div>
@@ -106,7 +106,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Pulse</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span key={patient.hr} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-3xl' : 'text-xl'} ${isSerious ? 'text-white' : 'text-white'}`}>
+              <span key={patient.hr} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-3xl' : 'text-xl'} ${isSerious ? 'text-slate-900' : 'text-white'}`}>
                 {patient.hr || '--'}
               </span>
               <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span>
@@ -118,7 +118,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
               <Activity size={12} className={isSerious ? 'text-orange-500' : 'text-quro-teal'} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>BP</span>
             </div>
-            <span key={patient.bp} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-2xl' : 'text-xl'} ${isSerious ? 'text-white' : 'text-white'}`}>
+            <span key={patient.bp} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-2xl' : 'text-xl'} ${isSerious ? 'text-slate-900' : 'text-white'}`}>
               {patient.bp || '--'}
             </span>
           </div>
@@ -129,7 +129,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
               <Thermometer size={12} className={isSerious ? 'text-orange-400' : 'text-quro-teal'} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Temp</span>
             </div>
-            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isSerious ? 'text-orange-400' : 'text-slate-200'}`}>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isSerious ? 'text-slate-900' : 'text-slate-200'}`}>
               {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
             </span>
           </div>
@@ -139,7 +139,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
               <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : 'text-quro-teal'} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Resp</span>
             </div>
-            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : 'text-slate-200'}`}>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : (isSerious ? 'text-slate-900' : 'text-slate-200')}`}>
               {patient.resp || '--'}
             </span>
           </div>
