@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Patient } from '@/lib/firebase/types';
@@ -13,8 +13,8 @@ export function usePatient(patientId: string) {
 
   useEffect(() => {
     if (!organization?.id || !patientId) {
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     }
 
     const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
@@ -43,10 +43,11 @@ export function usePatient(patientId: string) {
   const updatePatient = async (data: Partial<Patient>) => {
     if (!organization?.id || !patientId) throw new Error('Not authenticated');
     const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
-    return await updateDoc(patientRef, {
+    return await setDoc(patientRef, {
+      ...(patient || {}),
       ...data,
       updated_at: new Date().toISOString()
-    });
+    }, { merge: true });
   };
 
   return { patient, loading, error, updatePatient };

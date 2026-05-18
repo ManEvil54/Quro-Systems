@@ -6,11 +6,6 @@
 
 import React, { useState } from 'react';
 import { 
-  Activity, 
-  Heart, 
-  Thermometer, 
-  Wind, 
-  Droplets,
   AlertTriangle,
   Clock,
   Plus
@@ -23,7 +18,7 @@ interface Props {
 }
 
 export default function VitalHistory({ patientId }: Props) {
-  const { vitals, loading, error, recordVitals } = useVitals(patientId);
+  const { vitals, loading, recordVitals } = useVitals(patientId);
   const [showModal, setShowModal] = useState(false);
 
   if (loading) return <div className="py-10 text-center text-slate-400 text-sm">Loading vitals...</div>;

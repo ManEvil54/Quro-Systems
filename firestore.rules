@@ -115,16 +115,16 @@ service cloud.firestore {
         );
 
         match /rooms/{roomId} {
-          allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
-          allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
-            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && (
+            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
           );
         }
 
         match /beds/{bedId} {
-          allow read: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId);
-          allow write: if isOrgMember(orgId) && hasFacilityAccess(orgId, facilityId) && (
-            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && (
+            hasRole(['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
           );
         }
       }

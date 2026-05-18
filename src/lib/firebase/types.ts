@@ -75,8 +75,8 @@ export interface Patient {
   id: string;
   org_id: string;
   facility_id: string;
-  room_id?: string;
-  bed_id?: string;
+  room_id?: string | null;
+  bed_id?: string | null;
   mrn: string;
   first_name: string;
   last_name: string;
@@ -507,8 +507,8 @@ export interface CarePlan {
   status: 'draft' | 'active' | 'archived';
   cards: CarePlanCard[];
   disclaimer: string;
-  created_at: any;
-  updated_at: any;
+  created_at: string;
+  updated_at: string;
   signed_by?: string | null;
   signed_by_name?: string | null;
   signed_at?: string | null;

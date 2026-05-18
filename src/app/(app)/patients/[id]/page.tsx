@@ -141,12 +141,16 @@ export default function PatientChartPage() {
       if (!facilityId) throw new Error('Facility ID not found');
 
       // 1. If patient has a previous bed, release it
-      if (patient.bed_id) {
-        const prevBedRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', patient.bed_id);
-        await updateDoc(prevBedRef, {
-          patient_id: null,
-          status: 'available'
-        });
+      if (patient.bed_id && patient.bed_id !== selectedBedId) {
+        try {
+          const prevBedRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', patient.bed_id);
+          await updateDoc(prevBedRef, {
+            patient_id: null,
+            status: 'available'
+          });
+        } catch (prevBedError) {
+          console.warn('Could not release previous bed (may have been deleted):', prevBedError);
+        }
       }
 
       if (selectedRoomId && selectedBedId) {
@@ -172,8 +176,8 @@ export default function PatientChartPage() {
       } else {
         // Clearing assignment
         await updatePatient({
-          room_id: null as any,
-          bed_id: null as any,
+          room_id: null,
+          bed_id: null,
           room_number: ''
         });
       }
@@ -208,7 +212,7 @@ export default function PatientChartPage() {
   const handleSaveFamilyMember = async () => {
     try {
       const currentList = patient?.family_members || [];
-      let updatedList = [...currentList];
+      const updatedList = [...currentList];
       if (editingFamilyMemberIndex !== null) {
         updatedList[editingFamilyMemberIndex] = tempFamilyMember;
       } else {
@@ -2555,7 +2559,7 @@ export default function PatientChartPage() {
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Family Contacts</h3>
             <div className="space-y-6">
               {patient?.family_members && patient.family_members.length > 0 ? (
-                patient.family_members.map((member: any, idx: number) => (
+                patient.family_members.map((member, idx: number) => (
                   <div key={idx} className="border-b border-white/5 pb-4 last:border-0 last:pb-0">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                       {member.is_emergency_contact ? 'Primary Emergency Contact' : `Contact #${idx + 1}`}
