@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({
-  vertexai: {
-    project: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quro-13d98',
-    location: 'us-central1',
-  }
-});
-
 export async function POST(req: Request) {
   try {
+    const ai = new GoogleGenAI({
+      vertexai: true,
+      project: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quro-13d98',
+      location: 'us-central1',
+    });
+
     const body = await req.json();
     const { medication_list, allergies, diagnoses } = body as {
       medication_list: string[];

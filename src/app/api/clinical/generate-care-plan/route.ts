@@ -10,12 +10,6 @@ import { NextResponse } from 'next/server';
 const PROJECT_ID = 'quro-13d98';
 const LOCATION = 'us-central1';
 
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: PROJECT_ID,
-  location: LOCATION,
-});
-
 const SYSTEM_PROMPT = `
 You are an expert Clinical Director of Nursing (DON) and clinical scribe specializing in Congregate Living Health Facilities (CLHF).
 Your task is to generate a comprehensive, highly relevant, and regulatory-compliant preliminary clinical Care Plan for a newly admitted resident.
@@ -52,6 +46,12 @@ Ensure the output is pure JSON. Do not include markdown code block wrappers (lik
 
 export async function POST(req: Request) {
   try {
+    const ai = new GoogleGenAI({
+      vertexai: true,
+      project: PROJECT_ID,
+      location: LOCATION,
+    });
+
     const { patient, confirmedDiagnosis, baselines, notes } = await req.json();
 
     if (!patient) {
@@ -105,7 +105,7 @@ Intake / Admitting Nurse Inputs:
     let parsedData;
     try {
       parsedData = JSON.parse(text);
-    } catch (parseErr) {
+    } catch {
       console.error('Failed to parse model output directly. Output was:', text);
       throw new Error('Model did not return a valid structured JSON output.');
     }
