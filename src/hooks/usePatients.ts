@@ -9,8 +9,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  serverTimestamp,
-  orderBy
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,19 +23,18 @@ export function usePatients(facilityId?: string | null) {
 
   useEffect(() => {
     if (!staff?.org_id) {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 0);
       return;
     }
 
-    setLoading(true);
+    setTimeout(() => setLoading(true), 0);
     
     // Scoped collection: organizations/{org_id}/patients
     const patientsRef = collection(db, 'organizations', staff.org_id, 'patients');
     
     // Base query
-    let constraints = [
-      where('is_active', '==', true),
-      orderBy('last_name', 'asc')
+    const constraints = [
+      where('is_active', '==', true)
     ];
 
     // If facilityId is provided, filter by it
@@ -51,6 +49,10 @@ export function usePatients(facilityId?: string | null) {
         id: doc.id,
         ...doc.data()
       })) as Patient[];
+      
+      // Client-side sort by last_name to avoid needing a composite index
+      docs.sort((a, b) => (a.last_name || '').localeCompare(b.last_name || ''));
+      
       setPatients(docs);
       setLoading(false);
     }, (err) => {

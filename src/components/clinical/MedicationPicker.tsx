@@ -17,9 +17,14 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const skipNextFetch = useRef(false);
+
   // Sync internal query state if parent value changes externally
   useEffect(() => {
-    setQuery(value);
+    if (value !== query) {
+      setQuery(value);
+      skipNextFetch.current = true;
+    }
   }, [value]);
 
   useEffect(() => {
@@ -33,8 +38,13 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
   }, []);
 
   useEffect(() => {
-    if (!query || query.length < 3 || query === value) {
+    if (!query || query.length < 3) {
       setSuggestions([]);
+      return;
+    }
+
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false;
       return;
     }
 
@@ -57,9 +67,10 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, value]);
+  }, [query]);
 
   const handleSelect = async (name: string) => {
+    skipNextFetch.current = true;
     setQuery(name);
     setIsOpen(false);
     
