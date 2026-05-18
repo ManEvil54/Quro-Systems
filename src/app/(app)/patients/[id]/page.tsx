@@ -57,6 +57,7 @@ import TreatmentPortal from '@/components/clinical/TreatmentPortal';
 import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
 import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
 import CarePlanManager from '@/components/clinical/CarePlanManager';
+import { useRxNavSearch } from '@/hooks/useRxNavSearch';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
@@ -250,6 +251,7 @@ export default function PatientChartPage() {
     treatment_duration: ''
   });
   const [drugSearch, setDrugSearch] = useState('');
+  const { suggestions: rxNavSuggestions, loading: rxNavLoading } = useRxNavSearch(drugSearch);
   const [showDrugDropdown, setShowDrugDropdown] = useState(false);
 
   // Charting State
@@ -1501,32 +1503,95 @@ export default function PatientChartPage() {
                               d.generic.toLowerCase().includes(drugSearch.toLowerCase()) || 
                               d.brand?.toLowerCase().includes(drugSearch.toLowerCase())
                             ).map((drug, i) => (
-                              <button
-                                key={i}
-                                onClick={() => {
-                                  setNewOrder({ 
-                                    ...newOrder, 
-                                    order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''}`,
-                                    is_psychotropic: drug.is_psychotropic || false
-                                  });
-                                  setShowDrugDropdown(false);
-                                }}
-                                className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-all text-left group"
-                              >
-                                <div>
-                                  <p className="text-xs font-black text-slate-900 group-hover:text-quro-teal transition-colors">{drug.generic}</p>
-                                  {drug.brand && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{drug.brand}</p>}
+                              <div key={i} className="p-4 hover:bg-slate-50 rounded-xl transition-all group border-b border-slate-50 last:border-0">
+                                <div className="flex items-center justify-between mb-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setNewOrder({ 
+                                        ...newOrder, 
+                                        order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''}`,
+                                        is_psychotropic: drug.is_psychotropic || false
+                                      });
+                                      setShowDrugDropdown(false);
+                                    }}
+                                    className="text-left flex-1"
+                                  >
+                                    <p className="text-xs font-black text-slate-900 group-hover:text-quro-teal transition-colors">{drug.generic}</p>
+                                    {drug.brand && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{drug.brand}</p>}
+                                  </button>
+                                  {drug.is_psychotropic && (
+                                    <span className="px-2 py-1 bg-rose-50 text-rose-500 text-[8px] font-black rounded-lg uppercase tracking-widest border border-rose-100">
+                                      PSYCH
+                                    </span>
+                                  )}
                                 </div>
-                                {drug.is_psychotropic && (
-                                  <span className="px-2 py-1 bg-rose-50 text-rose-500 text-[8px] font-black rounded-lg uppercase tracking-widest border border-rose-100">
-                                    PSYCH
-                                  </span>
+                                {drug.common_dosages && (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {drug.common_dosages.map(dose => (
+                                      <button
+                                        key={dose}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setNewOrder({ 
+                                            ...newOrder, 
+                                            order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''} ${dose}`,
+                                            is_psychotropic: drug.is_psychotropic || false
+                                          });
+                                          setShowDrugDropdown(false);
+                                        }}
+                                        className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[9px] font-bold hover:bg-quro-teal hover:text-white transition-all"
+                                      >
+                                        {dose}
+                                      </button>
+                                    ))}
+                                  </div>
                                 )}
-                              </button>
+                              </div>
                             ))
                           ) : (
                             <div className="p-4 text-center">
-                              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No matching drugs found</p>
+                              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No local drugs found</p>
+                            </div>
+                          )}
+                          
+                          {rxNavSuggestions.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-slate-100">
+                              <p className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">NIH RxNav API Results</p>
+                              {rxNavSuggestions.map((suggestion, i) => (
+                                <button
+                                  key={`rxnav-${i}`}
+                                  type="button"
+                                  onClick={async () => {
+                                    // Optionally fetch RxCUI here if needed for page.tsx order state
+                                    let rxcui = null;
+                                    try {
+                                      const rxRes = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(suggestion)}`);
+                                      const rxData = await rxRes.json();
+                                      rxcui = rxData?.idGroup?.rxnormId?.[0] || null;
+                                    } catch (err) {
+                                      console.error('Error fetching RxCUI:', err);
+                                    }
+
+                                    setNewOrder({ 
+                                      ...newOrder, 
+                                      order_text: suggestion,
+                                      rxcui: rxcui,
+                                      is_psychotropic: false
+                                    });
+                                    setShowDrugDropdown(false);
+                                  }}
+                                  className="w-full flex items-center justify-between p-4 hover:bg-teal-50 rounded-xl transition-all text-left group"
+                                >
+                                  <p className="text-xs font-black text-slate-900 group-hover:text-quro-teal transition-colors capitalize">{suggestion}</p>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {rxNavLoading && (
+                            <div className="p-4 text-center text-quro-teal flex justify-center">
+                              <div className="w-4 h-4 border-2 border-quro-teal border-t-transparent rounded-full animate-spin"></div>
                             </div>
                           )}
                         </div>

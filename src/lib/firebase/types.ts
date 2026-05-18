@@ -213,6 +213,7 @@ export interface Medication {
   org_id: string;
   patient_id: string;
   generic_name: string;
+  rxcui?: string | null;
   brand_name?: string;
   strength: string;
   dosage: string;
@@ -290,6 +291,7 @@ export interface ProviderOrder {
   acknowledging_nurse_id?: string;
   order_type: 'medication' | 'lab' | 'imaging' | 'therapy' | 'diet' | 'treatment' | 'other';
   order_text: string;
+  rxcui?: string | null;
   priority: 'routine' | 'urgent' | 'stat';
   status: OrderStatus;
   signed_at?: string;

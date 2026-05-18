@@ -7,14 +7,15 @@ export interface DrugInfo {
   brand?: string;
   class: string;
   is_psychotropic?: boolean;
+  common_dosages?: string[];
 }
 
 export const COMMON_DRUGS: DrugInfo[] = [
   // 1. Cardiovascular (Heart & Blood Pressure)
   { generic: 'Amlodipine', brand: 'Norvasc', class: 'Cardiovascular (Antihypertensive)' },
-  { generic: 'Lisinopril', brand: 'Zestril', class: 'Cardiovascular (Antihypertensive)' },
-  { generic: 'Losartan', brand: 'Cozaar', class: 'Cardiovascular (Antihypertensive)' },
-  { generic: 'Metoprolol', brand: 'Lopressor', class: 'Cardiovascular (Antihypertensive)' },
+  { generic: 'Lisinopril', brand: 'Zestril', class: 'Cardiovascular (Antihypertensive)', common_dosages: ['5mg', '10mg', '20mg'] },
+  { generic: 'Losartan', brand: 'Cozaar', class: 'Cardiovascular (Antihypertensive)', common_dosages: ['25mg', '50mg', '100mg'] },
+  { generic: 'Metoprolol', brand: 'Lopressor', class: 'Cardiovascular (Antihypertensive)', common_dosages: ['25mg', '50mg'] },
   { generic: 'Carvedilol', brand: 'Coreg', class: 'Cardiovascular (Antihypertensive)' },
   { generic: 'Clonidine', brand: 'Catapres', class: 'Cardiovascular (Antihypertensive)' },
   { generic: 'Furosemide', brand: 'Lasix', class: 'Cardiovascular (Diuretic)' },
@@ -66,7 +67,7 @@ export const COMMON_DRUGS: DrugInfo[] = [
   { generic: 'Metoclopramide', brand: 'Reglan', class: 'Gastrointestinal (Anti-Emetic)' },
 
   // 4. Pain & Musculoskeletal
-  { generic: 'Acetaminophen', brand: 'Tylenol', class: 'Pain (Analgesic)' },
+  { generic: 'Acetaminophen', brand: 'Tylenol', class: 'Pain (Analgesic)', common_dosages: ['325mg', '500mg', '650mg'] },
   { generic: 'Ibuprofen', brand: 'Advil/Motrin', class: 'Pain (NSAID)' },
   { generic: 'Naproxen', brand: 'Aleve', class: 'Pain (NSAID)' },
   { generic: 'Celecoxib', brand: 'Celebrex', class: 'Pain (NSAID)' },
@@ -84,21 +85,21 @@ export const COMMON_DRUGS: DrugInfo[] = [
   { generic: 'Tizanidine', brand: 'Zanaflex', class: 'Musculoskeletal (Muscle Relaxant)' },
 
   // 5. Psychotropic & Neurological (Flagged for Monitoring)
-  { generic: 'Quetiapine', brand: 'Seroquel', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
-  { generic: 'Risperidone', brand: 'Risperdal', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
-  { generic: 'Olanzapine', brand: 'Zyprexa', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
-  { generic: 'Haloperidol', brand: 'Haldol', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true },
-  { generic: 'Lorazepam', brand: 'Ativan', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
-  { generic: 'Alprazolam', brand: 'Xanax', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
-  { generic: 'Diazepam', brand: 'Valium', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
-  { generic: 'Buspirone', brand: 'Buspar', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true },
-  { generic: 'Sertraline', brand: 'Zoloft', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
-  { generic: 'Escitalopram', brand: 'Lexapro', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
-  { generic: 'Fluoxetine', brand: 'Prozac', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
-  { generic: 'Mirtazapine', brand: 'Remeron', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
-  { generic: 'Trazodone', brand: 'Desyrel', class: 'Psychotropic (Antidepressant)', is_psychotropic: true },
-  { generic: 'Donepezil', brand: 'Aricept', class: 'Neurological (Anti-Dementia)', is_psychotropic: true },
-  { generic: 'Memantine', brand: 'Namenda', class: 'Neurological (Anti-Dementia)', is_psychotropic: true },
+  { generic: 'Quetiapine', brand: 'Seroquel', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true, common_dosages: ['25mg', '50mg', '100mg', '200mg'] },
+  { generic: 'Risperidone', brand: 'Risperdal', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true, common_dosages: ['0.25mg', '0.5mg', '1mg', '2mg'] },
+  { generic: 'Olanzapine', brand: 'Zyprexa', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true, common_dosages: ['2.5mg', '5mg', '10mg', '15mg'] },
+  { generic: 'Haloperidol', brand: 'Haldol', class: 'Psychotropic (Antipsychotic)', is_psychotropic: true, common_dosages: ['0.5mg', '1mg', '2mg', '5mg'] },
+  { generic: 'Lorazepam', brand: 'Ativan', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true, common_dosages: ['0.5mg', '1mg', '2mg'] },
+  { generic: 'Alprazolam', brand: 'Xanax', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true, common_dosages: ['0.25mg', '0.5mg', '1mg'] },
+  { generic: 'Diazepam', brand: 'Valium', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true, common_dosages: ['2mg', '5mg', '10mg'] },
+  { generic: 'Buspirone', brand: 'Buspar', class: 'Psychotropic (Anxiolytic)', is_psychotropic: true, common_dosages: ['5mg', '10mg', '15mg'] },
+  { generic: 'Sertraline', brand: 'Zoloft', class: 'Psychotropic (Antidepressant)', is_psychotropic: true, common_dosages: ['25mg', '50mg', '100mg'] },
+  { generic: 'Escitalopram', brand: 'Lexapro', class: 'Psychotropic (Antidepressant)', is_psychotropic: true, common_dosages: ['5mg', '10mg', '20mg'] },
+  { generic: 'Fluoxetine', brand: 'Prozac', class: 'Psychotropic (Antidepressant)', is_psychotropic: true, common_dosages: ['10mg', '20mg', '40mg'] },
+  { generic: 'Mirtazapine', brand: 'Remeron', class: 'Psychotropic (Antidepressant)', is_psychotropic: true, common_dosages: ['7.5mg', '15mg', '30mg'] },
+  { generic: 'Trazodone', brand: 'Desyrel', class: 'Psychotropic (Antidepressant)', is_psychotropic: true, common_dosages: ['50mg', '100mg', '150mg'] },
+  { generic: 'Donepezil', brand: 'Aricept', class: 'Neurological (Anti-Dementia)', is_psychotropic: true, common_dosages: ['5mg', '10mg', '23mg'] },
+  { generic: 'Memantine', brand: 'Namenda', class: 'Neurological (Anti-Dementia)', is_psychotropic: true, common_dosages: ['5mg', '10mg'] },
   { generic: 'Levetiracetam', brand: 'Keppra', class: 'Neurological (Anti-Seizure)' },
   { generic: 'Phenytoin', brand: 'Dilantin', class: 'Neurological (Anti-Seizure)' },
   { generic: 'Divalproex', brand: 'Depakote', class: 'Neurological (Anti-Seizure)' },

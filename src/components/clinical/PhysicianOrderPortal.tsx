@@ -33,6 +33,8 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Medication, MedRoute, MedFrequency } from '@/lib/firebase/types';
 import { format } from 'date-fns';
+import { COMMON_DRUGS } from '@/lib/constants/drugs';
+import MedicationPicker from './MedicationPicker';
 
 interface Props {
   patientId: string;
@@ -62,7 +64,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     vital_threshold_high: '',
     order_type: 'direct' as 'direct' | 'telephone',
     physician_id: '',
-    physician_name: ''
+    physician_name: '',
+    rxcui: null as string | null
   });
 
   useEffect(() => {
@@ -227,19 +230,31 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
             <div className="space-y-6">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication Name (Generic/Brand)</label>
-                <input 
-                  required
-                  placeholder="e.g. Lisinopril"
-                  className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal focus:ring-2 ring-quro-teal"
+                <MedicationPicker 
                   value={newOrder.generic_name}
-                  onChange={e => setNewOrder({...newOrder, generic_name: e.target.value})}
+                  onChange={(name, rxcui) => {
+                    const match = COMMON_DRUGS.find(d => d.generic === name || `${d.generic} (${d.brand})` === name);
+                    setNewOrder({
+                      ...newOrder,
+                      generic_name: name,
+                      rxcui,
+                      is_psychotropic: match?.is_psychotropic || newOrder.is_psychotropic
+                    });
+                  }}
+                  className="bg-slate-50 border-none p-4"
+                  placeholder="e.g. Lisinopril"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strength</label>
-                  <input required placeholder="e.g. 20mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" value={newOrder.strength} onChange={e => setNewOrder({...newOrder, strength: e.target.value})} />
+                  <input required list="strength-list" placeholder="e.g. 20mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" value={newOrder.strength} onChange={e => setNewOrder({...newOrder, strength: e.target.value})} />
+                  <datalist id="strength-list">
+                    {COMMON_DRUGS.find(d => newOrder.generic_name.includes(d.generic))?.common_dosages?.map(dose => (
+                      <option key={dose} value={dose} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage</label>

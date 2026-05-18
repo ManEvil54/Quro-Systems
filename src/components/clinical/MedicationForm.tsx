@@ -15,6 +15,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import type { Medication, MedRoute, MedFrequency } from '@/lib/firebase/types';
+import { COMMON_DRUGS } from '@/lib/constants/drugs';
+import MedicationPicker from './MedicationPicker';
 
 interface Props {
   onClose: () => void;
@@ -30,6 +32,7 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
 
   const [form, setForm] = useState<Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>>({
     generic_name: '',
+    rxcui: null,
     brand_name: '',
     strength: '',
     dosage: '',
@@ -106,9 +109,20 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">Generic Name (Required)</label>
-              <input 
-                type="text" required className="input" placeholder="E.G. Metoprolol Tartrate"
-                value={form.generic_name} onChange={e => setForm({...form, generic_name: e.target.value})}
+              <MedicationPicker 
+                value={form.generic_name}
+                onChange={(name, rxcui) => {
+                  const match = COMMON_DRUGS.find(d => d.generic === name || `${d.generic} (${d.brand})` === name);
+                  setForm({
+                    ...form,
+                    generic_name: name,
+                    rxcui,
+                    brand_name: match?.brand || form.brand_name,
+                    is_psychotropic: match?.is_psychotropic || form.is_psychotropic
+                  });
+                }}
+                className="input px-4 py-2"
+                placeholder="E.G. Metoprolol Tartrate"
               />
             </div>
             <div>
@@ -139,8 +153,14 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
                 <label className="label">Strength</label>
                 <input 
                   type="text" required className="input" placeholder="50mg"
+                  list="med-form-strength-list"
                   value={form.strength} onChange={e => setForm({...form, strength: e.target.value})}
                 />
+                <datalist id="med-form-strength-list">
+                  {COMMON_DRUGS.find(d => form.generic_name.includes(d.generic))?.common_dosages?.map(dose => (
+                    <option key={dose} value={dose} />
+                  ))}
+                </datalist>
               </div>
               <div className="col-span-2 md:col-span-1">
                 <label className="label">Dosage</label>
