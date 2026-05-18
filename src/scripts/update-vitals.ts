@@ -9,7 +9,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const ORG_ID = 'mq-demo-org';
-interface CriticalVital {
+interface SeriousVital {
   heart_rate: number;
   systolic: number;
   diastolic: number;
@@ -19,11 +19,11 @@ interface CriticalVital {
   glucose: number;
   pain: number;
   weight: number;
-  is_critical: boolean;
+  is_serious: boolean;
   status_note: string;
 }
 
-const criticalVitals: Record<string, CriticalVital> = {
+const seriousVitals: Record<string, SeriousVital> = {
   "Morgan, Arthur": {
     "heart_rate": 112,
     "systolic": 145,
@@ -34,7 +34,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 156,
     "pain": 7,
     "weight": 198.5,
-    "is_critical": true,
+    "is_serious": true,
     "status_note": "Respiratory distress; thick yellow secretions noted. O2 saturation dropping."
   },
   "Thompson, Margaret": {
@@ -47,7 +47,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 112,
     "pain": 4,
     "weight": 162.4,
-    "is_critical": true,
+    "is_serious": true,
     "status_note": "Enteral residual >150mL; feeding paused per protocol. Nausea reported."
   },
   "Chen, Robert": {
@@ -60,7 +60,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 118,
     "pain": 0,
     "weight": 182.2,
-    "is_critical": false,
+    "is_serious": false,
     "status_note": "Stable. Blood glucose within target range."
   },
   "Vance, Eleanor": {
@@ -73,7 +73,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 95,
     "pain": 2,
     "weight": 124.8,
-    "is_critical": false,
+    "is_serious": false,
     "status_note": "Alert and oriented x2. Resting comfortably."
   },
   "Jenkins, Sarah": {
@@ -86,7 +86,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 104,
     "pain": 1,
     "weight": 142.6,
-    "is_critical": false,
+    "is_serious": false,
     "status_note": "Reported mild joint pain in hands. PRN administered."
   },
   "Dumont, Victor": {
@@ -99,7 +99,7 @@ const criticalVitals: Record<string, CriticalVital> = {
     "glucose": 98,
     "pain": 3,
     "weight": 175.2,
-    "is_critical": false,
+    "is_serious": false,
     "status_note": "Sleeping soundly. Comfort measures maintained."
   }
 };
@@ -111,7 +111,7 @@ async function updateVitals() {
   const ACTOR_ID = 'system-update-agent';
   const ACTOR_NAME = 'Automated Adversarial Auditor';
 
-  for (const [name, data] of Object.entries(criticalVitals)) {
+  for (const [name, data] of Object.entries(seriousVitals) as [string, SeriousVital][]) {
     // CRITICAL FIX: Use MRN or ID instead of Name to prevent collisions
     // For this demo, we'll extract a unique ID if available, but MRN is the target.
     const patientsRef = collection(db, 'organizations', ORG_ID, 'patients');
@@ -153,7 +153,7 @@ async function updateVitals() {
         glucose: data.glucose,
         pain_level: data.pain,
         weight: data.weight,
-        is_alert: data.is_critical,
+        is_alert: data.is_serious,
         status_note: data.status_note,
         recorded_at: serverTimestamp(),
         recorded_by: ACTOR_ID,
@@ -196,7 +196,7 @@ async function updateVitals() {
         timestamp: serverTimestamp(),
         metadata: {
           vitals: ['pulse', 'bp', 'temp', 'spO2'],
-          is_critical: data.is_critical
+          is_serious: data.is_serious
         }
       });
 

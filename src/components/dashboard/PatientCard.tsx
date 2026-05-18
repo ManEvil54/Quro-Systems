@@ -7,7 +7,7 @@ type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 interface PatientCardProps {
   bed: DashboardBed;
-  isCritical: boolean;
+  isSerious: boolean;
   viewType: 'boutique' | 'enterprise';
   showDiagnostics?: boolean;
   readOnly?: boolean;
@@ -16,7 +16,7 @@ interface PatientCardProps {
   onGTClick?: (patient: DashboardPatient) => void;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, showDiagnostics, readOnly, onVitalsClick, onRTClick, onGTClick }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, showDiagnostics, readOnly, onVitalsClick, onRTClick, onGTClick }) => {
   const isBoutique = viewType === 'boutique';
   const { patient } = bed;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -43,8 +43,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
   return (
     <div className="block h-full">
       <div className={`glass-card-quro rounded-3xl transition-all duration-700 overflow-hidden group border h-full ${
-        isCritical 
-          ? 'border-red-500/50 critical-glow-red critical-ripple scale-[1.03] z-10' 
+        isSerious 
+          ? 'border-orange-500/50 critical-glow-red critical-ripple scale-[1.03] z-10' 
           : 'border-white/20 hover:border-quro-teal/30 hover:shadow-2xl hover:shadow-quro-teal/5'
       } ${isBoutique ? 'p-8' : 'p-5'}`}>
         
@@ -54,23 +54,23 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
             <div className="flex items-center gap-3">
               <div className={`rounded-full flex items-center justify-center text-xs font-bold transition-transform group-hover:scale-110 ${
                 isBoutique ? 'h-12 w-12 text-sm' : 'h-8 w-8 text-[10px]'
-              } ${isCritical ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-quro-charcoal text-white'}`}>
+              } ${isSerious ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-quro-charcoal text-white'}`}>
                 {patient.initials}
               </div>
               <div>
-                <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isCritical ? 'text-red-400' : 'text-quro-teal'}`}>
+                <p className={`font-black tracking-widest uppercase mb-0.5 ${isBoutique ? 'text-[10px]' : 'text-[8px]'} ${isSerious ? 'text-orange-400' : 'text-quro-teal'}`}>
                   {bed.room_name} • {bed.bed_name}
                 </p>
-                <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isCritical ? 'text-white' : 'text-slate-100'}`}>
+                <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isSerious ? 'text-white' : 'text-slate-100'}`}>
                   {patient.full_name || `Patient ${patient.initials}`}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isCritical && (
-                <div className="flex items-center gap-2 bg-red-600 text-white text-[8px] px-3 py-1.5 rounded-full font-black tracking-widest shadow-xl shadow-red-600/40 border border-white/20 animate-pulse">
+              {isSerious && (
+                <div className="flex items-center gap-2 bg-orange-600 text-white text-[8px] px-3 py-1.5 rounded-full font-black tracking-widest shadow-xl shadow-orange-600/40 border border-white/20 animate-pulse">
                   <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                  CRITICAL
+                  SERIOUS
                 </div>
               )}
                 <button 
@@ -95,18 +95,18 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           className={`grid grid-cols-2 gap-4 rounded-2xl p-4 border backdrop-blur-xl transition-all duration-500 ${
             !readOnly ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'
           } ${
-            isCritical ? 'bg-red-950/20 border-red-500/30' : 'bg-black/20 border-white/5 ' + (!readOnly ? 'hover:border-quro-teal/40 hover:bg-quro-teal/10' : '')
+            isSerious ? 'bg-orange-950/20 border-orange-500/30' : 'bg-black/20 border-white/5 ' + (!readOnly ? 'hover:border-quro-teal/40 hover:bg-quro-teal/10' : '')
           } ${isBoutique ? 'mt-4' : ''}`}
         >
           {/* Top Row: Pulse & BP (Always Visible) */}
           {/* Summary Row: Pulse & BP */}
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
-              <Heart size={12} className={`${patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-red-500' : 'text-quro-teal'} animate-vital-pulse`} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Pulse</span>
+              <Heart size={12} className={`${patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-orange-500' : 'text-quro-teal'} animate-vital-pulse`} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Pulse</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span key={patient.hr} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-3xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
+              <span key={patient.hr} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-3xl' : 'text-xl'} ${isSerious ? 'text-white' : 'text-white'}`}>
                 {patient.hr || '--'}
               </span>
               <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span>
@@ -115,10 +115,10 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           
           <div className="flex flex-col border-l border-white/10 pl-4">
             <div className="flex items-center gap-1.5 mb-2">
-              <Activity size={12} className={isCritical ? 'text-red-500' : 'text-quro-teal'} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>BP</span>
+              <Activity size={12} className={isSerious ? 'text-orange-500' : 'text-quro-teal'} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>BP</span>
             </div>
-            <span key={patient.bp} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-2xl' : 'text-xl'} ${isCritical ? 'text-white' : 'text-white'}`}>
+            <span key={patient.bp} className={`font-black tracking-tighter animate-vital-update ${isBoutique ? 'text-2xl' : 'text-xl'} ${isSerious ? 'text-white' : 'text-white'}`}>
               {patient.bp || '--'}
             </span>
           </div>
@@ -126,20 +126,20 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
           {/* Summary Row 2: Temp & Resp (Always Visible) */}
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
             <div className="flex items-center gap-1.5 mb-2">
-              <Thermometer size={12} className={isCritical ? 'text-red-400' : 'text-quro-teal'} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Temp</span>
+              <Thermometer size={12} className={isSerious ? 'text-orange-400' : 'text-quro-teal'} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Temp</span>
             </div>
-            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isCritical ? 'text-red-400' : 'text-slate-200'}`}>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isSerious ? 'text-orange-400' : 'text-slate-200'}`}>
               {patient.temp ? `${Number(patient.temp).toFixed(1)}°F` : '--'}
             </span>
           </div>
 
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
             <div className="flex items-center gap-1.5 mb-2">
-              <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-quro-teal'} />
-              <span className={`text-[8px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>Resp</span>
+              <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : 'text-quro-teal'} />
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Resp</span>
             </div>
-            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+            <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : 'text-slate-200'}`}>
               {patient.resp || '--'}
             </span>
           </div>
@@ -260,7 +260,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isCritical, viewType, sh
               </div>
               <div className="px-2 py-1 bg-black/20 rounded-md">
                 <p className="text-[7px] text-slate-400 uppercase">Alert</p>
-                <p className="text-[9px] font-bold text-teal-400 tracking-tighter">{isCritical ? 'TRUE' : 'FALSE'}</p>
+                <p className="text-[9px] font-bold text-teal-400 tracking-tighter">{isSerious ? 'TRUE' : 'FALSE'}</p>
               </div>
             </div>
           </div>

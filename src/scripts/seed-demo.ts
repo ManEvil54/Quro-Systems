@@ -153,7 +153,7 @@ async function seed() {
     // 3. Clinical Demo Patients
     const demoPatients = [
       { 
-        first_name: 'Margaret', last_name: 'Thompson', mrn: 'MRN-001', code: 'dnr', status: 'Critical', monitoring: true, 
+        first_name: 'Margaret', last_name: 'Thompson', mrn: 'MRN-001', code: 'dnr', status: 'Serious', monitoring: true, 
         dob: '1938-11-12', ssn: '4412', gender: 'female', room_number: '101-A',
         allergies: ['Penicillin', 'Sulfa'], 
         diagnoses: ['Congestive Heart Failure', 'Atrial Fibrillation', 'Osteoporosis', 'Chronic Kidney Disease (Stage 3)'],
@@ -197,7 +197,7 @@ async function seed() {
         ]
       },
       { 
-        first_name: 'Arthur', last_name: 'Morgan', mrn: 'MRN-004', code: 'full', status: 'Critical', monitoring: true,
+        first_name: 'Arthur', last_name: 'Morgan', mrn: 'MRN-004', code: 'full', status: 'Serious', monitoring: true,
         dob: '1950-08-15', ssn: '2214', gender: 'male', room_number: '102-B',
         allergies: ['Aspirin'], 
         diagnoses: ['COPD', 'Pneumonia (Right Lower Lobe)', 'Hypertension', 'Tobacco Use Disorder'],
@@ -313,7 +313,7 @@ async function seed() {
           created_at: recorded_at
         };
 
-        if (isLatest && p.status === 'Critical') {
+        if (isLatest && p.status === 'Serious') {
           if (p.first_name === 'Margaret') {
             vitalData.pulse = 112;
             vitalData.is_alert = true;

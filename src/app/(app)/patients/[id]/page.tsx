@@ -633,7 +633,7 @@ export default function PatientChartPage() {
             <div>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
               <p className={`text-xl font-black ${patient.is_active_monitoring ? 'text-rose-400' : 'text-emerald-400'}`}>
-                {patient.is_active_monitoring ? 'Critical' : 'Stable'}
+                {patient.is_active_monitoring ? 'Serious' : 'Stable'}
               </p>
             </div>
             <div>

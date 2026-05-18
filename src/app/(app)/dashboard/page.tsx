@@ -73,7 +73,7 @@ export default function DashboardPage() {
         full_name: 'Thompson, Margaret',
         initials: 'TM',
         mrn: 'MRN-001',
-        status: 'Critical',
+        status: 'Serious',
         hr: 112,
         bp: '148/92',
         temp: 99.1,
@@ -148,7 +148,7 @@ export default function DashboardPage() {
         full_name: 'Morgan, Arthur',
         initials: 'MA',
         mrn: 'MRN-004',
-        status: 'Critical',
+        status: 'Serious',
         hr: 105,
         bp: '168/94',
         temp: 100.2,
@@ -341,7 +341,7 @@ export default function DashboardPage() {
             <PatientCard 
               key={bed.id} 
               bed={bed}
-              isCritical={bed.patient?.status === 'Critical'}
+              isSerious={bed.patient?.status === 'Serious'}
               viewType={viewType}
               showDiagnostics={isImpersonating}
               readOnly={staff?.role === 'SURVEYOR'}

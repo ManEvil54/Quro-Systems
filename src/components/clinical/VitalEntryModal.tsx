@@ -20,7 +20,7 @@ import type { VitalSign } from '@/lib/firebase/types';
 
 interface Props {
   onClose: () => void;
-  onSubmit: (data: any) => Promise<any>;
+  onSubmit: (data: Omit<VitalSign, 'id' | 'org_id' | 'patient_id' | 'recorded_by' | 'created_at'>) => Promise<void>;
 }
 
 export default function VitalEntryModal({ onClose, onSubmit }: Props) {
@@ -58,29 +58,29 @@ export default function VitalEntryModal({ onClose, onSubmit }: Props) {
     const glu = Number(form.glucose);
     const respRate = Number(form.resp);
 
-    if (sys > 160 || sys < 90) { is_alert = true; alert_message += 'Abnormal BP. '; }
+    if (sys > 160 || sys < 90 || dia > 100 || dia < 50) { is_alert = true; alert_message += 'Abnormal BP. '; }
     if (o2 < 92 && o2 > 0) { is_alert = true; alert_message += 'Low O2. '; }
-    if (glu > 250 || (glu < 70 && glu > 0)) { is_alert = true; alert_message += 'Critical Glucose. '; }
+    if (glu > 250 || (glu < 70 && glu > 0)) { is_alert = true; alert_message += 'Serious Glucose. '; }
     if (respRate > 24 || respRate < 10) { is_alert = true; alert_message += 'Abnormal Resp. '; }
 
     try {
       await onSubmit({
         ...form,
-        systolic: form.systolic ? Number(form.systolic) : null,
-        diastolic: form.diastolic ? Number(form.diastolic) : null,
-        pulse: form.pulse ? Number(form.pulse) : null,
-        temperature: form.temperature ? Number(form.temperature) : null,
-        resp: form.resp ? Number(form.resp) : null,
-        spO2: form.spO2 ? Number(form.spO2) : null,
-        glucose: form.glucose ? Number(form.glucose) : null,
-        weight: form.weight ? Number(form.weight) : null,
+        systolic: form.systolic ? Number(form.systolic) : undefined,
+        diastolic: form.diastolic ? Number(form.diastolic) : undefined,
+        pulse: form.pulse ? Number(form.pulse) : undefined,
+        temperature: form.temperature ? Number(form.temperature) : undefined,
+        resp: form.resp ? Number(form.resp) : undefined,
+        spO2: form.spO2 ? Number(form.spO2) : undefined,
+        glucose: form.glucose ? Number(form.glucose) : undefined,
+        weight: form.weight ? Number(form.weight) : undefined,
         pain_level: Number(form.pain_level),
         is_alert,
-        alert_message: is_alert ? alert_message.trim() : null
+        alert_message: is_alert ? alert_message.trim() : undefined
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to record vitals.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to record vitals.');
       setLoading(false);
     }
   };
