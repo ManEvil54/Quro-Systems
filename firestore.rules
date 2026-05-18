@@ -193,6 +193,12 @@ service cloud.firestore {
         allow read: if isOrgMember(orgId);
         allow write: if isOrgMember(orgId) && (hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
       }
+
+      // 10. Intelligence Summaries
+      match /intelligence_summaries/{summaryId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && (hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+      }
     }
 
     // Global Audit Logs (Outside Org scope for system-wide auditing)
