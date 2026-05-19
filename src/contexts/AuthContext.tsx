@@ -20,7 +20,7 @@ import type { Staff, StaffRole } from '@/lib/firebase/types';
 interface AuthContextType {
   user: User | null;
   staff: Staff | null;
-  organization: { id: string; name: string; max_facilities?: number } | null;
+  organization: { id: string; name: string; max_facilities?: number; clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
   loading: boolean;
   isImpersonating: boolean;
   impersonatedDonName: string | null;
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{
     user: User | null;
     staff: Staff | null;
-    organization: { id: string, name: string, max_facilities?: number } | null;
+    organization: { id: string, name: string, max_facilities?: number, clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
     isImpersonating: boolean;
     impersonatedDonName: string | null;
     activeFacility: { id: string, name: string, bed_count?: number | null } | null;
@@ -97,7 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       : null;
 
     const orgData = orgDoc.exists() 
-      ? { id: orgDoc.id, name: orgDoc.data().name, max_facilities: orgDoc.data().max_facilities } 
+      ? { 
+          id: orgDoc.id, 
+          name: orgDoc.data().name, 
+          max_facilities: orgDoc.data().max_facilities,
+          clinical_settings: orgDoc.data().clinical_settings 
+        } 
       : { id: orgId, name: 'Quro Facility', max_facilities: 3 };
 
     // Handle Active Facility initialization
@@ -138,7 +143,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const orgDoc = await getDoc(doc(db, 'organizations', orgId));
       if (!orgDoc.exists()) throw new Error("Target organization not found");
-      const orgData = { id: orgDoc.id, name: orgDoc.data().name, max_facilities: orgDoc.data().max_facilities };
+      const orgData = { 
+        id: orgDoc.id, 
+        name: orgDoc.data().name, 
+        max_facilities: orgDoc.data().max_facilities,
+        clinical_settings: orgDoc.data().clinical_settings
+      };
 
       let staffData: Staff | null = null;
       if (staffId) {
