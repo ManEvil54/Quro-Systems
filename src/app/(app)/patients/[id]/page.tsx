@@ -1401,7 +1401,15 @@ export default function PatientChartPage() {
                                 onClick={() => {
                                   setSelectedMedForAction(med);
                                   setPendingAction('given');
-                                  if (requiresVitals) setShowVitalsModal(true);
+                                  if (requiresVitals) {
+                                    const latest = vitals[0];
+                                    setVitalsEntry({
+                                      bp_sys: latest?.systolic ? String(latest.systolic) : '',
+                                      bp_dia: latest?.diastolic ? String(latest.diastolic) : '',
+                                      hr: latest?.pulse ? String(latest.pulse) : ''
+                                    });
+                                    setShowVitalsModal(true);
+                                  }
                                   else setShowPinModal(true);
                                 }}
                                 className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"

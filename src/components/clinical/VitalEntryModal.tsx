@@ -21,23 +21,24 @@ import type { VitalSign } from '@/lib/firebase/types';
 interface Props {
   onClose: () => void;
   onSubmit: (data: Omit<VitalSign, 'id' | 'org_id' | 'patient_id' | 'recorded_by' | 'created_at'>) => Promise<void>;
+  lastReading?: VitalSign;
 }
 
-export default function VitalEntryModal({ onClose, onSubmit }: Props) {
+export default function VitalEntryModal({ onClose, onSubmit, lastReading }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     recorded_at: new Date().toISOString(),
-    systolic: '',
-    diastolic: '',
-    pulse: '',
-    temperature: '',
-    resp: '',
-    spO2: '',
-    glucose: '',
-    weight: '',
-    pain_level: '0',
+    systolic: lastReading?.systolic !== undefined && lastReading?.systolic !== null ? String(lastReading.systolic) : '',
+    diastolic: lastReading?.diastolic !== undefined && lastReading?.diastolic !== null ? String(lastReading.diastolic) : '',
+    pulse: lastReading?.pulse !== undefined && lastReading?.pulse !== null ? String(lastReading.pulse) : '',
+    temperature: lastReading?.temperature !== undefined && lastReading?.temperature !== null ? String(lastReading.temperature) : '',
+    resp: lastReading?.resp !== undefined && lastReading?.resp !== null ? String(lastReading.resp) : '',
+    spO2: lastReading?.spO2 !== undefined && lastReading?.spO2 !== null ? String(lastReading.spO2) : '',
+    glucose: lastReading?.glucose !== undefined && lastReading?.glucose !== null ? String(lastReading.glucose) : '',
+    weight: lastReading?.weight !== undefined && lastReading?.weight !== null ? String(lastReading.weight) : '',
+    pain_level: lastReading?.pain_level !== undefined && lastReading?.pain_level !== null ? String(lastReading.pain_level) : '0',
     notes: '',
     is_alert: false,
     alert_message: null

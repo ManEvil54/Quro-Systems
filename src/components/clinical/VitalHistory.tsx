@@ -40,6 +40,7 @@ export default function VitalHistory({ patientId }: Props) {
         <VitalEntryModal 
           onClose={() => setShowModal(false)}
           onSubmit={recordVitals}
+          lastReading={vitals[0]}
         />
       )}
 
