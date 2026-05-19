@@ -41,6 +41,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
   const [isOrdering, setIsOrdering] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [physicians, setPhysicians] = useState<Staff[]>([]);
+  const [strengths, setStrengths] = useState<string[]>([]);
 
   // New Order Form State
   const [orderCategory, setOrderCategory] = useState<'medication' | 'diet'>('medication');
@@ -78,6 +79,25 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     fetchPhysicians();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId, organization]);
+
+  useEffect(() => {
+    if (!newOrder.generic_name || newOrder.generic_name.length < 3) {
+      setStrengths([]);
+      return;
+    }
+    const fetchStrengths = async () => {
+      try {
+        const res = await fetch(`https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=${encodeURIComponent(newOrder.generic_name)}&ef=STRENGTHS_AND_FORMS`);
+        const data = await res.json();
+        const strengthsList = data[3]?.[0] || [];
+        setStrengths(strengthsList);
+      } catch (err) {
+        console.error('Error fetching strengths:', err);
+        setStrengths([]);
+      }
+    };
+    fetchStrengths();
+  }, [newOrder.generic_name]);
 
   async function fetchPhysicians() {
     if (!organization) return;
@@ -311,7 +331,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strength (Type or Select)</label>
                   <input required list="strength-list" placeholder="e.g. 20mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" value={newOrder.strength} onChange={e => setNewOrder({...newOrder, strength: e.target.value})} />
                   <datalist id="strength-list">
-                    {COMMON_DRUGS.find(d => newOrder.generic_name.includes(d.generic))?.common_dosages?.map(dose => (
+                    {strengths.map(dose => (
                       <option key={dose} value={dose} />
                     ))}
                   </datalist>

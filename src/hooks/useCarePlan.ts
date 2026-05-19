@@ -41,8 +41,8 @@ export function useCarePlan(patientId: string) {
       const activeOrDraft = plans
         .filter(p => p.status === 'draft' || p.status === 'active')
         .sort((a, b) => {
-          const aTime = a.updated_at?.seconds ? a.updated_at.seconds * 1000 : new Date(a.updated_at || 0).getTime();
-          const bTime = b.updated_at?.seconds ? b.updated_at.seconds * 1000 : new Date(b.updated_at || 0).getTime();
+          const aTime = (a.updated_at as any)?.seconds ? (a.updated_at as any).seconds * 1000 : new Date(a.updated_at || 0).getTime();
+          const bTime = (b.updated_at as any)?.seconds ? (b.updated_at as any).seconds * 1000 : new Date(b.updated_at || 0).getTime();
           return bTime - aTime;
         });
 

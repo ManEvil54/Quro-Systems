@@ -66,7 +66,7 @@ export default function MedicationList({ patientId }: Props) {
       {showForm && (
         <MedicationForm 
           onClose={() => setShowForm(false)}
-          onSubmit={addMedication}
+          onSubmit={async (data) => { await addMedication(data); }}
         />
       )}
 

@@ -52,10 +52,10 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
       setLoading(true);
       try {
         const response = await fetch(
-          `https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`
+          `https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=${encodeURIComponent(query)}`
         );
         const data = await response.json();
-        const results = data?.suggestionGroup?.suggestionList?.suggestion || [];
+        const results = data[1] || [];
         setSuggestions(results.slice(0, 10));
         setIsOpen(true);
       } catch (err) {
