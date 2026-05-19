@@ -325,7 +325,11 @@ export default function PatientChartPage() {
     physician_id: '',
     physician_name: '',
     diet_type: 'Regular',
-    consistency: 'Regular'
+    consistency: 'Regular',
+    generic_name: '',
+    brand_name: '',
+    strength: '',
+    dosage: ''
   });
 
   useEffect(() => {
@@ -630,18 +634,20 @@ export default function PatientChartPage() {
 
       // Automatically place on MAR if it's a medication or specific monitoring order
       if (newOrder.order_type === 'medication') {
+        const parsedGeneric = newOrder.generic_name || newOrder.order_text.split(' ')[0];
         await addMedication({
-          generic_name: newOrder.order_text.split(' ')[0],
-          brand_name: '',
-          strength: 'As ordered',
-          dosage: 'As ordered',
+          generic_name: parsedGeneric,
+          brand_name: newOrder.brand_name || '',
+          strength: newOrder.strength || 'As ordered',
+          dosage: newOrder.dosage || 'As ordered',
           route: newOrder.route,
           frequency: newOrder.frequency,
           start_date: new Date().toISOString(),
           status: 'active',
           is_psychotropic: newOrder.is_psychotropic,
           special_instructions: newOrder.order_text,
-          order_id: orderRef.id
+          order_id: orderRef.id,
+          rxcui: newOrder.rxcui
         });
       } else if (!isDiet && (newOrder.order_text.toLowerCase().includes('weight') || newOrder.order_text.toLowerCase().includes('sleep'))) {
         await addMedication({
@@ -672,7 +678,11 @@ export default function PatientChartPage() {
         physician_id: '',
         physician_name: '',
         diet_type: 'Regular',
-        consistency: 'Regular'
+        consistency: 'Regular',
+        generic_name: '',
+        brand_name: '',
+        strength: '',
+        dosage: ''
       });
       setIsAddingOrder(false);
       alert('Order signed and automatically synchronized with Patient MAR.');
@@ -1650,7 +1660,12 @@ export default function PatientChartPage() {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => setNewOrder({...newOrder, order_method: 'telephone'})}
+                        onClick={() => setNewOrder({
+                          ...newOrder, 
+                          order_method: 'telephone',
+                          physician_id: patient?.attending_physician || '',
+                          physician_name: patient?.attending_physician || ''
+                        })}
                         className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                           newOrder.order_method === 'telephone' 
                             ? 'bg-white text-slate-900 shadow-sm font-black' 
@@ -1673,11 +1688,14 @@ export default function PatientChartPage() {
                             setNewOrder({
                               ...newOrder, 
                               physician_id: e.target.value, 
-                              physician_name: p ? `Dr. ${p.last_name}` : ''
+                              physician_name: p ? `Dr. ${p.last_name}` : e.target.value
                             });
                           }}
                         >
                           <option value="">Select Physician giving the order...</option>
+                          {patient?.attending_physician && (
+                            <option value={patient.attending_physician}>{patient.attending_physician} (Attending)</option>
+                          )}
                           {physicians.map(p => (
                             <option key={p.id} value={p.id}>Dr. {p.first_name} {p.last_name}</option>
                           ))}
@@ -1764,7 +1782,9 @@ export default function PatientChartPage() {
                                       setNewOrder({ 
                                         ...newOrder, 
                                         order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''}`,
-                                        is_psychotropic: drug.is_psychotropic || false
+                                        is_psychotropic: drug.is_psychotropic || false,
+                                        generic_name: drug.generic,
+                                        brand_name: drug.brand || ''
                                       });
                                       setShowDrugDropdown(false);
                                     }}
@@ -1790,7 +1810,11 @@ export default function PatientChartPage() {
                                           setNewOrder({ 
                                             ...newOrder, 
                                             order_text: `${drug.generic}${drug.brand ? ` (${drug.brand})` : ''} ${dose}`,
-                                            is_psychotropic: drug.is_psychotropic || false
+                                            is_psychotropic: drug.is_psychotropic || false,
+                                            generic_name: drug.generic,
+                                            brand_name: drug.brand || '',
+                                            strength: dose,
+                                            dosage: '1 tablet'
                                           });
                                           setShowDrugDropdown(false);
                                         }}
@@ -1831,7 +1855,9 @@ export default function PatientChartPage() {
                                       ...newOrder, 
                                       order_text: suggestion,
                                       rxcui: rxcui,
-                                      is_psychotropic: false
+                                      is_psychotropic: false,
+                                      generic_name: suggestion,
+                                      brand_name: ''
                                     });
                                     setShowDrugDropdown(false);
                                   }}
@@ -2012,7 +2038,7 @@ export default function PatientChartPage() {
                             }`}>
                               {order.priority} • {order.order_type}
                             </span>
-                            {(order as any).order_method === 'telephone' && (
+                            {order.order_method === 'telephone' && (
                               <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[9px] font-black rounded-full uppercase tracking-widest border border-amber-200 animate-pulse">
                                 Telephone (T.O.)
                               </span>

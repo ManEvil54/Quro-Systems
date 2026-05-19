@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Medication, MedRoute, MedFrequency, Staff } from '@/lib/firebase/types';
+import type { Medication, MedRoute, MedFrequency, Staff, Patient } from '@/lib/firebase/types';
 import { format } from 'date-fns';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
@@ -74,11 +74,27 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     rxcui: null as string | null
   });
 
+  const [patient, setPatient] = useState<Patient | null>(null);
+
   useEffect(() => {
     fetchOrders();
     fetchPhysicians();
+    fetchPatient();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId, organization]);
+
+  async function fetchPatient() {
+    if (!organization || !patientId) return;
+    try {
+      const { getDoc } = await import('firebase/firestore');
+      const docSnap = await getDoc(doc(db, 'organizations', organization.id, 'patients', patientId));
+      if (docSnap.exists()) {
+        setPatient(docSnap.data());
+      }
+    } catch (err) {
+      console.error('Error fetching patient in order portal:', err);
+    }
+  }
 
   useEffect(() => {
     if (!newOrder.generic_name || newOrder.generic_name.length < 3) {
@@ -270,8 +286,21 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <button 
                   type="button"
                   onClick={() => {
-                    if (orderCategory === 'medication') setNewOrder({...newOrder, order_type: 'telephone'});
-                    else setNewDietOrder({...newDietOrder, order_type: 'telephone'});
+                    if (orderCategory === 'medication') {
+                      setNewOrder({
+                        ...newOrder, 
+                        order_type: 'telephone',
+                        physician_id: patient?.attending_physician || '',
+                        physician_name: patient?.attending_physician || ''
+                      });
+                    } else {
+                      setNewDietOrder({
+                        ...newDietOrder, 
+                        order_type: 'telephone',
+                        physician_id: patient?.attending_physician || '',
+                        physician_name: patient?.attending_physician || ''
+                      });
+                    }
                   }}
                   className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderCategory === 'medication' ? newOrder.order_type : newDietOrder.order_type) === 'telephone' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
@@ -290,14 +319,26 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 value={orderCategory === 'medication' ? newOrder.physician_id : newDietOrder.physician_id}
                 onChange={e => {
                   const p = physicians.find(ph => ph.id === e.target.value);
+                  const selectedName = p ? `Dr. ${p.last_name}` : e.target.value;
                   if (orderCategory === 'medication') {
-                    setNewOrder({...newOrder, physician_id: e.target.value, physician_name: `Dr. ${p?.last_name}`});
+                    setNewOrder({
+                      ...newOrder,
+                      physician_id: e.target.value,
+                      physician_name: selectedName
+                    });
                   } else {
-                    setNewDietOrder({...newDietOrder, physician_id: e.target.value, physician_name: `Dr. ${p?.last_name}`});
+                    setNewDietOrder({
+                      ...newDietOrder,
+                      physician_id: e.target.value,
+                      physician_name: selectedName
+                    });
                   }
                 }}
               >
                 <option value="">Select Physician giving the order...</option>
+                {patient?.attending_physician && (
+                  <option value={patient.attending_physician}>{patient.attending_physician} (Attending)</option>
+                )}
                 {physicians.map(p => (
                   <option key={p.id} value={p.id}>Dr. {p.first_name} {p.last_name}</option>
                 ))}
