@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Medication, MARAction } from '@/lib/firebase/types';
 
 interface Props {
@@ -22,6 +23,9 @@ interface Props {
 export default function MARGrid({ patientId }: Props) {
   const { medications, loading: medsLoading } = useMedications(patientId);
   const { entries, loading: marLoading, logAdministration } = useMAR(patientId);
+  const { organization } = useAuth();
+  
+  const isElectronicMode = organization?.clinical_settings?.emar_mode !== false;
   
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const currentYear = new Date().getFullYear();
@@ -85,6 +89,11 @@ export default function MARGrid({ patientId }: Props) {
               <ChevronRight size={16} />
             </button>
           </div>
+          {!isElectronicMode && (
+            <span className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              Hybrid Mode (Print & Paper Charting Only)
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4 text-xs font-medium">
           <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Given</div>
@@ -143,16 +152,18 @@ export default function MARGrid({ patientId }: Props) {
                           return (
                             <button
                               key={time}
-                              title={`${time} - Click to log`}
-                              onClick={() => !action && handleLog(med, dateStr, time)}
-                              disabled={!!action}
+                              title={isElectronicMode ? `${time} - Click to log` : `${time} - Paper MAR Only`}
+                              onClick={() => isElectronicMode && !action && handleLog(med, dateStr, time)}
+                              disabled={!isElectronicMode || !!action}
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
                                 action === 'given' ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20' :
                                 action === 'refused' ? 'bg-red-500 text-white' :
                                 action === 'held' ? 'bg-amber-500 text-white' :
                                 logging?.medId === med.id && logging?.date === dateStr && logging?.time === time
                                   ? 'bg-amber-500 text-white animate-pulse'
-                                  : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                  : isElectronicMode
+                                    ? 'bg-slate-100 text-slate-400 hover:bg-slate-200 cursor-pointer'
+                                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                               }`}
                             >
                               {action === 'given' ? <Check size={10} /> : 
