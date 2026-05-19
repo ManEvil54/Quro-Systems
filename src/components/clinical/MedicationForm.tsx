@@ -9,8 +9,6 @@ import {
   X, 
   Pill, 
   Clock, 
-  Activity, 
-  ShieldAlert, 
   Save,
   AlertCircle
 } from 'lucide-react';
@@ -20,7 +18,7 @@ import MedicationPicker from './MedicationPicker';
 
 interface Props {
   onClose: () => void;
-  onSubmit: (data: Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => Promise<any>;
+  onSubmit: (data: Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => Promise<void>;
 }
 
 const routes: MedRoute[] = ['PO', 'SL', 'IM', 'IV', 'SC', 'PR', 'TOP', 'INH', 'OPH', 'OTC', 'NGT', 'PATCH'];
@@ -64,8 +62,9 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
     try {
       await onSubmit(form);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save medication order.');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Failed to save medication order.');
       setLoading(false);
     }
   };
@@ -150,7 +149,7 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="col-span-2 md:col-span-1">
-                <label className="label">Strength</label>
+                <label className="label">Strength (Type or Select)</label>
                 <input 
                   type="text" required className="input" placeholder="50mg"
                   list="med-form-strength-list"
@@ -163,7 +162,7 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
                 </datalist>
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="label">Dosage</label>
+                <label className="label">Dosage (Type manually)</label>
                 <input 
                   type="text" required className="input" placeholder="1 tablet"
                   value={form.dosage} onChange={e => setForm({...form, dosage: e.target.value})}
@@ -226,7 +225,7 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
               <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                 <div>
                   <label className="label">Vital Type</label>
-                  <select className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value as any})}>
+                  <select className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value as 'bp' | 'hr' | 'glucose' | 'spO2'})}>
                     <option value="bp">Blood Pressure</option>
                     <option value="hr">Heart Rate</option>
                     <option value="glucose">Blood Glucose</option>

@@ -225,6 +225,8 @@ export interface Medication {
   prescriber_name?: string | null;
   pharmacy_name?: string | null;
   rx_number?: string | null;
+  transcribed_by_id?: string | null;
+  transcribed_by_name?: string | null;
   start_date: string;
   end_date?: string | null;
   status: MedStatus;
@@ -236,7 +238,7 @@ export interface Medication {
   psychotropic_monitoring?: string[];
   special_instructions?: string;
   order_id?: string | null;
-  order_type?: 'direct' | 'e-rx';
+  order_type?: 'direct' | 'e-rx' | 'telephone';
   created_at: string;
   updated_at: string;
 }

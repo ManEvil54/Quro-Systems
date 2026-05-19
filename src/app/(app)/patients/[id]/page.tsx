@@ -66,7 +66,7 @@ export default function PatientChartPage() {
   const id = params.id as string;
   const { activeFacility, staff, organization } = useAuth();
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
-  const { medications, loading: medsLoading, addMedication } = useMedications(id);
+  const { medications, loading: medsLoading, addMedication, updateMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
@@ -246,6 +246,7 @@ export default function PatientChartPage() {
     route: 'PO' as MedRoute,
     frequency: 'QD' as MedFrequency,
     is_psychotropic: false,
+    rxcui: null as string | null,
     treatment_site: '',
     treatment_frequency: 'Daily',
     treatment_duration: ''
@@ -502,7 +503,7 @@ export default function PatientChartPage() {
         order_type: newOrder.order_type,
         priority: newOrder.priority,
         status: 'signed',
-        ordering_physician_id: staff?.id || 'attending-1',
+        ordering_physician_id: staff?.role === 'physician' ? staff.id : (patient.attending_physician || 'Unassigned'),
         facility_id: patient.facility_id,
       });
 
@@ -542,6 +543,7 @@ export default function PatientChartPage() {
         route: 'PO',
         frequency: 'QD',
         is_psychotropic: false,
+        rxcui: null,
         treatment_site: '',
         treatment_frequency: 'Daily',
         treatment_duration: ''
@@ -558,6 +560,10 @@ export default function PatientChartPage() {
     if (!confirm('Are you sure you want to discontinue this order?')) return;
     try {
       await updateOrderStatus(orderId, 'cancelled');
+      const matchingMed = medications.find(m => m.order_id === orderId);
+      if (matchingMed) {
+        await updateMedication(matchingMed.id, { status: 'discontinued' });
+      }
       alert('Order has been discontinued.');
     } catch (err) {
       console.error('Failed to stop order:', err);
@@ -626,7 +632,7 @@ export default function PatientChartPage() {
               </div>
               <h1 className="text-4xl font-black uppercase tracking-tighter mb-1">{patient.first_name} {patient.last_name}</h1>
               <p className="text-slate-400 font-medium italic opacity-80">
-                {activeFacility?.name} — Room {patient.room_id || 'TBD'}
+                {activeFacility?.name} — Room {patient.room_number || 'TBD'}
               </p>
             </div>
           </div>
@@ -634,8 +640,8 @@ export default function PatientChartPage() {
           <div className="grid grid-cols-3 gap-6 md:gap-12 border-l border-white/10 pl-12">
             <div>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
-              <p className={`text-xl font-black ${patient.is_active_monitoring ? 'text-rose-400' : 'text-emerald-400'}`}>
-                {patient.is_active_monitoring ? 'Serious' : 'Stable'}
+              <p className={`text-xl font-black ${!patient.current_vitals ? 'text-slate-400' : (patient.is_active_monitoring ? 'text-rose-400' : 'text-emerald-400')}`}>
+                {!patient.current_vitals ? 'Pending Baseline' : (patient.is_active_monitoring ? 'Serious' : 'Stable')}
               </p>
             </div>
             <div>
@@ -1187,6 +1193,12 @@ export default function PatientChartPage() {
                     Scheduled Medications (eMAR)
                   </h3>
                   <div className="flex gap-4 items-center">
+                    <button 
+                      onClick={() => window.print()}
+                      className="no-print flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-all"
+                    >
+                      <Printer size={14} /> Print Hybrid MAR
+                    </button>
                     <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
                       <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
                       <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
@@ -1484,7 +1496,7 @@ export default function PatientChartPage() {
                           onFocus={() => {
                             if (newOrder.order_type === 'medication') setShowDrugDropdown(true);
                           }}
-                          placeholder={newOrder.order_type === 'medication' ? "Search drug library or enter custom..." : "Enter clinical directive..."}
+                          placeholder={newOrder.order_type === 'medication' ? "Search drug library or type full order (e.g. Lisinopril 20mg PO Daily)" : "Enter clinical directive..."}
                           className="w-full h-24 p-6 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-quro-teal transition-all resize-none"
                         />
                         {newOrder.order_type === 'medication' && (
@@ -1734,7 +1746,7 @@ export default function PatientChartPage() {
                             </div>
                             <div>
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ordering Provider</p>
-                              <p className="text-xs font-bold text-slate-700">Dr. Demo Attending</p>
+                              <p className="text-xs font-bold text-slate-700">{patient?.attending_physician || 'Verified Prescriber'}</p>
                             </div>
                           </div>
                         </div>

@@ -229,7 +229,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
                     }`}
                   >
                     <Droplets size={12} className={`${readOnly ? 'text-slate-500' : 'text-quro-teal group-hover/gt:animate-bounce'}`} />
-                    <span className={`text-[8px] font-black uppercase tracking-widest ${readOnly ? 'text-slate-500' : 'text-emerald-500'}`}>Enteral</span>
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${readOnly ? 'text-slate-500' : 'text-emerald-500'}`}>{patient.diet ? `Diet: ${patient.diet}` : 'Enteral'}</span>
                   </button>
                 )}
               </div>

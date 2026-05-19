@@ -37,7 +37,11 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
     diastolic: '',
     pulse: '',
     temperature: '',
-    o2_saturation: ''
+    o2_saturation: '',
+    resp: '',
+    glucose: '',
+    weight: '',
+    pain_level: ''
   });
 
   // Zero-Click UX: Auto-focus the first input
@@ -57,6 +61,10 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
         pulse: Number(form.pulse),
         temperature: Number(form.temperature),
         o2_saturation: Number(form.o2_saturation),
+        resp: Number(form.resp),
+        glucose: Number(form.glucose),
+        weight: Number(form.weight),
+        pain_level: Number(form.pain_level),
         recorded_at: new Date().toISOString()
       });
       
@@ -81,6 +89,9 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
       case 'pulse': return val > 110 || val < 55;
       case 'temperature': return val > 100.4 || val < 96.0;
       case 'o2_saturation': return val < 92;
+      case 'resp': return val > 24 || val < 10;
+      case 'glucose': return val > 200 || val < 70;
+      case 'pain_level': return val > 7;
       default: return false;
     }
   };
@@ -146,7 +157,7 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
               isOutlier={isOutlier('temperature', form.temperature)}
               onChange={(val) => setForm({ ...form, temperature: val })}
             />
-            <div className="col-span-2">
+            <div className="col-span-2 grid grid-cols-2 gap-6">
               <InputField 
                 label="SpO2 Saturation" 
                 icon={Wind} 
@@ -156,6 +167,44 @@ export default function VitalsInlay({ patient, onClose, onSubmit }: VitalsInlayP
                 isOutlier={isOutlier('o2_saturation', form.o2_saturation)}
                 onChange={(val) => setForm({ ...form, o2_saturation: val })}
               />
+              <InputField 
+                label="Resp Rate" 
+                icon={Activity} 
+                placeholder="16" 
+                unit="/min" 
+                value={form.resp}
+                isOutlier={isOutlier('resp', form.resp)}
+                onChange={(val) => setForm({ ...form, resp: val })}
+              />
+              <InputField 
+                label="Glucose" 
+                icon={Activity} 
+                placeholder="110" 
+                unit="mg/dL" 
+                value={form.glucose}
+                isOutlier={isOutlier('glucose', form.glucose)}
+                onChange={(val) => setForm({ ...form, glucose: val })}
+              />
+              <InputField 
+                label="Weight" 
+                icon={Activity} 
+                placeholder="165" 
+                unit="lbs" 
+                value={form.weight}
+                isOutlier={false}
+                onChange={(val) => setForm({ ...form, weight: val })}
+              />
+              <div className="col-span-2">
+                <InputField 
+                  label="Pain Level" 
+                  icon={Activity} 
+                  placeholder="0" 
+                  unit="/ 10" 
+                  value={form.pain_level}
+                  isOutlier={isOutlier('pain_level', form.pain_level)}
+                  onChange={(val) => setForm({ ...form, pain_level: val })}
+                />
+              </div>
             </div>
           </div>
 

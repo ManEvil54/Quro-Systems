@@ -32,6 +32,7 @@ export interface DashboardBed {
     is_active_monitoring: boolean;
     code_status?: string;
     diagnoses?: string[];
+    diet?: string;
   };
 }
 
@@ -110,7 +111,8 @@ export function useDashboard(facilityId: string) {
                 full_name: patient.full_name,
                 is_active_monitoring: patient.is_active_monitoring,
                 code_status: patient.code_status,
-                diagnoses: patient.diagnoses
+                diagnoses: patient.diagnoses,
+                diet: patient.diet
               } : undefined
             };
           });

@@ -241,6 +241,10 @@ export default function DashboardPage() {
       diastolic: data.diastolic as number,
       temperature: data.temperature as number,
       spO2: data.o2_saturation as number,
+      resp: data.resp as number,
+      glucose: data.glucose as number,
+      weight: data.weight as number,
+      pain_level: data.pain_level as number,
       recorded_at: data.recorded_at as string,
       recorded_by: staff?.id || 'system',
       created_at: serverTimestamp()
@@ -257,6 +261,10 @@ export default function DashboardPage() {
         diastolic: vitalData.diastolic,
         temperature: vitalData.temperature,
         spO2: vitalData.spO2,
+        resp: vitalData.resp,
+        glucose: vitalData.glucose,
+        weight: vitalData.weight,
+        pain_level: vitalData.pain_level,
         recorded_at: vitalData.recorded_at,
         recorded_by_name: staff ? `${staff.first_name} ${staff.last_name}` : 'System'
       },
