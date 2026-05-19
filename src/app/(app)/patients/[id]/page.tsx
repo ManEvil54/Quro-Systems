@@ -71,6 +71,7 @@ export default function PatientChartPage() {
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
+  const activeMeds = medications.filter(m => m.status === 'active');
   
   const { rooms, beds, loading: bedsLoading } = useBeds(patient?.facility_id || activeFacility?.id || '');
 
@@ -1060,14 +1061,14 @@ export default function PatientChartPage() {
                     Active Medication Profile
                   </h3>
                   <span className="px-4 py-2 bg-slate-900 text-white text-[9px] font-black rounded-xl uppercase tracking-widest">
-                    {medications.length} Active Prescriptions
+                    {activeMeds.length} Active Prescriptions
                   </span>
                 </div>
 
                 <div className="space-y-6">
                   {medsLoading ? (
                     <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">Loading Meds...</div>
-                  ) : medications.length > 0 ? medications.map((med) => (
+                  ) : activeMeds.length > 0 ? activeMeds.map((med) => (
                     <div key={med.id} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:border-quro-teal/30 transition-all group">
                       <div className="flex items-start justify-between">
                         <div>
@@ -1208,7 +1209,7 @@ export default function PatientChartPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {medications.length > 0 ? medications.map((med) => {
+                  {activeMeds.length > 0 ? activeMeds.map((med) => {
                     // Logic for Time Window Alerts
                     // Simplified for demo: assume current time vs 09:00
                     const status = med.is_psychotropic ? 'overdue' : 'ready'; // Mock status
@@ -1279,29 +1280,40 @@ export default function PatientChartPage() {
                             </div>
                           </div>
 
-                          <div className="flex gap-3">
-                            <button 
-                              onClick={() => {
-                                setSelectedMedForAction(med);
-                                setPendingAction('given');
-                                if (requiresVitals) setShowVitalsModal(true);
-                                else setShowPinModal(true);
-                              }}
-                              className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
-                            >
-                              Sign Administration
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setSelectedMedForAction(med);
-                                setPendingAction('held');
-                                setShowDelayReasonModal(true);
-                              }}
-                              className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
+                          {organization?.clinical_settings?.emar_mode !== false ? (
+                            <div className="flex gap-3">
+                              <button 
+                                onClick={() => {
+                                  setSelectedMedForAction(med);
+                                  setPendingAction('given');
+                                  if (requiresVitals) setShowVitalsModal(true);
+                                  else setShowPinModal(true);
+                                }}
+                                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
+                              >
+                                Sign Administration
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setSelectedMedForAction(med);
+                                  setPendingAction('held');
+                                  setShowDelayReasonModal(true);
+                                }}
+                                className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl w-full">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                Paper Signature Required
+                              </p>
+                              <p className="text-[9px] text-slate-400 mt-1 font-medium">
+                                Tracking hand-signed paper MAR
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
