@@ -49,8 +49,9 @@ import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
 import { useBeds } from '@/hooks/useBeds';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, query, where, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import type { Staff } from '@/lib/firebase/types';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
 import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
 import TreatmentPortal from '@/components/clinical/TreatmentPortal';
@@ -308,6 +309,7 @@ export default function PatientChartPage() {
 
   // Orders State
   const [isAddingOrder, setIsAddingOrder] = useState(false);
+  const [physicians, setPhysicians] = useState<Staff[]>([]);
   const [newOrder, setNewOrder] = useState({
     order_text: '',
     order_type: 'medication' as ProviderOrder['order_type'],
@@ -318,8 +320,27 @@ export default function PatientChartPage() {
     rxcui: null as string | null,
     treatment_site: '',
     treatment_frequency: 'Daily',
-    treatment_duration: ''
+    treatment_duration: '',
+    order_method: 'direct' as 'direct' | 'telephone',
+    physician_id: '',
+    physician_name: '',
+    diet_type: 'Regular',
+    consistency: 'Regular'
   });
+
+  useEffect(() => {
+    if (!organization) return;
+    const fetchPhysicians = async () => {
+      try {
+        const q = query(collection(db, 'organizations', organization.id, 'staff'), where('role', '==', 'physician'));
+        const snap = await getDocs(q);
+        setPhysicians(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff)));
+      } catch (err) {
+        console.error('Error fetching physicians in chart:', err);
+      }
+    };
+    fetchPhysicians();
+  }, [organization]);
   const [drugSearch, setDrugSearch] = useState('');
   const { suggestions: rxNavSuggestions, loading: rxNavLoading } = useRxNavSearch(drugSearch);
   const [showDrugDropdown, setShowDrugDropdown] = useState(false);
@@ -560,11 +581,21 @@ export default function PatientChartPage() {
   };
 
   const handleAddOrder = async () => {
-    if (!newOrder.order_text.trim() || !patient) return;
+    const isDiet = newOrder.order_type === 'diet';
+    if (!isDiet && !newOrder.order_text.trim() && !patient) return;
+    if (isDiet && !newOrder.diet_type && !patient) return;
+
     let finalOrderText = newOrder.order_text;
     if (newOrder.order_type === 'treatment') {
       finalOrderText = `${newOrder.order_text}${newOrder.treatment_site ? ` to ${newOrder.treatment_site}` : ''} ${newOrder.treatment_frequency}${newOrder.treatment_duration ? ` for ${newOrder.treatment_duration}` : ''}`;
+    } else if (isDiet) {
+      finalOrderText = `${newOrder.diet_type} Diet${newOrder.consistency !== 'Regular' ? ` with ${newOrder.consistency} Consistency` : ''}${newOrder.order_text ? `. Special Instructions: ${newOrder.order_text}` : ''}`;
     }
+
+    const isTelephone = newOrder.order_method === 'telephone';
+    const orderingPhysicianId = isTelephone 
+      ? (newOrder.physician_id || patient?.attending_physician || 'Unassigned')
+      : (staff?.role === 'physician' ? staff.id : (patient?.attending_physician || 'Unassigned'));
 
     try {
       const orderRef = await addOrder({
@@ -572,9 +603,30 @@ export default function PatientChartPage() {
         order_type: newOrder.order_type,
         priority: newOrder.priority,
         status: 'signed',
-        ordering_physician_id: staff?.role === 'physician' ? staff.id : (patient.attending_physician || 'Unassigned'),
-        facility_id: patient.facility_id,
+        ordering_physician_id: orderingPhysicianId,
+        facility_id: patient!.facility_id,
+        order_method: newOrder.order_method,
       });
+
+      // If it is a telephone order, log to audit_logs
+      if (isTelephone && organization && staff) {
+        await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+          action: 'TELEPHONE_ORDER_TRANSCRIBED',
+          staff_id: staff.id,
+          patient_id: id,
+          details: `Nurse transcribed telephone order from ${newOrder.physician_name || 'Dr. ' + (patient?.attending_physician || 'Verified Prescriber')} for ${newOrder.order_type === 'medication' ? newOrder.order_text : finalOrderText}`,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // If diet, update patient document in Firestore
+      if (isDiet && organization) {
+        const dietString = `${newOrder.diet_type}${newOrder.consistency !== 'Regular' ? ' with ' + newOrder.consistency : ''}`;
+        await updateDoc(doc(db, 'organizations', organization.id, 'patients', id), {
+          diet: dietString,
+          updated_at: new Date().toISOString()
+        });
+      }
 
       // Automatically place on MAR if it's a medication or specific monitoring order
       if (newOrder.order_type === 'medication') {
@@ -591,7 +643,7 @@ export default function PatientChartPage() {
           special_instructions: newOrder.order_text,
           order_id: orderRef.id
         });
-      } else if (newOrder.order_text.toLowerCase().includes('weight') || newOrder.order_text.toLowerCase().includes('sleep')) {
+      } else if (!isDiet && (newOrder.order_text.toLowerCase().includes('weight') || newOrder.order_text.toLowerCase().includes('sleep'))) {
         await addMedication({
           generic_name: newOrder.order_text.includes('weight') ? 'Monthly Weight' : 'Sleep Monitoring',
           strength: 'N/A',
@@ -615,7 +667,12 @@ export default function PatientChartPage() {
         rxcui: null,
         treatment_site: '',
         treatment_frequency: 'Daily',
-        treatment_duration: ''
+        treatment_duration: '',
+        order_method: 'direct',
+        physician_id: '',
+        physician_name: '',
+        diet_type: 'Regular',
+        consistency: 'Regular'
       });
       setIsAddingOrder(false);
       alert('Order signed and automatically synchronized with Patient MAR.');
@@ -1578,6 +1635,55 @@ export default function PatientChartPage() {
                       <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Entry: New Provider Directive</h4>
                       <button onClick={() => setIsAddingOrder(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                     </div>
+
+                    <div className="flex bg-slate-200/50 p-1 rounded-2xl mb-8 max-w-xs">
+                      <button 
+                        type="button"
+                        onClick={() => setNewOrder({...newOrder, order_method: 'direct'})}
+                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          newOrder.order_method === 'direct' 
+                            ? 'bg-white text-slate-900 shadow-sm font-black' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Direct Order
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setNewOrder({...newOrder, order_method: 'telephone'})}
+                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          newOrder.order_method === 'telephone' 
+                            ? 'bg-white text-slate-900 shadow-sm font-black' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Telephone Order
+                      </button>
+                    </div>
+
+                    {newOrder.order_method === 'telephone' && (
+                      <div className="mb-8 p-6 bg-amber-50/50 border border-amber-100 rounded-[2rem] animate-in slide-in-from-top-2">
+                        <p className="text-[9px] font-black text-amber-800 uppercase tracking-widest mb-3 block">Select Prescribing Physician</p>
+                        <select 
+                          required
+                          className="w-full bg-white border border-slate-200 p-4 rounded-xl font-bold text-xs text-slate-700 outline-none focus:border-quro-teal transition-all"
+                          value={newOrder.physician_id}
+                          onChange={e => {
+                            const p = physicians.find(ph => ph.id === e.target.value);
+                            setNewOrder({
+                              ...newOrder, 
+                              physician_id: e.target.value, 
+                              physician_name: p ? `Dr. ${p.last_name}` : ''
+                            });
+                          }}
+                        >
+                          <option value="">Select Physician giving the order...</option>
+                          {physicians.map(p => (
+                            <option key={p.id} value={p.id}>Dr. {p.first_name} {p.last_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                       <div>
@@ -1631,7 +1737,7 @@ export default function PatientChartPage() {
                           onFocus={() => {
                             if (newOrder.order_type === 'medication') setShowDrugDropdown(true);
                           }}
-                          placeholder={newOrder.order_type === 'medication' ? "Search drug library or type full order (e.g. Lisinopril 20mg PO Daily)" : "Enter clinical directive..."}
+                          placeholder={newOrder.order_type === 'medication' ? "Search drug library or type full order (e.g. Lisinopril 20mg PO Daily)" : newOrder.order_type === 'diet' ? "Enter any custom dietary instructions or restrictions (optional)..." : "Enter clinical directive..."}
                           className="w-full h-24 p-6 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-quro-teal transition-all resize-none"
                         />
                         {newOrder.order_type === 'medication' && (
@@ -1842,6 +1948,42 @@ export default function PatientChartPage() {
                         </div>
                       </div>
                     )}
+                    
+                    {newOrder.order_type === 'diet' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Diet Type</p>
+                          <select 
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl font-bold text-xs outline-none focus:border-quro-teal transition-all text-slate-700"
+                            value={newOrder.diet_type}
+                            onChange={e => setNewOrder({...newOrder, diet_type: e.target.value})}
+                          >
+                            <option value="Regular">Regular Diet</option>
+                            <option value="Mech Soft">Mechanical Soft</option>
+                            <option value="Pureed">Pureed Diet</option>
+                            <option value="Clear Liquid">Clear Liquid Diet</option>
+                            <option value="Full Liquid">Full Liquid Diet</option>
+                            <option value="Diabetic">Diabetic / Consistent Carbohydrate</option>
+                            <option value="Cardiac">Cardiac / Low Sodium (2g Na)</option>
+                            <option value="Renal">Renal Diet</option>
+                            <option value="NPO">NPO (Nothing by Mouth)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Fluid Consistency</p>
+                          <select 
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl font-bold text-xs outline-none focus:border-quro-teal transition-all text-slate-700"
+                            value={newOrder.consistency}
+                            onChange={e => setNewOrder({...newOrder, consistency: e.target.value})}
+                          >
+                            <option value="Regular">Regular (Thin Fluids)</option>
+                            <option value="Nectar Thick">Nectar Thick Fluids</option>
+                            <option value="Honey Thick">Honey Thick Fluids</option>
+                            <option value="Pudding Thick">Pudding Thick Fluids</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex justify-end">
                       <button 
@@ -1870,6 +2012,11 @@ export default function PatientChartPage() {
                             }`}>
                               {order.priority} • {order.order_type}
                             </span>
+                            {(order as any).order_method === 'telephone' && (
+                              <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[9px] font-black rounded-full uppercase tracking-widest border border-amber-200 animate-pulse">
+                                Telephone (T.O.)
+                              </span>
+                            )}
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {formatDate(order.created_at)}</span>
                           </div>
@@ -1881,7 +2028,13 @@ export default function PatientChartPage() {
                             </div>
                             <div>
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ordering Provider</p>
-                              <p className="text-xs font-bold text-slate-700">{patient?.attending_physician || 'Verified Prescriber'}</p>
+                              <p className="text-xs font-bold text-slate-700">
+                                {order.ordering_physician_id ? (
+                                  physicians.find(p => p.id === order.ordering_physician_id) 
+                                    ? `Dr. ${physicians.find(p => p.id === order.ordering_physician_id)?.last_name}` 
+                                    : (order.ordering_physician_id === 'Unassigned' ? 'Verified Prescriber' : order.ordering_physician_id)
+                                ) : (patient?.attending_physician || 'Verified Prescriber')}
+                              </p>
                             </div>
                           </div>
                         </div>

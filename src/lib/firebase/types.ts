@@ -299,6 +299,7 @@ export interface ProviderOrder {
   signed_at?: string;
   acknowledged_at?: string;
   faxed_at?: string;
+  order_method?: 'direct' | 'telephone';
   created_at: string;
   updated_at: string;
 }
