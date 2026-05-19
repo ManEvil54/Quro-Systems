@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { 
@@ -48,6 +48,7 @@ import { useNotes } from '@/hooks/useNotes';
 import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
+import { useOrders as useOrdersHook } from '@/hooks/useOrders'; // fallback import check
 import { useBeds } from '@/hooks/useBeds';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
@@ -60,6 +61,20 @@ import CarePlanManager from '@/components/clinical/CarePlanManager';
 import { useRxNavSearch } from '@/hooks/useRxNavSearch';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
+const formatDate = (dateValue: any) => {
+  if (!dateValue) return 'N/A';
+  if (typeof dateValue === 'object') {
+    if ('seconds' in dateValue) {
+      return new Date(dateValue.seconds * 1000).toLocaleDateString();
+    }
+    if (typeof dateValue.toDate === 'function') {
+      return dateValue.toDate().toLocaleDateString();
+    }
+  }
+  const d = new Date(dateValue);
+  return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+};
+
 export default function PatientChartPage() {
   const params = useParams();
   const router = useRouter();
@@ -71,8 +86,62 @@ export default function PatientChartPage() {
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
   const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
-  const activeMeds = medications.filter(m => m.status === 'active');
   
+  const activeMeds = useMemo(() => {
+    return medications.filter(m => {
+      if (m.status !== 'active') return false;
+      const matchingOrder = orders.find(o => o.id === m.order_id);
+      if (matchingOrder && matchingOrder.status === 'cancelled') return false;
+      const matchingDiscontinuedOrder = orders.find(o => 
+        o.status === 'cancelled' && 
+        o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
+      );
+      if (matchingDiscontinuedOrder) return false;
+      return true;
+    });
+  }, [medications, orders]);
+
+  const discontinuedMeds = useMemo(() => {
+    return medications.filter(m => {
+      if (m.status === 'discontinued') return true;
+      const matchingOrder = orders.find(o => o.id === m.order_id);
+      if (matchingOrder && matchingOrder.status === 'cancelled') return true;
+      const matchingDiscontinuedOrder = orders.find(o => 
+        o.status === 'cancelled' && 
+        o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
+      );
+      if (matchingDiscontinuedOrder) return true;
+      return false;
+    });
+  }, [medications, orders]);
+
+  // Auto-sync medication status with discontinued/cancelled orders in the Firestore database
+  useEffect(() => {
+    if (medsLoading || ordersLoading || !medications.length || !orders.length) return;
+
+    const syncMedsWithOrders = async () => {
+      for (const med of medications) {
+        if (med.status === 'active') {
+          const cancelledOrder = orders.find(o => 
+            o.status === 'cancelled' && 
+            (o.id === med.order_id || (med.generic_name && o.order_text.toLowerCase().includes(med.generic_name.toLowerCase())))
+          );
+
+          if (cancelledOrder) {
+            console.log(`Sync: Discontinuing medication ${med.generic_name} due to cancelled provider order.`);
+            try {
+              await updateMedication(med.id, { status: 'discontinued' });
+            } catch (err) {
+              console.error(`Failed to auto-discontinue medication ${med.id}:`, err);
+            }
+          }
+        }
+      }
+    };
+
+    syncMedsWithOrders();
+  }, [medications, orders, medsLoading, ordersLoading, updateMedication]);
+
   const { rooms, beds, loading: bedsLoading } = useBeds(patient?.facility_id || activeFacility?.id || '');
 
   // Room Assignment State
@@ -561,10 +630,19 @@ export default function PatientChartPage() {
     if (!confirm('Are you sure you want to discontinue this order?')) return;
     try {
       await updateOrderStatus(orderId, 'cancelled');
-      const matchingMed = medications.find(m => m.order_id === orderId);
-      if (matchingMed) {
-        await updateMedication(matchingMed.id, { status: 'discontinued' });
-      }
+      
+      const order = orders.find(o => o.id === orderId);
+      const matchingMeds = medications.filter(m => 
+        m.status === 'active' && (
+          m.order_id === orderId || 
+          (order && m.generic_name && order.order_text.toLowerCase().includes(m.generic_name.toLowerCase()))
+        )
+      );
+
+      await Promise.all(matchingMeds.map(med => 
+        updateMedication(med.id, { status: 'discontinued' })
+      ));
+      
       alert('Order has been discontinued.');
     } catch (err) {
       console.error('Failed to stop order:', err);
@@ -1075,7 +1153,7 @@ export default function PatientChartPage() {
                           <div className="flex items-center gap-3 mb-2">
                             <span className="text-[10px] font-black text-quro-teal uppercase tracking-widest">{med.route} • {med.frequency}</span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Started {new Date(med.start_date).toLocaleDateString()}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Started {formatDate(med.start_date)}</span>
                           </div>
                           <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-2">{med.generic_name}</h4>
                           <p className="text-sm font-bold text-slate-500 mb-4">
@@ -1106,6 +1184,44 @@ export default function PatientChartPage() {
                   )}
                 </div>
               </div>
+
+              {/* History of Discontinued / Inactive Medications */}
+              {discontinuedMeds.length > 0 && (
+                <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                  <div className="flex items-center justify-between mb-12">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <Archive size={18} className="text-slate-400" />
+                      Discontinued / Inactive Medications
+                    </h3>
+                    <span className="px-4 py-2 bg-slate-200 text-slate-600 text-[9px] font-black rounded-xl uppercase tracking-widest">
+                      {discontinuedMeds.length} Inactive Prescriptions
+                    </span>
+                  </div>
+
+                  <div className="space-y-6">
+                    {discontinuedMeds.map((med) => (
+                      <div key={med.id} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-through">{med.route} • {med.frequency}</span>
+                              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Started {formatDate(med.start_date)}</span>
+                            </div>
+                            <h4 className="text-2xl font-black text-slate-400 line-through tracking-tight mb-2">{med.generic_name}</h4>
+                            <p className="text-sm font-bold text-slate-400 mb-4 line-through">
+                              {med.strength} — {med.dosage}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
+                            <Pill size={24} className="text-slate-300" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1748,7 +1864,7 @@ export default function PatientChartPage() {
                               {order.priority} • {order.order_type}
                             </span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {new Date(order.created_at as string).toLocaleDateString()}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ordered {formatDate(order.created_at)}</span>
                           </div>
                           <h4 className="text-xl font-black text-slate-900 tracking-tight mb-4 leading-relaxed">{order.order_text}</h4>
                           <div className="flex gap-6 pt-4 border-t border-slate-200/60">
@@ -1793,7 +1909,7 @@ export default function PatientChartPage() {
                         <div key={order.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                            <div>
                              <p className="text-xs font-black text-slate-400 line-through">{order.order_text}</p>
-                             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Discontinued on {new Date(order.updated_at as string).toLocaleDateString()}</p>
+                             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Discontinued on {formatDate(order.updated_at)}</p>
                            </div>
                            <span className="px-3 py-1 bg-slate-200 text-slate-500 text-[8px] font-black rounded-lg uppercase">Inactive</span>
                         </div>

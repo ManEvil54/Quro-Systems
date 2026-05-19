@@ -14,6 +14,7 @@ import {
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrders } from '@/hooks/useOrders';
 import type { Medication, MARAction } from '@/lib/firebase/types';
 
 interface Props {
@@ -24,12 +25,29 @@ export default function MARGrid({ patientId }: Props) {
   const { medications, loading: medsLoading } = useMedications(patientId);
   const { entries, loading: marLoading, logAdministration } = useMAR(patientId);
   const { organization } = useAuth();
+  const { orders } = useOrders(patientId);
   
   const isElectronicMode = organization?.clinical_settings?.emar_mode !== false;
   
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const currentYear = new Date().getFullYear();
   const [logging, setLogging] = useState<{ medId: string, date: string, time: string } | null>(null);
+
+  const activeMedications = useMemo(() => {
+    return medications.filter(m => {
+      if (m.status !== 'active') return false;
+      if (orders) {
+        const matchingOrder = orders.find(o => o.id === m.order_id);
+        if (matchingOrder && matchingOrder.status === 'cancelled') return false;
+        const matchingDiscontinuedOrder = orders.find(o => 
+          o.status === 'cancelled' && 
+          o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
+        );
+        if (matchingDiscontinuedOrder) return false;
+      }
+      return true;
+    });
+  }, [medications, orders]);
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -118,7 +136,7 @@ export default function MARGrid({ patientId }: Props) {
             </tr>
           </thead>
           <tbody>
-            {medications.map((med) => (
+            {activeMedications.map((med) => (
               <tr key={med.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
                 <td className="sticky left-0 z-20 bg-white p-4 border-r border-slate-100">
                   <div className="flex items-start gap-3">
@@ -183,9 +201,9 @@ export default function MARGrid({ patientId }: Props) {
         </table>
       </div>
       
-      {medications.length === 0 && (
+      {activeMedications.length === 0 && (
         <div className="py-20 text-center text-slate-400 italic text-sm">
-          No medications listed for this month.
+          No active medications listed for this month.
         </div>
       )}
 
