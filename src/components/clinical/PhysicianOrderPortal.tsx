@@ -82,8 +82,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
   useEffect(() => {
     if (!newOrder.generic_name || newOrder.generic_name.length < 3) {
-      setStrengths([]);
-      return;
+      const timer = setTimeout(() => {
+        setStrengths([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const fetchStrengths = async () => {
       try {

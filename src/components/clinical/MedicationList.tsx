@@ -8,14 +8,11 @@ import React, { useState } from 'react';
 import { 
   Pill, 
   Clock, 
-  AlertCircle, 
   Plus, 
-  ChevronRight,
   MoreVertical,
   Activity
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
-import type { Medication } from '@/lib/firebase/types';
 import MedicationForm from './MedicationForm';
 
 interface Props {
@@ -23,7 +20,7 @@ interface Props {
 }
 
 export default function MedicationList({ patientId }: Props) {
-  const { medications, loading, error, addMedication } = useMedications(patientId);
+  const { medications, loading, addMedication } = useMedications(patientId);
   const [filter, setFilter] = useState<'active' | 'discontinued'>('active');
   const [showForm, setShowForm] = useState(false);
 

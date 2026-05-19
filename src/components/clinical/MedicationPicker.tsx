@@ -19,13 +19,14 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
 
   const skipNextFetch = useRef(false);
 
-  // Sync internal query state if parent value changes externally
-  useEffect(() => {
-    if (value !== query) {
-      setQuery(value);
-      skipNextFetch.current = true;
-    }
-  }, [value]);
+  const [prevValue, setPrevValue] = useState(value);
+
+  // Sync internal query state if parent value changes externally during render
+  if (value !== prevValue) {
+    setQuery(value);
+    setPrevValue(value);
+    skipNextFetch.current = true;
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -39,7 +40,6 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
 
   useEffect(() => {
     if (!query || query.length < 3) {
-      setSuggestions([]);
       return;
     }
 
@@ -93,9 +93,13 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
           type="text"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const val = e.target.value;
+            setQuery(val);
             setIsOpen(true);
-            onChange(e.target.value, null); // Clear rxcui if they manually edit
+            onChange(val, null); // Clear rxcui if they manually edit
+            if (!val || val.length < 3) {
+              setSuggestions([]);
+            }
           }}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);

@@ -21,8 +21,10 @@ export function useCarePlan(patientId: string) {
 
   useEffect(() => {
     if (!organization?.id || !patientId) {
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     setLoading(true);
@@ -41,8 +43,12 @@ export function useCarePlan(patientId: string) {
       const activeOrDraft = plans
         .filter(p => p.status === 'draft' || p.status === 'active')
         .sort((a, b) => {
-          const aTime = (a.updated_at as any)?.seconds ? (a.updated_at as any).seconds * 1000 : new Date(a.updated_at || 0).getTime();
-          const bTime = (b.updated_at as any)?.seconds ? (b.updated_at as any).seconds * 1000 : new Date(b.updated_at || 0).getTime();
+          const aTime = typeof a.updated_at === 'object' && a.updated_at && 'seconds' in a.updated_at
+            ? (a.updated_at as { seconds: number }).seconds * 1000 
+            : new Date(a.updated_at as string || 0).getTime();
+          const bTime = typeof b.updated_at === 'object' && b.updated_at && 'seconds' in b.updated_at
+            ? (b.updated_at as { seconds: number }).seconds * 1000 
+            : new Date(b.updated_at as string || 0).getTime();
           return bTime - aTime;
         });
 
@@ -58,7 +64,7 @@ export function useCarePlan(patientId: string) {
   }, [organization?.id, patientId]);
 
   const generateCarePlanAI = async (
-    patientProfile: any, 
+    patientProfile: unknown, 
     confirmedDiagnosis: string, 
     baselines: string[], 
     notes: string

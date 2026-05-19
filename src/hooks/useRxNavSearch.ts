@@ -6,8 +6,10 @@ export function useRxNavSearch(searchQuery: string) {
 
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 3) {
-      setSuggestions([]);
-      return;
+      const timer = setTimeout(() => {
+        setSuggestions([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const timer = setTimeout(async () => {
