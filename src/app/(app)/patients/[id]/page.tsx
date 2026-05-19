@@ -48,7 +48,6 @@ import { useNotes } from '@/hooks/useNotes';
 import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
-import { useOrders as useOrdersHook } from '@/hooks/useOrders'; // fallback import check
 import { useBeds } from '@/hooks/useBeds';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
@@ -61,17 +60,17 @@ import CarePlanManager from '@/components/clinical/CarePlanManager';
 import { useRxNavSearch } from '@/hooks/useRxNavSearch';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
-const formatDate = (dateValue: any) => {
+const formatDate = (dateValue: unknown) => {
   if (!dateValue) return 'N/A';
-  if (typeof dateValue === 'object') {
-    if ('seconds' in dateValue) {
-      return new Date(dateValue.seconds * 1000).toLocaleDateString();
+  if (typeof dateValue === 'object' && dateValue !== null) {
+    if ('seconds' in dateValue && typeof (dateValue as { seconds?: unknown }).seconds === 'number') {
+      return new Date((dateValue as { seconds: number }).seconds * 1000).toLocaleDateString();
     }
-    if (typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleDateString();
+    if ('toDate' in dateValue && typeof (dateValue as { toDate?: unknown }).toDate === 'function') {
+      return (dateValue as { toDate: () => Date }).toDate().toLocaleDateString();
     }
   }
-  const d = new Date(dateValue);
+  const d = new Date(dateValue as string | number | Date);
   return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
 };
 
