@@ -25,8 +25,13 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
   if (value !== prevValue) {
     setQuery(value);
     setPrevValue(value);
-    skipNextFetch.current = true;
   }
+
+  useEffect(() => {
+    if (value !== prevValue) {
+      skipNextFetch.current = true;
+    }
+  }, [value, prevValue]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

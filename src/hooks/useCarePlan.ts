@@ -27,7 +27,9 @@ export function useCarePlan(patientId: string) {
       return () => clearTimeout(timer);
     }
 
-    setLoading(true);
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+    }, 0);
     
     // Scoped collection: organizations/{org_id}/patients/{patientId}/care_plans
     const carePlansRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'care_plans');
@@ -60,7 +62,10 @@ export function useCarePlan(patientId: string) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(startTimer);
+      unsubscribe();
+    };
   }, [organization?.id, patientId]);
 
   const generateCarePlanAI = async (
