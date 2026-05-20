@@ -19,6 +19,7 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Medication } from '@/lib/firebase/types';
 import { format } from 'date-fns';
+import { safeFormat } from '@/lib/dateUtils';
 
 interface Props {
   patientId: string;
@@ -106,7 +107,7 @@ export default function OrderAcknowledgment({ patientId }: Props) {
                 </p>
                 <div className="mt-2 flex items-center gap-2 text-[9px] text-amber-700 font-bold">
                   <UserCheck size={12} />
-                  Signed by Dr. {order.prescriber_name?.split(',')[0]} @ {format(new Date(order.created_at), 'HH:mm')}
+                  Signed by Dr. {order.prescriber_name?.split(',')[0]} @ {safeFormat(order.created_at, 'HH:mm')}
                 </div>
               </div>
             </div>

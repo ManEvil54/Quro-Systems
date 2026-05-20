@@ -28,6 +28,7 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MedRoute, MedFrequency, Staff, Patient, ProviderOrder } from '@/lib/firebase/types';
 import { format } from 'date-fns';
+import { safeFormat } from '@/lib/dateUtils';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
 
@@ -1002,7 +1003,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                   </p>
                   {order.created_at && (
                     <p className="text-[8px] text-slate-400 mt-1">
-                      {format(new Date(order.created_at), 'MMM dd, yyyy HH:mm')}
+                      {safeFormat(order.created_at, 'MMM dd, yyyy HH:mm')}
                     </p>
                   )}
                 </div>

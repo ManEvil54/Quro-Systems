@@ -14,6 +14,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { useOrders } from '@/hooks/useOrders';
+import { safeLocaleDateString } from '@/lib/dateUtils';
 
 interface Props {
   patientId: string;
@@ -66,7 +67,7 @@ export default function OrderList({ patientId }: Props) {
                   <div className="flex items-center gap-4 mt-3">
                     <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
                       <Clock size={12} />
-                      <span>Ordered: {new Date(order.created_at).toLocaleDateString()}</span>
+                      <span>Ordered: {safeLocaleDateString(order.created_at)}</span>
                     </div>
                     {order.signed_at && (
                       <div className="flex items-center gap-1.5 text-[10px] font-medium text-blue-600">

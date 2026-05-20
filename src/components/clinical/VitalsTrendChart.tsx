@@ -8,17 +8,19 @@ import React, { useMemo } from 'react';
 import { Activity, Thermometer, Droplets, Heart, Wind } from 'lucide-react';
 import { VitalSign } from '@/lib/firebase/types';
 import { format } from 'date-fns';
+import { parseSafeDate, safeFormat } from '@/lib/dateUtils';
 
 interface VitalsTrendChartProps {
   vitals: VitalSign[];
 }
 
 const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
-  // Sort vitals by time ascending for the chart
   const sortedVitals = useMemo(() => {
-    return [...vitals].sort((a, b) => 
-      new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
-    ).slice(-15); // Show last 15 points
+    return [...vitals].sort((a, b) => {
+      const dateA = parseSafeDate(a.recorded_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.recorded_at)?.getTime() || 0;
+      return dateA - dateB;
+    }).slice(-15); // Show last 15 points
   }, [vitals]);
 
   if (sortedVitals.length < 2) {
@@ -204,7 +206,7 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
                 textAnchor="middle"
                 className="uppercase tracking-widest"
               >
-                {format(new Date(v.recorded_at), 'HH:mm')}
+                {safeFormat(v.recorded_at, 'HH:mm')}
               </text>
             );
           })}

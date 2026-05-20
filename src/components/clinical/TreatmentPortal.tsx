@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Treatment, TreatmentEntry } from '@/lib/firebase/types';
 import { format } from 'date-fns';
+import { safeFormat } from '@/lib/dateUtils';
 
 interface Props {
   patientId: string;
@@ -277,7 +278,7 @@ export default function TreatmentPortal({ patientId }: Props) {
                   <span className="px-3 py-1 bg-slate-900 text-white text-[8px] font-black rounded-lg uppercase tracking-widest">
                     {t.frequency}
                   </span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Started {format(new Date(t.start_date), 'MMM dd')}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Started {safeFormat(t.start_date, 'MMM dd')}</span>
                 </div>
                 <h4 className="text-xl font-black text-slate-900 tracking-tight mb-2 uppercase">{t.treatment_name}</h4>
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
