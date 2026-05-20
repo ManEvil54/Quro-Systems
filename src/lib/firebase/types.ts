@@ -320,6 +320,7 @@ export interface ProviderOrder {
   vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2' | null;
   vital_threshold_low?: number | null;
   vital_threshold_high?: number | null;
+  frequency_times?: string[];
   
   created_at: string;
   updated_at: string;

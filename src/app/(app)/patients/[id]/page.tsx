@@ -58,6 +58,34 @@ import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
+// Helper to safely format raw Firestore timestamps or ISO strings
+const safeFormatDate = (val: any): string => {
+  if (!val) return 'Pending...';
+  try {
+    let d: Date;
+    if (typeof val === 'object') {
+      if (typeof val.toDate === 'function') {
+        d = val.toDate();
+      } else if (val.seconds !== undefined) {
+        d = new Date(val.seconds * 1000 + Math.floor((val.nanoseconds || 0) / 1000000));
+      } else if (val instanceof Date) {
+        d = val;
+      } else {
+        d = new Date(val);
+      }
+    } else {
+      d = new Date(val);
+    }
+    
+    if (isNaN(d.getTime())) {
+      return 'Pending...';
+    }
+    return d.toLocaleString();
+  } catch (e) {
+    return 'Pending...';
+  }
+};
+
 export default function PatientChartPage() {
   const params = useParams();
   const router = useRouter();
@@ -1398,7 +1426,7 @@ export default function PatientChartPage() {
                         const med = medications.find(m => m.id === entry.medication_id);
                         return (
                           <tr key={entry.id} className="group hover:bg-slate-50/50 transition-colors">
-                            <td className="py-4 text-[11px] font-black text-slate-900">{new Date(entry.created_at).toLocaleString()}</td>
+                            <td className="py-4 text-[11px] font-black text-slate-900">{safeFormatDate(entry.created_at)}</td>
                             <td className="py-4 text-[11px] font-bold text-slate-600">{entry.administered_by?.slice(-6).toUpperCase()}</td>
                             <td className="py-4">
                               <p className="text-[11px] font-black text-slate-900">{med?.generic_name}</p>

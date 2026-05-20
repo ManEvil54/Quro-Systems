@@ -30,6 +30,34 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { HandoffEntry, Shift } from '@/lib/firebase/types';
 import { format } from 'date-fns';
 
+// Helper to safely format raw Firestore timestamps or ISO strings for Handoff timeline
+const safeFormatHandoffDate = (val: any): string => {
+  if (!val) return 'Pending...';
+  try {
+    let d: Date;
+    if (typeof val === 'object') {
+      if (typeof val.toDate === 'function') {
+        d = val.toDate();
+      } else if (val.seconds !== undefined) {
+        d = new Date(val.seconds * 1000 + Math.floor((val.nanoseconds || 0) / 1000000));
+      } else if (val instanceof Date) {
+        d = val;
+      } else {
+        d = new Date(val);
+      }
+    } else {
+      d = new Date(val);
+    }
+    
+    if (isNaN(d.getTime())) {
+      return 'Pending...';
+    }
+    return format(d, 'MMM dd, yyyy @ HH:mm');
+  } catch (e) {
+    return 'Pending...';
+  }
+};
+
 interface Props {
   patientId: string;
 }
@@ -350,7 +378,7 @@ export default function ShiftHandoff({ patientId }: Props) {
                     )}
                   </div>
                   <p className="text-[10px] text-slate-500 font-medium">
-                    {format(new Date(entry.created_at), 'MMM dd, yyyy @ HH:mm')} by Nurse {entry.outgoing_nurse_name}
+                    {safeFormatHandoffDate(entry.created_at)} by Nurse {entry.outgoing_nurse_name}
                   </p>
                 </div>
               </div>

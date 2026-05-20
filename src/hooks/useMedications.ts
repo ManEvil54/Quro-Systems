@@ -180,58 +180,75 @@ export function useMedications(patientId: string) {
               console.error(`Failed to auto-transcribe order ${order.id}:`, err);
             }
           } else if (matchingMed) {
-            // Sync any updates from order to medication
-            const orderTimes = order.frequency_times || [];
+            // Define unified target expected values to avoid mismatch / infinite auto-sync loops
+            const targetGenericName = order.generic_name || matchingMed.generic_name || 'Unknown Medication';
+            const targetStrength = order.strength || matchingMed.strength || 'As ordered';
+            const targetDose = order.dose || null;
+            const targetDosage = order.dosage || matchingMed.dosage || '1 tablet';
+            const targetRoute = order.route || matchingMed.route || 'PO';
+            const targetFrequency = order.frequency || matchingMed.frequency || 'QD';
+
+            let targetTimes: string[] = order.frequency_times || [];
+            if (targetTimes.length === 0) {
+              if (targetFrequency === 'BID') targetTimes = ['09:00', '17:00'];
+              else if (targetFrequency === 'TID') targetTimes = ['09:00', '13:00', '17:00'];
+              else if (targetFrequency === 'QID') targetTimes = ['09:00', '13:00', '17:00', '21:00'];
+              else if (targetFrequency === 'QHS') targetTimes = ['21:00'];
+              else if (targetFrequency === 'PRN') targetTimes = [];
+              else targetTimes = ['09:00'];
+            }
+
+            const targetIndication = order.indication || '';
+            const targetPrnReason = order.prn_reason || null;
+            const targetPrnInterval = order.prn_interval || null;
+            const targetIsPsychotropic = order.is_psychotropic || false;
+            const targetRequiresVitals = order.requires_vitals || false;
+            const targetVitalType = order.vital_type || null;
+            const targetVitalThresholdLow = order.vital_threshold_low || null;
+            const targetVitalThresholdHigh = order.vital_threshold_high || null;
+            const targetSpecialInstructions = order.special_instructions || '';
+
             const medTimes = matchingMed.frequency_times || [];
-            const timesMatch = orderTimes.length === medTimes.length && orderTimes.every((t, idx) => t === medTimes[idx]);
+            const timesMatch = targetTimes.length === medTimes.length && targetTimes.every((t: string, idx: number) => t === medTimes[idx]);
             
             if (
-              matchingMed.generic_name !== order.generic_name ||
-              matchingMed.strength !== order.strength ||
-              matchingMed.dose !== (order.dose || null) ||
-              matchingMed.dosage !== order.dosage ||
-              matchingMed.route !== order.route ||
-              matchingMed.frequency !== order.frequency ||
+              matchingMed.generic_name !== targetGenericName ||
+              matchingMed.strength !== targetStrength ||
+              matchingMed.dose !== targetDose ||
+              matchingMed.dosage !== targetDosage ||
+              matchingMed.route !== targetRoute ||
+              matchingMed.frequency !== targetFrequency ||
               !timesMatch ||
-              matchingMed.indication !== order.indication ||
-              matchingMed.prn_reason !== (order.prn_reason || null) ||
-              matchingMed.prn_interval !== (order.prn_interval || null) ||
-              matchingMed.is_psychotropic !== (order.is_psychotropic || false) ||
-              matchingMed.requires_vitals !== (order.requires_vitals || false) ||
-              matchingMed.vital_type !== (order.vital_type || null) ||
-              matchingMed.vital_threshold_low !== (order.vital_threshold_low || null) ||
-              matchingMed.vital_threshold_high !== (order.vital_threshold_high || null) ||
-              matchingMed.special_instructions !== (order.special_instructions || '')
+              matchingMed.indication !== targetIndication ||
+              matchingMed.prn_reason !== targetPrnReason ||
+              matchingMed.prn_interval !== targetPrnInterval ||
+              matchingMed.is_psychotropic !== targetIsPsychotropic ||
+              matchingMed.requires_vitals !== targetRequiresVitals ||
+              matchingMed.vital_type !== targetVitalType ||
+              matchingMed.vital_threshold_low !== targetVitalThresholdLow ||
+              matchingMed.vital_threshold_high !== targetVitalThresholdHigh ||
+              matchingMed.special_instructions !== targetSpecialInstructions
             ) {
               console.log(`Auto-sync: Updating medication ${matchingMed.id} to match edited provider order ${order.id}`);
               try {
                 const medRef = doc(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications', matchingMed.id);
-                let frequency_times = order.frequency_times;
-                if (!frequency_times || frequency_times.length === 0) {
-                  if (order.frequency === 'BID') frequency_times = ['09:00', '17:00'];
-                  else if (order.frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
-                  else if (order.frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
-                  else if (order.frequency === 'QHS') frequency_times = ['21:00'];
-                  else if (order.frequency === 'PRN') frequency_times = [];
-                  else frequency_times = ['09:00'];
-                }
                 await updateDoc(medRef, {
-                  generic_name: order.generic_name || matchingMed.generic_name,
-                  strength: order.strength || matchingMed.strength,
-                  dose: order.dose || null,
-                  dosage: order.dosage || matchingMed.dosage,
-                  route: order.route || matchingMed.route,
-                  frequency: order.frequency || matchingMed.frequency,
-                  frequency_times,
-                  indication: order.indication || '',
-                  prn_reason: order.prn_reason || null,
-                  prn_interval: order.prn_interval || null,
-                  is_psychotropic: order.is_psychotropic || false,
-                  requires_vitals: order.requires_vitals || false,
-                  vital_type: order.vital_type || null,
-                  vital_threshold_low: order.vital_threshold_low || null,
-                  vital_threshold_high: order.vital_threshold_high || null,
-                  special_instructions: order.special_instructions || '',
+                  generic_name: targetGenericName,
+                  strength: targetStrength,
+                  dose: targetDose,
+                  dosage: targetDosage,
+                  route: targetRoute,
+                  frequency: targetFrequency,
+                  frequency_times: targetTimes,
+                  indication: targetIndication,
+                  prn_reason: targetPrnReason,
+                  prn_interval: targetPrnInterval,
+                  is_psychotropic: targetIsPsychotropic,
+                  requires_vitals: targetRequiresVitals,
+                  vital_type: targetVitalType,
+                  vital_threshold_low: targetVitalThresholdLow,
+                  vital_threshold_high: targetVitalThresholdHigh,
+                  special_instructions: targetSpecialInstructions,
                   updated_at: serverTimestamp()
                 });
               } catch (err) {
