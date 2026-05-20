@@ -108,7 +108,13 @@ export default function MedicationList({ patientId }: Props) {
                     <span className="text-slate-300 mx-1.5">·</span>
                     <span className="text-slate-500">{med.route}</span>
                     <span className="text-slate-300 mx-1.5">·</span>
-                    <span className="text-teal-600 font-bold bg-teal-50/50 px-2 py-0.5 rounded text-xs">{med.frequency}</span>
+                    <span className="text-teal-600 font-bold bg-teal-50/50 px-2 py-0.5 rounded text-xs">
+                      {med.frequency === 'PRN' ? (
+                        `PRN (${med.prn_interval || 'every 8h'} as needed for ${med.prn_reason || med.indication || 'pain'})`
+                      ) : (
+                        med.frequency
+                      )}
+                    </span>
                   </p>
                   
                   <div className="flex flex-wrap gap-3 mt-2">

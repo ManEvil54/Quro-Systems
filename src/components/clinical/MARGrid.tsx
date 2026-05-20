@@ -159,7 +159,13 @@ export default function MARGrid({ patientId }: Props) {
                         <span className="text-slate-300 mx-1">·</span>
                         {med.route}
                         <span className="text-slate-300 mx-1">·</span>
-                        <span className="text-teal-600 font-bold">{med.frequency}</span>
+                        <span className="text-teal-600 font-bold">
+                          {med.frequency === 'PRN' ? (
+                            `PRN (${med.prn_interval || 'every 8h'} for ${med.prn_reason || med.indication || 'pain'})`
+                          ) : (
+                            med.frequency
+                          )}
+                        </span>
                       </p>
                       <div className="flex gap-1 mt-1">
                         {(med.frequency_times || []).map(t => (

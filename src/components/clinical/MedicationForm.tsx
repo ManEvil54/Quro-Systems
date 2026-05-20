@@ -40,6 +40,8 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     frequency: initialData?.frequency || 'QD',
     frequency_times: initialData?.frequency_times || ['09:00'],
     indication: initialData?.indication || '',
+    prn_reason: initialData?.prn_reason || '',
+    prn_interval: initialData?.prn_interval || '',
     prescriber_id: initialData?.prescriber_id || null,
     pharmacy_name: initialData?.pharmacy_name || null,
     rx_number: initialData?.rx_number || null,
@@ -136,9 +138,9 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               />
             </div>
             <div>
-              <label className="label">Indication</label>
+              <label className="label">Indication (Reason) <span className="text-rose-500">*</span></label>
               <input 
-                type="text" className="input" placeholder="E.G. Hypertension"
+                type="text" required className="input" placeholder="E.G. Hypertension"
                 value={form.indication || ''} onChange={e => setForm({...form, indication: e.target.value})}
               />
             </div>
@@ -192,6 +194,58 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                 </select>
               </div>
             </div>
+
+            {form.frequency === 'PRN' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 rounded-2xl bg-teal-50/40 border border-teal-100/50 animate-in fade-in slide-in-from-top-2">
+                <div>
+                  <label className="label text-teal-800 font-bold">PRN Min Interval <span className="text-rose-500">*</span></label>
+                  <input 
+                    required 
+                    type="text" 
+                    list="med-form-prn-intervals"
+                    placeholder="e.g. every 8 hours" 
+                    className="input bg-white focus:ring-2 focus:ring-teal-500" 
+                    value={form.prn_interval || ''} 
+                    onChange={e => setForm({...form, prn_interval: e.target.value})} 
+                  />
+                  <datalist id="med-form-prn-intervals">
+                    <option value="every 4 hours" />
+                    <option value="every 6 hours" />
+                    <option value="every 8 hours" />
+                    <option value="every 12 hours" />
+                    <option value="every 24 hours" />
+                  </datalist>
+                </div>
+                <div>
+                  <label className="label text-teal-800 font-bold">PRN Trigger / Reason <span className="text-rose-500">*</span></label>
+                  <input 
+                    required 
+                    type="text" 
+                    list="med-form-prn-triggers"
+                    placeholder="e.g. pain 4-10" 
+                    className="input bg-white focus:ring-2 focus:ring-teal-500" 
+                    value={form.prn_reason || ''} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setForm({
+                        ...form, 
+                        prn_reason: val,
+                        indication: form.indication || val
+                      });
+                    }} 
+                  />
+                  <datalist id="med-form-prn-triggers">
+                    <option value="pain 4-10" />
+                    <option value="mild pain" />
+                    <option value="severe pain" />
+                    <option value="fever > 101F" />
+                    <option value="anxiety" />
+                    <option value="shortness of breath" />
+                    <option value="nausea" />
+                  </datalist>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="label">Administration Times</label>

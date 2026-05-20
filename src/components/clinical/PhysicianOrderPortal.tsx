@@ -54,6 +54,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       route: 'PO',
       frequency: 'QD',
       indication: '',
+      prn_reason: '',
+      prn_interval: '',
       is_psychotropic: false,
       special_instructions: '',
       requires_vitals: false,
@@ -85,6 +87,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       route: order.route || 'PO',
       frequency: order.frequency || 'QD',
       indication: order.indication || '',
+      prn_reason: order.prn_reason || '',
+      prn_interval: order.prn_interval || '',
       is_psychotropic: order.is_psychotropic || false,
       special_instructions: order.special_instructions || '',
       requires_vitals: order.requires_vitals || false,
@@ -122,6 +126,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         route: order.route || 'PO',
         frequency: order.frequency || 'QD',
         indication: order.indication || '',
+        prn_reason: order.prn_reason || null,
+        prn_interval: order.prn_interval || null,
         is_psychotropic: order.is_psychotropic || false,
         requires_vitals: order.requires_vitals || false,
         vital_type: order.requires_vitals ? order.vital_type : null,
@@ -185,6 +191,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     route: 'PO' as MedRoute,
     frequency: 'QD' as MedFrequency,
     indication: '',
+    prn_reason: '',
+    prn_interval: '',
     is_psychotropic: false,
     special_instructions: '',
     requires_vitals: false,
@@ -315,7 +323,11 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       }
 
       const isTelephone = newOrder.order_type === 'telephone';
-      const orderText = `${newOrder.generic_name} ${newOrder.strength} - Dose: ${newOrder.dose} (${newOrder.dosage}) via ${newOrder.route} ${newOrder.frequency}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
+      const isPRN = newOrder.frequency === 'PRN';
+      const frequencyText = isPRN 
+        ? `PRN (every ${newOrder.prn_interval || '8 hours'} as needed for ${newOrder.prn_reason || newOrder.indication || 'pain'})` 
+        : newOrder.frequency;
+      const orderText = `${newOrder.generic_name} ${newOrder.strength} - Dose: ${newOrder.dose} (${newOrder.dosage}) via ${newOrder.route} ${frequencyText}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
       
       let providerOrderRefId = editingDraftId;
       
@@ -337,6 +349,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         route: newOrder.route,
         frequency: newOrder.frequency,
         indication: newOrder.indication,
+        prn_reason: newOrder.prn_reason || null,
+        prn_interval: newOrder.prn_interval || null,
         is_psychotropic: newOrder.is_psychotropic,
         requires_vitals: newOrder.requires_vitals,
         vital_type: newOrder.requires_vitals ? newOrder.vital_type : null,
@@ -374,6 +388,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           route: newOrder.route,
           frequency: newOrder.frequency,
           indication: newOrder.indication,
+          prn_reason: newOrder.prn_reason || null,
+          prn_interval: newOrder.prn_interval || null,
           is_psychotropic: newOrder.is_psychotropic,
           requires_vitals: newOrder.requires_vitals,
           vital_type: newOrder.requires_vitals ? newOrder.vital_type : null,
@@ -631,6 +647,58 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                   </select>
                 </div>
               </div>
+
+              {newOrder.frequency === 'PRN' && (
+                <div className="grid grid-cols-2 gap-4 bg-teal-50/40 border border-teal-100/50 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-teal-700 uppercase tracking-widest">PRN Min Interval <span className="text-rose-500">*</span></label>
+                    <input 
+                      required 
+                      type="text" 
+                      list="prn-intervals-list"
+                      placeholder="e.g. 8 hours" 
+                      className="w-full bg-white border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal focus:ring-2 focus:ring-teal-500" 
+                      value={newOrder.prn_interval} 
+                      onChange={e => setNewOrder({...newOrder, prn_interval: e.target.value})} 
+                    />
+                    <datalist id="prn-intervals-list">
+                      <option value="every 4 hours" />
+                      <option value="every 6 hours" />
+                      <option value="every 8 hours" />
+                      <option value="every 12 hours" />
+                      <option value="every 24 hours" />
+                    </datalist>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-teal-700 uppercase tracking-widest">PRN Trigger / Reason <span className="text-rose-500">*</span></label>
+                    <input 
+                      required 
+                      type="text" 
+                      list="prn-triggers-list"
+                      placeholder="e.g. pain 4-10" 
+                      className="w-full bg-white border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal focus:ring-2 focus:ring-teal-500" 
+                      value={newOrder.prn_reason} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setNewOrder({
+                          ...newOrder,
+                          prn_reason: val,
+                          indication: newOrder.indication || val
+                        });
+                      }} 
+                    />
+                    <datalist id="prn-triggers-list">
+                      <option value="pain 4-10" />
+                      <option value="mild pain" />
+                      <option value="severe pain" />
+                      <option value="fever > 101F" />
+                      <option value="anxiety" />
+                      <option value="shortness of breath" />
+                      <option value="nausea" />
+                    </datalist>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Clinical Guardrails */}
@@ -677,8 +745,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason for Medication (Indication)</label>
-                <input placeholder="e.g. Hypertension" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold" value={newOrder.indication} onChange={e => setNewOrder({...newOrder, indication: e.target.value})} />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason for Medication (Indication) <span className="text-rose-500">*</span></label>
+                <input required placeholder="e.g. Hypertension" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-slate-400" value={newOrder.indication} onChange={e => setNewOrder({...newOrder, indication: e.target.value})} />
               </div>
 
               <div className="space-y-1">

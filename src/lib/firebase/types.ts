@@ -222,6 +222,8 @@ export interface Medication {
   frequency: MedFrequency;
   frequency_times?: string[];
   indication?: string;
+  prn_reason?: string | null;
+  prn_interval?: string | null;
   prescriber_id?: string | null;
   prescriber_name?: string | null;
   pharmacy_name?: string | null;
@@ -310,6 +312,8 @@ export interface ProviderOrder {
   route?: MedRoute;
   frequency?: MedFrequency;
   indication?: string;
+  prn_reason?: string | null;
+  prn_interval?: string | null;
   is_psychotropic?: boolean;
   special_instructions?: string;
   requires_vitals?: boolean;
