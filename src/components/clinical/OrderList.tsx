@@ -4,18 +4,16 @@
 // ============================================================
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileText, 
   CheckCircle2, 
   Clock, 
   Send, 
   XCircle,
-  MoreVertical,
-  AlertCircle
+  MoreVertical
 } from 'lucide-react';
 import { useOrders } from '@/hooks/useOrders';
-import type { ProviderOrder } from '@/lib/firebase/types';
 
 interface Props {
   patientId: string;
@@ -31,7 +29,8 @@ const statusColors: Record<string, string> = {
 };
 
 export default function OrderList({ patientId }: Props) {
-  const { orders, loading, error, updateOrderStatus } = useOrders(patientId);
+  const { orders, loading, updateOrderStatus } = useOrders(patientId);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   if (loading) return <div className="py-10 text-center text-slate-400">Loading orders...</div>;
 
@@ -85,18 +84,72 @@ export default function OrderList({ patientId }: Props) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="relative flex items-center gap-2">
                 {order.status === 'signed' && (
                   <button 
                     onClick={() => updateOrderStatus(order.id, 'acknowledged')}
-                    className="btn-secondary text-[10px] py-1 px-3 font-bold uppercase"
+                    className="btn-secondary text-[10px] py-1 px-3 font-bold uppercase transition-all"
                   >
                     Acknowledge
                   </button>
                 )}
-                <button className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400">
-                  <MoreVertical size={16} />
-                </button>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setActiveDropdownId(activeDropdownId === order.id ? null : order.id)}
+                    className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 group-hover:text-slate-600 transition-colors"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                  
+                  {activeDropdownId === order.id && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-20" 
+                        onClick={() => setActiveDropdownId(null)}
+                      />
+                      
+                      <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl border border-slate-100 shadow-xl py-1.5 z-30 animate-in fade-in slide-in-from-top-1 duration-200">
+                        {order.status === 'acknowledged' && (
+                          <button
+                            onClick={async () => {
+                              setActiveDropdownId(null);
+                              await updateOrderStatus(order.id, 'sent_to_pharmacy');
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-2 transition-colors uppercase tracking-wider"
+                          >
+                            <Send size={14} className="text-purple-500" />
+                            Send to Pharmacy
+                          </button>
+                        )}
+                        {order.status === 'sent_to_pharmacy' && (
+                          <button
+                            onClick={async () => {
+                              setActiveDropdownId(null);
+                              await updateOrderStatus(order.id, 'filled');
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50 flex items-center gap-2 transition-colors uppercase tracking-wider"
+                          >
+                            <CheckCircle2 size={14} className="text-teal-500" />
+                            Mark Filled
+                          </button>
+                        )}
+                        {order.status !== 'cancelled' && (
+                          <button
+                            onClick={async () => {
+                              setActiveDropdownId(null);
+                              await updateOrderStatus(order.id, 'cancelled');
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
+                          >
+                            <XCircle size={14} className="text-rose-500" />
+                            Cancel Order
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

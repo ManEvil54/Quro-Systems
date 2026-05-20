@@ -19,40 +19,43 @@ import MedicationPicker from './MedicationPicker';
 interface Props {
   onClose: () => void;
   onSubmit: (data: Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  initialData?: Medication;
 }
 
 const routes: MedRoute[] = ['PO', 'SL', 'IM', 'IV', 'SC', 'PR', 'TOP', 'INH', 'OPH', 'OTC', 'NGT', 'PATCH'];
 const frequencies: MedFrequency[] = ['QD', 'BID', 'TID', 'QID', 'Q4H', 'Q6H', 'Q8H', 'Q12H', 'QHS', 'QAM', 'QPM', 'PRN', 'STAT', 'WEEKLY', 'BIWEEKLY', 'MONTHLY'];
 
-export default function MedicationForm({ onClose, onSubmit }: Props) {
+export default function MedicationForm({ onClose, onSubmit, initialData }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>>({
-    generic_name: '',
-    rxcui: null,
-    brand_name: '',
-    strength: '',
-    dosage: '',
-    route: 'PO',
-    frequency: 'QD',
-    frequency_times: ['09:00'],
-    indication: '',
-    prescriber_id: null,
-    pharmacy_name: null,
-    rx_number: null,
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: null,
-    status: 'active',
-    requires_vitals: false,
-    vital_type: null,
-    vital_threshold_low: null,
-    vital_threshold_high: null,
-    is_psychotropic: false,
-    psychotropic_monitoring: [],
-    special_instructions: '',
-    order_id: null,
-    order_type: 'direct',
+    generic_name: initialData?.generic_name || '',
+    rxcui: initialData?.rxcui || null,
+    brand_name: initialData?.brand_name || '',
+    strength: initialData?.strength || '',
+    dosage: initialData?.dosage || '',
+    route: initialData?.route || 'PO',
+    frequency: initialData?.frequency || 'QD',
+    frequency_times: initialData?.frequency_times || ['09:00'],
+    indication: initialData?.indication || '',
+    prescriber_id: initialData?.prescriber_id || null,
+    pharmacy_name: initialData?.pharmacy_name || null,
+    rx_number: initialData?.rx_number || null,
+    start_date: initialData?.start_date 
+      ? (typeof initialData.start_date === 'string' ? initialData.start_date.split('T')[0] : new Date(initialData.start_date).toISOString().split('T')[0]) 
+      : new Date().toISOString().split('T')[0],
+    end_date: initialData?.end_date || null,
+    status: initialData?.status || 'active',
+    requires_vitals: initialData?.requires_vitals || false,
+    vital_type: initialData?.vital_type || null,
+    vital_threshold_low: initialData?.vital_threshold_low || null,
+    vital_threshold_high: initialData?.vital_threshold_high || null,
+    is_psychotropic: initialData?.is_psychotropic || false,
+    psychotropic_monitoring: initialData?.psychotropic_monitoring || [],
+    special_instructions: initialData?.special_instructions || '',
+    order_id: initialData?.order_id || null,
+    order_type: initialData?.order_type || 'direct',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,8 +90,8 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
               <Pill size={20} />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 leading-none">New Medication Order</h2>
-              <p className="text-xs text-slate-500 mt-1">Clinical administration protocol</p>
+              <h2 className="font-bold text-slate-900 leading-none">{initialData ? 'Edit Medication Details' : 'New Medication Order'}</h2>
+              <p className="text-xs text-slate-500 mt-1">{initialData ? 'Modify active prescription parameters' : 'Clinical administration protocol'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
@@ -266,7 +269,7 @@ export default function MedicationForm({ onClose, onSubmit }: Props) {
           <div className="sticky bottom-0 bg-white py-4 border-t border-slate-100 flex justify-end gap-3 -mx-6 px-6">
             <button type="button" onClick={onClose} className="btn-secondary px-6">Cancel</button>
             <button type="submit" disabled={loading} className="btn-primary shimmer-btn px-10 flex items-center gap-2">
-              {loading ? "Ordering..." : <><Save size={18} /><span>Order Medication</span></>}
+              {loading ? (initialData ? "Saving..." : "Ordering...") : <><Save size={18} /><span>{initialData ? "Save Changes" : "Order Medication"}</span></>}
             </button>
           </div>
         </form>

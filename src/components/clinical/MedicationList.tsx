@@ -14,15 +14,18 @@ import {
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
 import MedicationForm from './MedicationForm';
+import type { Medication } from '@/lib/firebase/types';
 
 interface Props {
   patientId: string;
 }
 
 export default function MedicationList({ patientId }: Props) {
-  const { medications, loading, addMedication } = useMedications(patientId);
+  const { medications, loading, addMedication, updateMedication } = useMedications(patientId);
   const [filter, setFilter] = useState<'active' | 'discontinued'>('active');
   const [showForm, setShowForm] = useState(false);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const [editingMed, setEditingMed] = useState<Medication | null>(null);
 
   const filteredMeds = medications.filter(m => m.status === filter);
 
@@ -67,6 +70,14 @@ export default function MedicationList({ patientId }: Props) {
         />
       )}
 
+      {editingMed && (
+        <MedicationForm 
+          initialData={editingMed}
+          onClose={() => setEditingMed(null)}
+          onSubmit={async (data) => { await updateMedication(editingMed.id, data); }}
+        />
+      )}
+
       {/* Medication Cards */}
       <div className="space-y-3">
         {filteredMeds.map((med) => (
@@ -102,10 +113,65 @@ export default function MedicationList({ patientId }: Props) {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <button className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400">
+              <div className="relative">
+                <button 
+                  onClick={() => setActiveDropdownId(activeDropdownId === med.id ? null : med.id)}
+                  className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 group-hover:text-slate-600 transition-colors"
+                >
                   <MoreVertical size={16} />
                 </button>
+                
+                {activeDropdownId === med.id && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-20" 
+                      onClick={() => setActiveDropdownId(null)}
+                    />
+                    
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl border border-slate-100 shadow-xl py-1.5 z-30 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <button
+                        onClick={() => {
+                          setEditingMed(med);
+                          setActiveDropdownId(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors uppercase tracking-wider"
+                      >
+                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Edit Details / Dose
+                      </button>
+                      
+                      {med.status === 'active' ? (
+                        <button
+                          onClick={async () => {
+                            setActiveDropdownId(null);
+                            await updateMedication(med.id, { status: 'discontinued' });
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
+                        >
+                          <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          Discontinue Med
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            setActiveDropdownId(null);
+                            await updateMedication(med.id, { status: 'active' });
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-teal-600 hover:bg-teal-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
+                        >
+                          <svg className="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Reactivate Med
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             

@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Medication, MedRoute, MedFrequency, Staff, Patient } from '@/lib/firebase/types';
+import type { MedRoute, MedFrequency, Staff, Patient, ProviderOrder } from '@/lib/firebase/types';
 import { format } from 'date-fns';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
@@ -36,12 +36,131 @@ interface Props {
 
 export default function PhysicianOrderPortal({ patientId }: Props) {
   const { staff, organization } = useAuth();
-  const [orders, setOrders] = useState<Medication[]>([]);
+  const [providerOrders, setProviderOrders] = useState<ProviderOrder[]>([]);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [targetStatus, setTargetStatus] = useState<'signed' | 'draft'>('signed');
   const [loading, setLoading] = useState(true);
   const [isOrdering, setIsOrdering] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [physicians, setPhysicians] = useState<Staff[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
+
+  const resetForm = () => {
+    setNewOrder({
+      generic_name: '',
+      strength: '',
+      dosage: '',
+      route: 'PO',
+      frequency: 'QD',
+      indication: '',
+      is_psychotropic: false,
+      special_instructions: '',
+      requires_vitals: false,
+      vital_type: 'bp',
+      vital_threshold_low: '',
+      vital_threshold_high: '',
+      order_type: 'direct',
+      physician_id: '',
+      physician_name: '',
+      rxcui: null
+    });
+    setNewDietOrder({
+      diet_type: 'Regular',
+      consistency: 'Regular',
+      instructions: '',
+      order_type: 'direct',
+      physician_id: '',
+      physician_name: ''
+    });
+    setEditingDraftId(null);
+  };
+
+  const handleEditDraft = (order: ProviderOrder) => {
+    setNewOrder({
+      generic_name: order.generic_name || '',
+      strength: order.strength || '',
+      dosage: order.dosage || '',
+      route: order.route || 'PO',
+      frequency: order.frequency || 'QD',
+      indication: order.indication || '',
+      is_psychotropic: order.is_psychotropic || false,
+      special_instructions: order.special_instructions || '',
+      requires_vitals: order.requires_vitals || false,
+      vital_type: order.vital_type || 'bp',
+      vital_threshold_low: order.vital_threshold_low ? String(order.vital_threshold_low) : '',
+      vital_threshold_high: order.vital_threshold_high ? String(order.vital_threshold_high) : '',
+      order_type: (order.order_method as 'direct' | 'telephone') || 'direct',
+      physician_id: order.ordering_physician_id || '',
+      physician_name: order.ordering_physician_id || '',
+      rxcui: order.rxcui || null
+    });
+    setEditingDraftId(order.id);
+    setOrderCategory('medication');
+    setIsOrdering(true);
+  };
+
+  const handleSignDirectly = async (order: ProviderOrder) => {
+    if (!staff || !organization) return;
+    setIsSaving(true);
+    try {
+      const isTelephone = order.order_method === 'telephone';
+      
+      const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', order.id);
+      await updateDoc(docRef, {
+        status: 'signed',
+        signed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      const orderData = {
+        generic_name: order.generic_name || '',
+        strength: order.strength || '',
+        dosage: order.dosage || '',
+        route: order.route || 'PO',
+        frequency: order.frequency || 'QD',
+        indication: order.indication || '',
+        is_psychotropic: order.is_psychotropic || false,
+        requires_vitals: order.requires_vitals || false,
+        vital_type: order.requires_vitals ? order.vital_type : null,
+        special_instructions: order.special_instructions || '',
+        org_id: organization.id,
+        patient_id: patientId,
+        order_type: order.order_method || 'direct',
+        prescriber_id: order.ordering_physician_id || staff.id,
+        prescriber_name: isTelephone 
+          ? `Dr. Physician` 
+          : `${staff.first_name} ${staff.last_name}, ${staff.credential}`,
+        transcribed_by_id: isTelephone ? staff.id : null,
+        transcribed_by_name: isTelephone ? `${staff.first_name} ${staff.last_name}` : null,
+        status: 'active', 
+        start_date: new Date().toISOString(),
+        vital_threshold_low: order.vital_threshold_low ? Number(order.vital_threshold_low) : null,
+        vital_threshold_high: order.vital_threshold_high ? Number(order.vital_threshold_high) : null,
+        order_id: order.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      await addDoc(
+        collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
+        orderData
+      );
+
+      await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+        action: 'MED_ORDER_SIGNED',
+        staff_id: staff.id,
+        patient_id: patientId,
+        details: `Physician signed draft order directly for ${order.generic_name}`,
+        timestamp: new Date().toISOString()
+      });
+
+      fetchOrders();
+    } catch (err) {
+      console.error('Error signing directly:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // New Order Form State
   const [orderCategory, setOrderCategory] = useState<'medication' | 'diet'>('medication');
@@ -65,7 +184,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     is_psychotropic: false,
     special_instructions: '',
     requires_vitals: false,
-    vital_type: 'BP',
+    vital_type: 'bp' as 'bp' | 'hr' | 'glucose' | 'spO2',
     vital_threshold_low: '',
     vital_threshold_high: '',
     order_type: 'direct' as 'direct' | 'telephone',
@@ -89,7 +208,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       const { getDoc } = await import('firebase/firestore');
       const docSnap = await getDoc(doc(db, 'organizations', organization.id, 'patients', patientId));
       if (docSnap.exists()) {
-        setPatient(docSnap.data());
+        setPatient({ id: docSnap.id, ...docSnap.data() } as Patient);
       }
     } catch (err) {
       console.error('Error fetching patient in order portal:', err);
@@ -132,11 +251,11 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     if (!organization || !patientId) return;
     try {
       const q = query(
-        collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
+        collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
         orderBy('created_at', 'desc')
       );
       const snap = await getDocs(q);
-      setOrders(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medication)));
+      setProviderOrders(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProviderOrder)));
     } catch (err) {
       console.error('Error fetching orders:', err);
     } finally {
@@ -153,6 +272,24 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       if (orderCategory === 'diet') {
         const isTelephone = newDietOrder.order_type === 'telephone';
         const dietString = `${newDietOrder.diet_type}${newDietOrder.consistency !== 'Regular' ? ' with ' + newDietOrder.consistency : ''}`;
+
+        // Create provider order first for diet
+        await addDoc(
+          collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+          {
+            org_id: organization.id,
+            patient_id: patientId,
+            facility_id: patient?.facility_id || '',
+            ordering_physician_id: isTelephone ? newDietOrder.physician_id : staff.id,
+            order_type: 'diet',
+            order_text: dietString + (newDietOrder.instructions ? `. Instructions: ${newDietOrder.instructions}` : ''),
+            priority: 'routine',
+            status: 'signed',
+            order_method: newDietOrder.order_type,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        );
 
         await updateDoc(doc(db, 'organizations', organization.id, 'patients', patientId), {
           diet: dietString,
@@ -174,43 +311,119 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       }
 
       const isTelephone = newOrder.order_type === 'telephone';
+      const orderText = `${newOrder.generic_name} ${newOrder.strength} - ${newOrder.dosage} via ${newOrder.route} ${newOrder.frequency}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
       
-      const orderData = {
-        ...newOrder,
+      let providerOrderRefId = editingDraftId;
+      
+      const providerOrderData: Partial<ProviderOrder> = {
         org_id: organization.id,
         patient_id: patientId,
-        order_type: newOrder.order_type,
-        prescriber_id: isTelephone ? newOrder.physician_id : staff.id,
-        prescriber_name: isTelephone 
-          ? newOrder.physician_name 
-          : `${staff.first_name} ${staff.last_name}, ${staff.credential}`,
-        transcribed_by_id: isTelephone ? staff.id : null,
-        transcribed_by_name: isTelephone ? `${staff.first_name} ${staff.last_name}` : null,
-        status: 'signed', 
-        start_date: new Date().toISOString(),
-        vital_threshold_low: newOrder.requires_vitals ? Number(newOrder.vital_threshold_low) : null,
-        vital_threshold_high: newOrder.requires_vitals ? Number(newOrder.vital_threshold_high) : null,
-        created_at: new Date().toISOString(),
+        facility_id: patient?.facility_id || '',
+        ordering_physician_id: isTelephone ? newOrder.physician_id : staff.id,
+        order_type: 'medication',
+        order_text: orderText,
+        rxcui: newOrder.rxcui,
+        priority: 'routine',
+        status: targetStatus,
+        order_method: newOrder.order_type,
+        generic_name: newOrder.generic_name,
+        strength: newOrder.strength,
+        dosage: newOrder.dosage,
+        route: newOrder.route,
+        frequency: newOrder.frequency,
+        indication: newOrder.indication,
+        is_psychotropic: newOrder.is_psychotropic,
+        requires_vitals: newOrder.requires_vitals,
+        vital_type: newOrder.requires_vitals ? newOrder.vital_type : null,
+        vital_threshold_low: newOrder.requires_vitals && newOrder.vital_threshold_low ? Number(newOrder.vital_threshold_low) : null,
+        vital_threshold_high: newOrder.requires_vitals && newOrder.vital_threshold_high ? Number(newOrder.vital_threshold_high) : null,
+        special_instructions: newOrder.special_instructions,
         updated_at: new Date().toISOString()
       };
 
-      await addDoc(
-        collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
-        orderData
-      );
+      if (targetStatus === 'signed') {
+        providerOrderData.signed_at = new Date().toISOString();
+      }
+
+      if (editingDraftId) {
+        // Update existing draft order
+        const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', editingDraftId);
+        await updateDoc(docRef, providerOrderData);
+      } else {
+        // Create new order
+        providerOrderData.created_at = new Date().toISOString();
+        const docRef = await addDoc(
+          collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+          providerOrderData
+        );
+        providerOrderRefId = docRef.id;
+      }
+
+      // If we signed the order, create or update the active medication document so that it goes live on the eMAR!
+      if (targetStatus === 'signed' && providerOrderRefId) {
+        const orderData = {
+          generic_name: newOrder.generic_name,
+          strength: newOrder.strength,
+          dosage: newOrder.dosage,
+          route: newOrder.route,
+          frequency: newOrder.frequency,
+          indication: newOrder.indication,
+          is_psychotropic: newOrder.is_psychotropic,
+          requires_vitals: newOrder.requires_vitals,
+          vital_type: newOrder.requires_vitals ? newOrder.vital_type : null,
+          special_instructions: newOrder.special_instructions,
+          org_id: organization.id,
+          patient_id: patientId,
+          order_type: newOrder.order_type,
+          prescriber_id: isTelephone ? newOrder.physician_id : staff.id,
+          prescriber_name: isTelephone 
+            ? newOrder.physician_name 
+            : `${staff.first_name} ${staff.last_name}, ${staff.credential}`,
+          transcribed_by_id: isTelephone ? staff.id : null,
+          transcribed_by_name: isTelephone ? `${staff.first_name} ${staff.last_name}` : null,
+          status: 'active', 
+          start_date: new Date().toISOString(),
+          vital_threshold_low: newOrder.requires_vitals ? Number(newOrder.vital_threshold_low) : null,
+          vital_threshold_high: newOrder.requires_vitals ? Number(newOrder.vital_threshold_high) : null,
+          order_id: providerOrderRefId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // Check if a medication with this order_id already exists to avoid duplicates
+        const medQ = query(
+          collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
+          where('order_id', '==', providerOrderRefId)
+        );
+        const medSnap = await getDocs(medQ);
+        if (!medSnap.empty) {
+          const medDocId = medSnap.docs[0].id;
+          await updateDoc(doc(db, 'organizations', organization.id, 'patients', patientId, 'medications', medDocId), orderData);
+        } else {
+          await addDoc(
+            collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
+            orderData
+          );
+        }
+      }
 
       // Log to Audit Trail
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
-        action: isTelephone ? 'TELEPHONE_ORDER_TRANSCRIBED' : 'MED_ORDER_SIGNED',
+        action: targetStatus === 'signed' 
+          ? (isTelephone ? 'TELEPHONE_ORDER_SIGNED' : 'MED_ORDER_SIGNED')
+          : 'MED_ORDER_DRAFT_SAVED',
         staff_id: staff.id,
         patient_id: patientId,
-        details: isTelephone 
-          ? `Nurse transcribed telephone order from ${newOrder.physician_name} for ${newOrder.generic_name}`
-          : `Physician signed new order for ${newOrder.generic_name}`,
+        details: targetStatus === 'signed'
+          ? (isTelephone 
+              ? `Nurse signed telephone order from ${newOrder.physician_name} for ${newOrder.generic_name}`
+              : `Physician signed new order for ${newOrder.generic_name}`)
+          : `Saved draft order for ${newOrder.generic_name}`,
         timestamp: new Date().toISOString()
       });
 
       setIsOrdering(false);
+      resetForm();
       fetchOrders();
     } catch (err) {
       console.error('Error signing order:', err);
@@ -468,19 +681,36 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 />
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button 
                   type="submit"
+                  onClick={() => setTargetStatus('signed')}
                   disabled={isSaving || (newOrder.order_type === 'telephone' && !newOrder.physician_id)}
-                  className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-800 transition-all shadow-2xl flex items-center justify-center gap-3"
+                  className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
                 >
-                  <ShieldCheck size={20} className="text-quro-teal" />
-                  {isSaving ? 'AUTHENTICATING...' : (newOrder.order_type === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT ORDER')}
+                  <ShieldCheck size={18} className="text-quro-teal" />
+                  {isSaving && targetStatus === 'signed' ? 'SIGNING...' : (newOrder.order_type === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT')}
                 </button>
+
+                <button 
+                  type="submit"
+                  onClick={() => setTargetStatus('draft')}
+                  disabled={isSaving}
+                  className="flex-1 bg-teal-50 text-quro-teal py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-teal-100 transition-all flex items-center justify-center gap-3 border border-teal-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  {isSaving && targetStatus === 'draft' ? 'SAVING DRAFT...' : (editingDraftId ? 'UPDATE DRAFT' : 'SAVE AS DRAFT')}
+                </button>
+
                 <button 
                   type="button"
-                  onClick={() => setIsOrdering(false)}
-                  className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
+                  onClick={() => {
+                    setIsOrdering(false);
+                    resetForm();
+                  }}
+                  className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
                 >
                   CANCEL
                 </button>
@@ -559,44 +789,82 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
       {/* Recent Orders History */}
       <div className="space-y-4">
-        {orders.length === 0 && !loading && (
+        {providerOrders.length === 0 && !loading && (
           <div className="text-center py-20 glass-card">
             <FileText className="mx-auto text-slate-200 mb-4" size={64} />
             <p className="text-slate-400 font-bold uppercase tracking-widest">No Recent Medication Orders</p>
           </div>
         )}
 
-        {orders.map((order) => (
-          <div key={order.id} className="glass-card p-6 border-l-4 border-quro-teal hover:border-l-8 transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-quro-charcoal">
-                  <Pill size={20} />
+        {providerOrders.map((order) => (
+          <div key={order.id} className={`glass-card p-6 border-l-4 transition-all duration-300 ${
+            order.status === 'draft' ? 'border-amber-400 bg-amber-50/20' : 'border-quro-teal'
+          }`}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  order.status === 'draft' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-quro-charcoal'
+                }`}>
+                  {order.status === 'draft' ? <FileText size={20} /> : <Pill size={20} />}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <h4 className="text-base font-black text-quro-charcoal uppercase tracking-tight">
-                      {order.generic_name} {order.strength}
+                      {order.generic_name || order.order_text?.split(' - ')[0] || 'Medication Order'} {order.strength}
                     </h4>
                     <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
-                      order.status === 'signed' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
+                      order.status === 'draft' 
+                        ? 'bg-amber-100 text-amber-700 border border-amber-300' 
+                        : order.status === 'signed' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-emerald-100 text-emerald-700'
                     }`}>
-                      {order.status === 'signed' ? 'Pending Acknowledgment' : 'Active on MAR'}
+                      {order.status === 'draft' ? 'Draft / Unsigned' : order.status === 'signed' ? 'Signed / Pending Ack' : order.status}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    {order.dosage} via {order.route} • {order.frequency} • {order.indication}
+                  <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                    {order.order_text}
                   </p>
+                  {order.indication && (
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Indication: {order.indication}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-[9px] font-black text-quro-charcoal uppercase">Electronically Signed</p>
-                {order.order_type === 'telephone' ? (
-                  <p className="text-[10px] text-slate-500 italic">Transcribed by {order.transcribed_by_name || 'Nurse'} for {order.prescriber_name}</p>
-                ) : (
-                  <p className="text-[10px] text-slate-500 italic">By {order.prescriber_name || 'Verified Prescriber'}</p>
+              
+              <div className="flex flex-col items-end gap-2 w-full md:w-auto text-right">
+                <div>
+                  <p className="text-[9px] font-black text-quro-charcoal uppercase">
+                    {order.status === 'draft' ? 'Pending Signature' : 'Electronically Signed'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 italic">
+                    By {order.ordering_physician_id || 'Attending Physician'}
+                  </p>
+                  {order.created_at && (
+                    <p className="text-[8px] text-slate-400 mt-1">
+                      {format(new Date(order.created_at), 'MMM dd, yyyy HH:mm')}
+                    </p>
+                  )}
+                </div>
+                
+                {order.status === 'draft' && (
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      onClick={() => handleEditDraft(order)}
+                      className="px-3 py-1 bg-white border border-slate-200 text-quro-charcoal rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider animate-pulse hover:animate-none"
+                    >
+                      Edit Draft
+                    </button>
+                    <button
+                      onClick={() => handleSignDirectly(order)}
+                      className="px-3 py-1 bg-quro-charcoal text-white rounded-lg text-[10px] font-bold hover:bg-slate-800 transition-colors uppercase tracking-wider flex items-center gap-1 shadow-md shadow-slate-900/10"
+                    >
+                      <ShieldCheck size={10} className="text-quro-teal" />
+                      Sign Now
+                    </button>
+                  </div>
                 )}
-                <p className="text-[8px] text-slate-400 mt-1">{format(new Date(order.created_at), 'MMM dd, yyyy HH:mm')}</p>
               </div>
             </div>
           </div>

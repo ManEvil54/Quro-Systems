@@ -300,6 +300,21 @@ export interface ProviderOrder {
   acknowledged_at?: string;
   faxed_at?: string;
   order_method?: 'direct' | 'telephone';
+  
+  // Medication-specific structured order details (for drafts and signature tracking)
+  generic_name?: string;
+  strength?: string;
+  dosage?: string;
+  route?: MedRoute;
+  frequency?: MedFrequency;
+  indication?: string;
+  is_psychotropic?: boolean;
+  special_instructions?: string;
+  requires_vitals?: boolean;
+  vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2' | null;
+  vital_threshold_low?: number | null;
+  vital_threshold_high?: number | null;
+  
   created_at: string;
   updated_at: string;
 }
