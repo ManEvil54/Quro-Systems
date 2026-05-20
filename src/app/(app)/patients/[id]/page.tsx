@@ -101,6 +101,14 @@ export default function PatientChartPage() {
     });
   }, [medications, orders]);
 
+  const scheduledMeds = useMemo(() => {
+    return activeMeds.filter(m => !m.frequency.toUpperCase().includes('PRN'));
+  }, [activeMeds]);
+
+  const prnMeds = useMemo(() => {
+    return activeMeds.filter(m => m.frequency.toUpperCase().includes('PRN'));
+  }, [activeMeds]);
+
   const discontinuedMeds = useMemo(() => {
     return medications.filter(m => {
       if (m.status === 'discontinued') return true;
@@ -517,7 +525,9 @@ export default function PatientChartPage() {
         medication_id: selectedMedForAction.id,
         action: pendingAction,
         scheduled_date: new Date().toISOString().split('T')[0],
-        scheduled_time: '09:00', // Mock scheduled time
+        scheduled_time: selectedMedForAction.frequency.toUpperCase().includes('PRN')
+          ? new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5)
+          : '09:00', // Mock scheduled time
         notes: delayReason,
         delay_reason: delayReason,
         linked_vitals: vitalsEntry.bp_sys ? {
@@ -1369,153 +1379,261 @@ export default function PatientChartPage() {
                     </div>
                   </div>
                 )}
-
-                <div className="flex items-center justify-between px-4">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                    <Pill size={18} className="text-quro-teal" />
-                    Scheduled Medications (eMAR)
-                  </h3>
-                  <div className="flex gap-4 items-center">
-                    <button 
-                      onClick={() => window.print()}
-                      className="no-print flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-all"
-                    >
-                      <Printer size={14} /> Print Hybrid MAR
-                    </button>
-                    <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                      <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
-                      <div className="w-2 h-2 rounded-full bg-rose-400 ml-2 animate-pulse" /> Overdue
+                {/* 1. Scheduled Medications Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <Pill size={18} className="text-quro-teal" />
+                      Scheduled Medications (Routine MAR)
+                    </h3>
+                    <div className="flex gap-4 items-center">
+                      <button 
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-all"
+                      >
+                        <Printer size={14} /> Print Hybrid MAR
+                      </button>
+                      <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
+                        <div className="w-2 h-2 rounded-full bg-rose-400 ml-2 animate-pulse" /> Overdue
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {scheduledMeds.length > 0 ? scheduledMeds.map((med) => {
+                      // Logic for Time Window Alerts
+                      // Simplified for demo: assume current time vs 09:00
+                      const status = med.is_psychotropic ? 'overdue' : 'ready'; // Mock status
+                      const requiresVitals = med.generic_name.toLowerCase().includes('lisinopril') || med.generic_name.toLowerCase().includes('metoprolol');
+
+                      return (
+                        <div 
+                          key={med.id} 
+                          className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
+                            status === 'overdue' ? 'shadow-2xl shadow-rose-100' : 
+                            status === 'ready' ? 'shadow-2xl shadow-emerald-100' : 'shadow-lg shadow-slate-100'
+                          }`}
+                        >
+                          {/* Status Pulse Glow */}
+                          <div className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 ${
+                            status === 'overdue' ? 'bg-rose-500' : 
+                            status === 'ready' ? 'bg-emerald-500' : 'bg-blue-500'
+                          }`} />
+                          
+                          <div className="relative glass-card p-8 bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] h-full flex flex-col">
+                            {/* Top Badge */}
+                            <div className="flex items-center justify-between mb-6">
+                              <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                status === 'overdue' ? 'bg-rose-500 text-white' : 
+                                status === 'ready' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                              }`}>
+                                {status === 'overdue' ? 'Overdue 1h 22m' : status === 'ready' ? 'Ready Now' : 'Upcoming (12:00)'}
+                              </span>
+                            </div>
+
+                            <div className="mb-6">
+                              <h4 className="text-lg font-black text-slate-900 leading-tight mb-1">{med.generic_name}</h4>
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{med.dosage} • {med.route}</p>
+                            </div>
+
+                            <div className="space-y-4 mb-8 flex-grow">
+                              <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
+                                <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                  <Clock size={14} />
+                                </div>
+                                <div>
+                                  <p className="font-black text-slate-900 uppercase text-[9px] tracking-tight">Scheduled</p>
+                                  <p>{med.frequency === 'QD' ? 'Daily at 09:00 AM' : `Frequency: ${med.frequency}`}</p>
+                                </div>
+                              </div>
+                              
+                              {requiresVitals && (
+                                <div className="flex items-center gap-3 text-[11px] font-medium text-rose-500 bg-rose-50 p-3 rounded-2xl">
+                                  <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-500">
+                                    <Activity size={14} />
+                                  </div>
+                                  <div>
+                                    <p className="font-black uppercase text-[9px] tracking-tight">Vital Required</p>
+                                    <p>Pulse/BP entry needed</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication</p>
+                                <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">&quot;{med.indication || 'Routine administration per protocol.'}&quot;</p>
+                              </div>
+                            </div>
+
+                            {organization?.clinical_settings?.emar_mode !== false ? (
+                              <div className="flex gap-3">
+                                <button 
+                                  onClick={() => {
+                                    setSelectedMedForAction(med);
+                                    setPendingAction('given');
+                                    if (requiresVitals) {
+                                      const latest = vitals[0];
+                                      setVitalsEntry({
+                                        bp_sys: latest?.systolic ? String(latest.systolic) : '',
+                                        bp_dia: latest?.diastolic ? String(latest.diastolic) : '',
+                                        hr: latest?.pulse ? String(latest.pulse) : ''
+                                      });
+                                      setShowVitalsModal(true);
+                                    }
+                                    else setShowPinModal(true);
+                                  }}
+                                  className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
+                                >
+                                  Sign Administration
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    setSelectedMedForAction(med);
+                                    setPendingAction('held');
+                                    setShowDelayReasonModal(true);
+                                  }}
+                                  className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl w-full">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                  Paper Signature Required
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-1 font-medium">
+                                  Tracking hand-signed paper MAR
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }) : (
+                      <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                        <div className="w-12 h-12 bg-white rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto mb-4">
+                          <Pill size={24} className="text-slate-200" />
+                        </div>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">No Active Scheduled Medications</h4>
+                        <p className="text-[10px] text-slate-300 mt-1">Routine medication passes will appear here once orders are signed.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {activeMeds.length > 0 ? activeMeds.map((med) => {
-                    // Logic for Time Window Alerts
-                    // Simplified for demo: assume current time vs 09:00
-                    const status = med.is_psychotropic ? 'overdue' : 'ready'; // Mock status
-                    const requiresVitals = med.generic_name.toLowerCase().includes('lisinopril') || med.generic_name.toLowerCase().includes('metoprolol');
-                    const isPRN = med.frequency.toUpperCase().includes('PRN');
+                {/* 2. PRN Medications Section */}
+                <div className="space-y-6 pt-8 border-t border-slate-100/80">
+                  <div className="flex items-center justify-between px-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <Zap size={18} className="text-teal-500" />
+                      PRN Medications (As Needed MAR)
+                    </h3>
+                  </div>
 
-                    return (
-                      <div 
-                        key={med.id} 
-                        className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
-                          status === 'overdue' ? 'shadow-2xl shadow-rose-100' : 
-                          status === 'ready' ? 'shadow-2xl shadow-emerald-100' : 'shadow-lg shadow-slate-100'
-                        }`}
-                      >
-                        {/* Status Pulse Glow */}
-                        <div className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 ${
-                          status === 'overdue' ? 'bg-rose-500' : 
-                          status === 'ready' ? 'bg-emerald-500' : 'bg-blue-500'
-                        }`} />
-                        
-                        <div className="relative glass-card p-8 bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] h-full flex flex-col">
-                          {/* Top Badge */}
-                          <div className="flex items-center justify-between mb-6">
-                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              status === 'overdue' ? 'bg-rose-500 text-white' : 
-                              status === 'ready' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
-                            }`}>
-                              {status === 'overdue' ? 'Overdue 1h 22m' : status === 'ready' ? 'Ready Now' : 'Upcoming (12:00)'}
-                            </span>
-                            {isPRN && (
-                              <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full">
-                                PRN
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {prnMeds.length > 0 ? prnMeds.map((med) => {
+                      const requiresVitals = med.generic_name.toLowerCase().includes('lisinopril') || med.generic_name.toLowerCase().includes('metoprolol');
+
+                      return (
+                        <div 
+                          key={med.id} 
+                          className="group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 shadow-lg shadow-teal-500/5 hover:shadow-2xl hover:shadow-teal-500/10"
+                        >
+                          <div className="absolute inset-0 opacity-5 bg-teal-500 transition-opacity group-hover:opacity-10" />
+                          
+                          <div className="relative glass-card p-8 bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] h-full flex flex-col">
+                            {/* Top Badge */}
+                            <div className="flex items-center justify-between mb-6">
+                              <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-teal-500 text-white shadow-sm shadow-teal-500/25 animate-pulse">
+                                Available As Needed
                               </span>
-                            )}
-                          </div>
-
-                          <div className="mb-6">
-                            <h4 className="text-lg font-black text-slate-900 leading-tight mb-1">{med.generic_name}</h4>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{med.dosage} • {med.route}</p>
-                          </div>
-
-                          <div className="space-y-4 mb-8 flex-grow">
-                            <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
-                              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                                <Clock size={14} />
-                              </div>
-                              <div>
-                                <p className="font-black text-slate-900 uppercase text-[9px] tracking-tight">Scheduled</p>
-                                <p>Daily at 09:00 AM</p>
-                              </div>
+                              <span className="px-3 py-1 bg-teal-50 text-teal-600 text-[9px] font-black uppercase tracking-widest rounded-full border border-teal-100">
+                                PRN Protocol
+                              </span>
                             </div>
-                            
-                            {requiresVitals && (
-                              <div className="flex items-center gap-3 text-[11px] font-medium text-rose-500 bg-rose-50 p-3 rounded-2xl">
-                                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-500">
-                                  <Activity size={14} />
+
+                            <div className="mb-6">
+                              <h4 className="text-lg font-black text-slate-900 leading-tight mb-1">{med.generic_name}</h4>
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{med.dosage} • {med.route}</p>
+                            </div>
+
+                            <div className="space-y-4 mb-8 flex-grow">
+                              <div className="flex items-center gap-3 text-[11px] font-medium text-teal-600 bg-teal-50/50 p-3 rounded-2xl border border-teal-100/20">
+                                <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">
+                                  <Clock size={14} />
                                 </div>
                                 <div>
-                                  <p className="font-black uppercase text-[9px] tracking-tight">Vital Required</p>
-                                  <p>Pulse/BP entry needed</p>
+                                  <p className="font-black text-teal-900 uppercase text-[9px] tracking-tight">PRN Interval</p>
+                                  <p className="font-bold text-[10px]">{med.prn_interval || 'As Needed'}</p>
                                 </div>
                               </div>
+                              
+                              {requiresVitals && (
+                                <div className="flex items-center gap-3 text-[11px] font-medium text-rose-500 bg-rose-50 p-3 rounded-2xl">
+                                  <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-500">
+                                    <Activity size={14} />
+                                  </div>
+                                  <div>
+                                    <p className="font-black uppercase text-[9px] tracking-tight">Vital Required</p>
+                                    <p>Pulse/BP entry needed</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication / Reason</p>
+                                <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">&quot;{med.prn_reason || med.indication || 'Administer as needed per protocol.'}&quot;</p>
+                              </div>
+                            </div>
+
+                            {organization?.clinical_settings?.emar_mode !== false ? (
+                              <div className="flex gap-3">
+                                <button 
+                                  onClick={() => {
+                                    setSelectedMedForAction(med);
+                                    setPendingAction('given');
+                                    if (requiresVitals) {
+                                      const latest = vitals[0];
+                                      setVitalsEntry({
+                                        bp_sys: latest?.systolic ? String(latest.systolic) : '',
+                                        bp_dia: latest?.diastolic ? String(latest.diastolic) : '',
+                                        hr: latest?.pulse ? String(latest.pulse) : ''
+                                      });
+                                      setShowVitalsModal(true);
+                                    }
+                                    else setShowPinModal(true);
+                                  }}
+                                  className="flex-1 py-4 bg-teal-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-teal-700 transition-all shadow-xl shadow-teal-500/25"
+                                >
+                                  Log PRN Dose
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl w-full">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                  Paper Signature Required
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-1 font-medium">
+                                  Tracking hand-signed paper MAR
+                                </p>
+                              </div>
                             )}
-
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Indication</p>
-                              <p className="text-[11px] font-bold text-slate-600 line-clamp-2 italic">&quot;{med.indication || 'Routine administration per protocol.'}&quot;</p>
-                            </div>
                           </div>
-
-                          {organization?.clinical_settings?.emar_mode !== false ? (
-                            <div className="flex gap-3">
-                              <button 
-                                onClick={() => {
-                                  setSelectedMedForAction(med);
-                                  setPendingAction('given');
-                                  if (requiresVitals) {
-                                    const latest = vitals[0];
-                                    setVitalsEntry({
-                                      bp_sys: latest?.systolic ? String(latest.systolic) : '',
-                                      bp_dia: latest?.diastolic ? String(latest.diastolic) : '',
-                                      hr: latest?.pulse ? String(latest.pulse) : ''
-                                    });
-                                    setShowVitalsModal(true);
-                                  }
-                                  else setShowPinModal(true);
-                                }}
-                                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
-                              >
-                                Sign Administration
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  setSelectedMedForAction(med);
-                                  setPendingAction('held');
-                                  setShowDelayReasonModal(true);
-                                }}
-                                className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
-                              >
-                                <X size={18} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl w-full">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                Paper Signature Required
-                              </p>
-                              <p className="text-[9px] text-slate-400 mt-1 font-medium">
-                                Tracking hand-signed paper MAR
-                              </p>
-                            </div>
-                          )}
                         </div>
+                      );
+                    }) : (
+                      <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                        <div className="w-12 h-12 bg-white rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto mb-4">
+                          <Zap size={24} className="text-slate-200" />
+                        </div>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">No Active PRN Medications</h4>
+                        <p className="text-[10px] text-slate-300 mt-1">PRN medication passes will appear here once orders are signed.</p>
                       </div>
-                    );
-                  }) : (
-                    <div className="col-span-full py-32 text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
-                      <div className="w-16 h-16 bg-white rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto mb-6">
-                        <Pill size={32} className="text-slate-200" />
-                      </div>
-                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">No Active Medications</h4>
-                      <p className="text-xs text-slate-300 mt-2">Medication passes will appear here once orders are signed.</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
