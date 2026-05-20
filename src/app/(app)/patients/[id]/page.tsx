@@ -34,13 +34,10 @@ import {
   Accessibility,
   Shield,
   Send,
-  Archive,
-  Search,
   Edit2,
   Trash2,
   Bed as BedIcon
 } from 'lucide-react';
-import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
@@ -60,7 +57,6 @@ import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
 import CarePlanManager from '@/components/clinical/CarePlanManager';
 import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
-import { useRxNavSearch } from '@/hooks/useRxNavSearch';
 import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 const formatDate = (dateValue: unknown) => {
@@ -111,19 +107,7 @@ export default function PatientChartPage() {
     return activeMeds.filter(m => m.frequency.toUpperCase().includes('PRN'));
   }, [activeMeds]);
 
-  const discontinuedMeds = useMemo(() => {
-    return medications.filter(m => {
-      if (m.status === 'discontinued') return true;
-      const matchingOrder = orders.find(o => o.id === m.order_id);
-      if (matchingOrder && matchingOrder.status === 'cancelled') return true;
-      const matchingDiscontinuedOrder = orders.find(o => 
-        o.status === 'cancelled' && 
-        o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
-      );
-      if (matchingDiscontinuedOrder) return true;
-      return false;
-    });
-  }, [medications, orders]);
+
 
   // Auto-sync medication status with discontinued/cancelled orders in the Firestore database
   useEffect(() => {
@@ -317,47 +301,7 @@ export default function PatientChartPage() {
     }
   };
 
-  // Orders State
-  const [isAddingOrder, setIsAddingOrder] = useState(false);
-  const [physicians, setPhysicians] = useState<Staff[]>([]);
-  const [newOrder, setNewOrder] = useState({
-    order_text: '',
-    order_type: 'medication' as ProviderOrder['order_type'],
-    priority: 'routine' as ProviderOrder['priority'],
-    route: 'PO' as MedRoute,
-    frequency: 'QD' as MedFrequency,
-    is_psychotropic: false,
-    rxcui: null as string | null,
-    treatment_site: '',
-    treatment_frequency: 'Daily',
-    treatment_duration: '',
-    order_method: 'direct' as 'direct' | 'telephone',
-    physician_id: '',
-    physician_name: '',
-    diet_type: 'Regular',
-    consistency: 'Regular',
-    generic_name: '',
-    brand_name: '',
-    strength: '',
-    dosage: ''
-  });
 
-  useEffect(() => {
-    if (!organization) return;
-    const fetchPhysicians = async () => {
-      try {
-        const q = query(collection(db, 'organizations', organization.id, 'staff'), where('role', '==', 'physician'));
-        const snap = await getDocs(q);
-        setPhysicians(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff)));
-      } catch (err) {
-        console.error('Error fetching physicians in chart:', err);
-      }
-    };
-    fetchPhysicians();
-  }, [organization]);
-  const [drugSearch, setDrugSearch] = useState('');
-  const { suggestions: rxNavSuggestions, loading: rxNavLoading } = useRxNavSearch(drugSearch);
-  const [showDrugDropdown, setShowDrugDropdown] = useState(false);
 
   // Charting State
   const [chartingSide, setChartingSide] = useState<'front' | 'back'>('front');
@@ -596,137 +540,7 @@ export default function PatientChartPage() {
     }
   };
 
-  const handleAddOrder = async () => {
-    const isDiet = newOrder.order_type === 'diet';
-    if (!isDiet && !newOrder.order_text.trim() && !patient) return;
-    if (isDiet && !newOrder.diet_type && !patient) return;
 
-    let finalOrderText = newOrder.order_text;
-    if (newOrder.order_type === 'treatment') {
-      finalOrderText = `${newOrder.order_text}${newOrder.treatment_site ? ` to ${newOrder.treatment_site}` : ''} ${newOrder.treatment_frequency}${newOrder.treatment_duration ? ` for ${newOrder.treatment_duration}` : ''}`;
-    } else if (isDiet) {
-      finalOrderText = `${newOrder.diet_type} Diet${newOrder.consistency !== 'Regular' ? ` with ${newOrder.consistency} Consistency` : ''}${newOrder.order_text ? `. Special Instructions: ${newOrder.order_text}` : ''}`;
-    }
-
-    const isTelephone = newOrder.order_method === 'telephone';
-    const orderingPhysicianId = isTelephone 
-      ? (newOrder.physician_id || patient?.attending_physician || 'Unassigned')
-      : (staff?.role === 'physician' ? staff.id : (patient?.attending_physician || 'Unassigned'));
-
-    try {
-      const orderRef = await addOrder({
-        order_text: finalOrderText,
-        order_type: newOrder.order_type,
-        priority: newOrder.priority,
-        status: 'signed',
-        ordering_physician_id: orderingPhysicianId,
-        facility_id: patient!.facility_id,
-        order_method: newOrder.order_method,
-      });
-
-      // If it is a telephone order, log to audit_logs
-      if (isTelephone && organization && staff) {
-        await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
-          action: 'TELEPHONE_ORDER_TRANSCRIBED',
-          staff_id: staff.id,
-          patient_id: id,
-          details: `Nurse transcribed telephone order from ${newOrder.physician_name || 'Dr. ' + (patient?.attending_physician || 'Verified Prescriber')} for ${newOrder.order_type === 'medication' ? newOrder.order_text : finalOrderText}`,
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      // If diet, update patient document in Firestore
-      if (isDiet && organization) {
-        const dietString = `${newOrder.diet_type}${newOrder.consistency !== 'Regular' ? ' with ' + newOrder.consistency : ''}`;
-        await updateDoc(doc(db, 'organizations', organization.id, 'patients', id), {
-          diet: dietString,
-          updated_at: new Date().toISOString()
-        });
-      }
-
-      // Automatically place on MAR if it's a medication or specific monitoring order
-      if (newOrder.order_type === 'medication') {
-        const parsedGeneric = newOrder.generic_name || newOrder.order_text.split(' ')[0];
-        await addMedication({
-          generic_name: parsedGeneric,
-          brand_name: newOrder.brand_name || '',
-          strength: newOrder.strength || 'As ordered',
-          dosage: newOrder.dosage || 'As ordered',
-          route: newOrder.route,
-          frequency: newOrder.frequency,
-          start_date: new Date().toISOString(),
-          status: 'active',
-          is_psychotropic: newOrder.is_psychotropic,
-          special_instructions: newOrder.order_text,
-          order_id: orderRef.id,
-          rxcui: newOrder.rxcui
-        });
-      } else if (!isDiet && (newOrder.order_text.toLowerCase().includes('weight') || newOrder.order_text.toLowerCase().includes('sleep'))) {
-        await addMedication({
-          generic_name: newOrder.order_text.includes('weight') ? 'Monthly Weight' : 'Sleep Monitoring',
-          strength: 'N/A',
-          dosage: 'N/A',
-          route: 'PO',
-          frequency: newOrder.order_text.includes('weight') ? 'MONTHLY' : 'QD',
-          start_date: new Date().toISOString(),
-          status: 'active',
-          special_instructions: newOrder.order_text,
-          order_id: orderRef.id
-        });
-      }
-
-      setNewOrder({ 
-        order_text: '', 
-        order_type: 'medication', 
-        priority: 'routine',
-        route: 'PO',
-        frequency: 'QD',
-        is_psychotropic: false,
-        rxcui: null,
-        treatment_site: '',
-        treatment_frequency: 'Daily',
-        treatment_duration: '',
-        order_method: 'direct',
-        physician_id: '',
-        physician_name: '',
-        diet_type: 'Regular',
-        consistency: 'Regular',
-        generic_name: '',
-        brand_name: '',
-        strength: '',
-        dosage: ''
-      });
-      setIsAddingOrder(false);
-      alert('Order signed and automatically synchronized with Patient MAR.');
-    } catch (err) {
-      console.error('Failed to add order:', err);
-      alert('Failed to add order.');
-    }
-  };
-
-  const handleStopOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to discontinue this order?')) return;
-    try {
-      await updateOrderStatus(orderId, 'cancelled');
-      
-      const order = orders.find(o => o.id === orderId);
-      const matchingMeds = medications.filter(m => 
-        m.status === 'active' && (
-          m.order_id === orderId || 
-          (order && m.generic_name && order.order_text.toLowerCase().includes(m.generic_name.toLowerCase()))
-        )
-      );
-
-      await Promise.all(matchingMeds.map(med => 
-        updateMedication(med.id, { status: 'discontinued' })
-      ));
-      
-      alert('Order has been discontinued.');
-    } catch (err) {
-      console.error('Failed to stop order:', err);
-      alert('Failed to discontinue order.');
-    }
-  };
 
   if (patientLoading) {
     return (
