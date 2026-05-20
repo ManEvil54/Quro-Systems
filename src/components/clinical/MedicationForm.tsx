@@ -4,7 +4,7 @@
 // ============================================================
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Pill, 
@@ -15,6 +15,53 @@ import {
 import type { Medication, MedRoute, MedFrequency } from '@/lib/firebase/types';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
+
+const calculateDosageFormQty = (dose: string, strength: string, currentDosage: string): string => {
+  if (!dose || !strength) return currentDosage;
+  
+  // Extract leading numbers (including decimals)
+  const doseNumMatch = dose.match(/^([\d\.]+)/);
+  const strengthNumMatch = strength.match(/^([\d\.]+)/);
+  
+  if (!doseNumMatch || !strengthNumMatch) return currentDosage;
+  
+  const doseNum = parseFloat(doseNumMatch[1]);
+  const strengthNum = parseFloat(strengthNumMatch[1]);
+  
+  if (isNaN(doseNum) || isNaN(strengthNum) || strengthNum === 0) return currentDosage;
+  
+  const ratio = parseFloat((doseNum / strengthNum).toFixed(3));
+  
+  // Extract form name from currentDosage (e.g. "1 Tablet" -> "Tablet", "0.5 Capsule" -> "Capsule")
+  let formName = 'Tablet';
+  if (currentDosage) {
+    const formMatch = currentDosage.match(/^[\d\.\-\s]+(.*)$/);
+    if (formMatch && formMatch[1].trim()) {
+      formName = formMatch[1].trim();
+    }
+  }
+  
+  // Clean up pluralization for common forms
+  const lowerForm = formName.toLowerCase();
+  const commonForms = ['tablet', 'capsule', 'patch', 'puffer', 'application'];
+  const matchedCommon = commonForms.find(f => 
+    lowerForm === f || lowerForm === f + 's' || (f === 'patch' && lowerForm === 'patches')
+  );
+  
+  if (matchedCommon) {
+    if (ratio <= 1) {
+      formName = matchedCommon.charAt(0).toUpperCase() + matchedCommon.slice(1);
+    } else {
+      if (matchedCommon === 'patch') {
+        formName = 'Patches';
+      } else {
+        formName = matchedCommon.charAt(0).toUpperCase() + matchedCommon.slice(1) + 's';
+      }
+    }
+  }
+  
+  return `${ratio} ${formName}`;
+};
 
 interface Props {
   onClose: () => void;
@@ -61,6 +108,18 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     order_id: initialData?.order_id || null,
     order_type: initialData?.order_type || 'direct',
   });
+
+  useEffect(() => {
+    if (form.strength && form.dose) {
+      const calculated = calculateDosageFormQty(form.dose, form.strength, form.dosage);
+      if (calculated !== form.dosage) {
+        setForm(prev => ({
+          ...prev,
+          dosage: calculated
+        }));
+      }
+    }
+  }, [form.strength, form.dose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

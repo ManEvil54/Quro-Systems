@@ -32,6 +32,53 @@ import { safeFormat } from '@/lib/dateUtils';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
 
+const calculateDosageFormQty = (dose: string, strength: string, currentDosage: string): string => {
+  if (!dose || !strength) return currentDosage;
+  
+  // Extract leading numbers (including decimals)
+  const doseNumMatch = dose.match(/^([\d\.]+)/);
+  const strengthNumMatch = strength.match(/^([\d\.]+)/);
+  
+  if (!doseNumMatch || !strengthNumMatch) return currentDosage;
+  
+  const doseNum = parseFloat(doseNumMatch[1]);
+  const strengthNum = parseFloat(strengthNumMatch[1]);
+  
+  if (isNaN(doseNum) || isNaN(strengthNum) || strengthNum === 0) return currentDosage;
+  
+  const ratio = parseFloat((doseNum / strengthNum).toFixed(3));
+  
+  // Extract form name from currentDosage (e.g. "1 Tablet" -> "Tablet", "0.5 Capsule" -> "Capsule")
+  let formName = 'Tablet';
+  if (currentDosage) {
+    const formMatch = currentDosage.match(/^[\d\.\-\s]+(.*)$/);
+    if (formMatch && formMatch[1].trim()) {
+      formName = formMatch[1].trim();
+    }
+  }
+  
+  // Clean up pluralization for common forms
+  const lowerForm = formName.toLowerCase();
+  const commonForms = ['tablet', 'capsule', 'patch', 'puffer', 'application'];
+  const matchedCommon = commonForms.find(f => 
+    lowerForm === f || lowerForm === f + 's' || (f === 'patch' && lowerForm === 'patches')
+  );
+  
+  if (matchedCommon) {
+    if (ratio <= 1) {
+      formName = matchedCommon.charAt(0).toUpperCase() + matchedCommon.slice(1);
+    } else {
+      if (matchedCommon === 'patch') {
+        formName = 'Patches';
+      } else {
+        formName = matchedCommon.charAt(0).toUpperCase() + matchedCommon.slice(1) + 's';
+      }
+    }
+  }
+  
+  return `${ratio} ${formName}`;
+};
+
 interface Props {
   patientId: string;
 }
@@ -261,6 +308,18 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     };
     fetchStrengths();
   }, [newOrder.generic_name]);
+
+  useEffect(() => {
+    if (newOrder.strength && newOrder.dose) {
+      const calculated = calculateDosageFormQty(newOrder.dose, newOrder.strength, newOrder.dosage);
+      if (calculated !== newOrder.dosage) {
+        setNewOrder(prev => ({
+          ...prev,
+          dosage: calculated
+        }));
+      }
+    }
+  }, [newOrder.strength, newOrder.dose]);
 
   async function fetchPhysicians() {
     if (!organization) return;
@@ -493,7 +552,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
       {/* New Order Form */}
       {isOrdering && (
-        <form onSubmit={handleSubmitOrder} className="glass-card p-10 border-2 border-quro-teal animate-in zoom-in-95 duration-200">
+        <form onSubmit={handleSubmitOrder} className="glass-card !overflow-visible p-10 border-2 border-quro-teal animate-in zoom-in-95 duration-200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-quro-teal rounded-2xl flex items-center justify-center text-white shadow-lg shadow-teal-900/20">
