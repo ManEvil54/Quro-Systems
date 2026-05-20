@@ -4,7 +4,7 @@
 // ============================================================
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  const switchFacility = async (facilityId: string) => {
+  const switchFacility = useCallback(async (facilityId: string) => {
     if (!state.organization?.id) return;
     
     try {
@@ -82,14 +82,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Failed to switch facility:", err);
     }
-  };
+  }, [state.organization?.id]);
 
   // Helper: Load standard user data
   const loadUserData = async (user: User, orgId: string) => {
+    const storedFacilityId = localStorage.getItem(`quro_active_facility_${orgId}`);
+
     // Parallel Data Hydration: Eliminate "Cold Start" sequential fetching
-    const [staffDoc, orgDoc] = await Promise.all([
+    // Fetch staff doc, organization doc, and active facility doc in a single round-trip
+    const [staffDoc, orgDoc, storedFacDoc] = await Promise.all([
       getDoc(doc(db, 'organizations', orgId, 'staff', user.uid)),
-      getDoc(doc(db, 'organizations', orgId))
+      getDoc(doc(db, 'organizations', orgId)),
+      storedFacilityId ? getDoc(doc(db, 'organizations', orgId, 'facilities', storedFacilityId)) : Promise.resolve(null)
     ]);
 
     const staffData = staffDoc.exists()
@@ -107,13 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Handle Active Facility initialization
     let activeFacility = null;
-    const storedFacilityId = localStorage.getItem(`quro_active_facility_${orgId}`);
     
-    if (storedFacilityId) {
-      const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', storedFacilityId));
-      if (facDoc.exists()) {
-        activeFacility = { id: facDoc.id, name: facDoc.data().name, bed_count: facDoc.data().bed_count };
-      }
+    if (storedFacDoc && storedFacDoc.exists()) {
+      activeFacility = { id: storedFacDoc.id, name: storedFacDoc.data().name, bed_count: storedFacDoc.data().bed_count };
     }
 
     if (!activeFacility && staffData) {
@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -269,9 +269,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
-  };
+  }, []);
 
-  const signUp: AuthContextType['signUp'] = async (data) => {
+  const signUp: AuthContextType['signUp'] = useCallback(async (data) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const credential = await createUserWithEmailAndPassword(
@@ -305,9 +305,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
-  };
+  }, []);
 
-  const impersonate = async (orgId: string, staffId?: string) => {
+  const impersonate = useCallback(async (orgId: string, staffId?: string) => {
     if (!state.user) return;
     const idTokenResult = await state.user.getIdTokenResult();
     const role = idTokenResult.claims.role;
@@ -315,26 +315,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     setState(prev => ({ ...prev, loading: true }));
     await performImpersonation(state.user, orgId, staffId);
-  };
+  }, [state.user]);
 
-  const stopImpersonating = () => {
+  const stopImpersonating = useCallback(() => {
     sessionStorage.removeItem('quro_impersonation');
     window.location.reload();
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       sessionStorage.removeItem('quro_impersonation');
       await firebaseSignOut(auth);
     } catch (err) {
       console.error("Sign out error:", err);
     }
-  };
+  }, []);
 
-  const clearError = () => setState((s) => ({ ...s, error: null }));
+  const clearError = useCallback(() => setState((s) => ({ ...s, error: null })), []);
+
+  const contextValue = useMemo(() => ({
+    user: state.user,
+    staff: state.staff,
+    organization: state.organization,
+    isImpersonating: state.isImpersonating,
+    impersonatedDonName: state.impersonatedDonName,
+    activeFacility: state.activeFacility,
+    loading: state.loading,
+    error: state.error,
+    signIn,
+    signUp,
+    signOut,
+    impersonate,
+    stopImpersonating,
+    switchFacility,
+    clearError
+  }), [
+    state.user,
+    state.staff,
+    state.organization,
+    state.isImpersonating,
+    state.impersonatedDonName,
+    state.activeFacility,
+    state.loading,
+    state.error,
+    signIn,
+    signUp,
+    signOut,
+    impersonate,
+    stopImpersonating,
+    switchFacility,
+    clearError
+  ]);
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, impersonate, stopImpersonating, switchFacility, clearError }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
