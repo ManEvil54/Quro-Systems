@@ -78,22 +78,10 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
       setLoading(true);
       try {
         const response = await fetch(
-          `https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=${encodeURIComponent(query)}&ef=STRENGTHS_AND_FORMS,RXCUIS`
+          `/api/medications/search?q=${encodeURIComponent(query)}`
         );
         const data = await response.json();
-        const rawNames = data[1] || [];
-        const extraFields = data[2] || {};
-        const strengthsList = extraFields.STRENGTHS_AND_FORMS || [];
-        const rxcuis = extraFields.RXCUIS || [];
-
-        const suggestionsObj = rawNames.map((name: string, idx: number) => ({
-          displayName: name,
-          genericName: name.split(' (')[0],
-          strengthsList: strengthsList[idx] || [],
-          rxcui: rxcuis[idx]?.[0] || null
-        }));
-
-        setSuggestions(suggestionsObj.slice(0, 10));
+        setSuggestions(data.terms || []);
         setIsOpen(true);
       } catch (err) {
         console.error('Error fetching RxNav suggestions:', err);

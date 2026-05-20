@@ -60,10 +60,20 @@ Output ONLY valid JSON. No markdown backticks.
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            severity: { type: "STRING", enum: ["low", "medium", "high"] },
+            rationale: { type: "STRING" },
+            clinicalRecommendation: { type: "STRING" }
+          },
+          required: ["severity", "rationale", "clinicalRecommendation"]
+        },
+        temperature: 0.1
       }
     });
 
-    const aiText = response.text?.replace(/```json/g, '').replace(/```/g, '').trim() || '{}';
+    const aiText = response.text || '{}';
     const parsed = JSON.parse(aiText);
 
     return NextResponse.json(parsed);
