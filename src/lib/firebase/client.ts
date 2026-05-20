@@ -48,7 +48,6 @@ try {
 
 export const db = app ? initializeFirestore(app, {
   localCache: localCacheConfig,
-  experimentalForceLongPolling: true,
 }) : ({} as any);
 
 export default app;
