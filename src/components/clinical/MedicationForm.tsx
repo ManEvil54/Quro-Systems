@@ -189,7 +189,14 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               </div>
               <div>
                 <label className="label">Frequency</label>
-                <select className="input" value={form.frequency} onChange={e => setForm({...form, frequency: e.target.value as MedFrequency})}>
+                <select className="input" value={form.frequency} onChange={e => {
+                  const freq = e.target.value as MedFrequency;
+                  setForm({
+                    ...form,
+                    frequency: freq,
+                    frequency_times: freq === 'PRN' ? [] : (form.frequency_times.length === 0 ? ['09:00'] : form.frequency_times)
+                  });
+                }}>
                   {frequencies.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>

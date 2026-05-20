@@ -11,7 +11,8 @@ import {
   Pill, 
   AlertCircle,
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from 'lucide-react';
 import { 
   collection, 
@@ -53,6 +54,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       dosage: '',
       route: 'PO',
       frequency: 'QD',
+      custom_times: ['09:00'],
       indication: '',
       prn_reason: '',
       prn_interval: '',
@@ -86,6 +88,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       dosage: order.dosage || '',
       route: order.route || 'PO',
       frequency: order.frequency || 'QD',
+      custom_times: order.frequency_times || (order.frequency === 'PRN' ? [] : ['09:00']),
       indication: order.indication || '',
       prn_reason: order.prn_reason || '',
       prn_interval: order.prn_interval || '',
@@ -118,6 +121,14 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         updated_at: new Date().toISOString()
       });
 
+      // Map frequency to standard MAR times
+      let frequency_times = ['09:00'];
+      if (order.frequency === 'BID') frequency_times = ['09:00', '17:00'];
+      else if (order.frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
+      else if (order.frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
+      else if (order.frequency === 'QHS') frequency_times = ['21:00'];
+      else if (order.frequency === 'PRN') frequency_times = [];
+
       const orderData = {
         generic_name: order.generic_name || '',
         strength: order.strength || '',
@@ -125,6 +136,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         dosage: order.dosage || '',
         route: order.route || 'PO',
         frequency: order.frequency || 'QD',
+        frequency_times,
         indication: order.indication || '',
         prn_reason: order.prn_reason || null,
         prn_interval: order.prn_interval || null,
@@ -190,6 +202,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     dosage: '',
     route: 'PO' as MedRoute,
     frequency: 'QD' as MedFrequency,
+    custom_times: ['09:00'] as string[],
     indication: '',
     prn_reason: '',
     prn_interval: '',
@@ -348,6 +361,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         dosage: newOrder.dosage,
         route: newOrder.route,
         frequency: newOrder.frequency,
+        frequency_times: newOrder.frequency === 'PRN' ? [] : (newOrder.custom_times || ['09:00']),
         indication: newOrder.indication,
         prn_reason: newOrder.prn_reason || null,
         prn_interval: newOrder.prn_interval || null,
@@ -380,6 +394,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
       // If we signed the order, create or update the active medication document so that it goes live on the eMAR!
       if (targetStatus === 'signed' && providerOrderRefId) {
+        const frequency_times = newOrder.frequency === 'PRN' ? [] : (newOrder.custom_times || ['09:00']);
+
         const orderData = {
           generic_name: newOrder.generic_name,
           strength: newOrder.strength,
@@ -387,6 +403,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           dosage: newOrder.dosage,
           route: newOrder.route,
           frequency: newOrder.frequency,
+          frequency_times,
           indication: newOrder.indication,
           prn_reason: newOrder.prn_reason || null,
           prn_interval: newOrder.prn_interval || null,
@@ -638,15 +655,79 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Frequency</label>
-                  <select className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold" value={newOrder.frequency} onChange={e => setNewOrder({...newOrder, frequency: e.target.value as MedFrequency})}>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" 
+                    value={newOrder.frequency} 
+                    onChange={e => {
+                      const freq = e.target.value as MedFrequency;
+                      let newTimes = ['09:00'];
+                      if (freq === 'BID') newTimes = ['09:00', '17:00'];
+                      else if (freq === 'TID') newTimes = ['09:00', '13:00', '17:00'];
+                      else if (freq === 'QID') newTimes = ['09:00', '13:00', '17:00', '21:00'];
+                      else if (freq === 'QHS') newTimes = ['21:00'];
+                      else if (freq === 'PRN') newTimes = [];
+                      setNewOrder({
+                        ...newOrder, 
+                        frequency: freq,
+                        custom_times: newTimes
+                      });
+                    }}
+                  >
                     <option value="QD">QD (Daily)</option>
                     <option value="BID">BID (Twice Daily)</option>
                     <option value="TID">TID (Three Times Daily)</option>
                     <option value="QID">QID (Four Times Daily)</option>
+                    <option value="QHS">QHS (Bedtime)</option>
                     <option value="PRN">PRN (As Needed)</option>
                   </select>
                 </div>
               </div>
+
+              {newOrder.frequency !== 'PRN' && (
+                <div className="space-y-2 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Administration Times</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(newOrder.custom_times || ['09:00']).map((time, i) => (
+                      <div key={i} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl pl-3 pr-1.5 py-1.5 shadow-sm">
+                        <input 
+                          type="time" 
+                          className="border-none p-0 text-xs font-black focus:ring-0 w-20 text-quro-charcoal"
+                          value={time} 
+                          onChange={e => {
+                            const newTimes = [...(newOrder.custom_times || ['09:00'])];
+                            newTimes[i] = e.target.value;
+                            setNewOrder({...newOrder, custom_times: newTimes});
+                          }}
+                        />
+                        {(newOrder.custom_times || ['09:00']).length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const newTimes = (newOrder.custom_times || ['09:00']).filter((_, idx) => idx !== i);
+                              setNewOrder({...newOrder, custom_times: newTimes});
+                            }} 
+                            className="p-1 text-slate-300 hover:text-rose-500 transition-colors rounded-lg hover:bg-slate-50"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setNewOrder({
+                          ...newOrder,
+                          custom_times: [...(newOrder.custom_times || ['09:00']), '09:00']
+                        });
+                      }}
+                      className="px-3 py-1.5 border border-dashed border-slate-300 rounded-xl text-[10px] font-black uppercase text-slate-500 hover:bg-slate-100 hover:border-slate-400 transition-colors"
+                    >
+                      + Add Time
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {newOrder.frequency === 'PRN' && (
                 <div className="grid grid-cols-2 gap-4 bg-teal-50/40 border border-teal-100/50 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2">

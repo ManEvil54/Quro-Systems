@@ -181,35 +181,84 @@ export default function MARGrid({ patientId }: Props) {
                 
                 {days.map(day => {
                   const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                  const isPRN = med.frequency === 'PRN';
                   return (
                     <td key={day} className="p-1 border-r border-slate-50 align-top">
                       <div className="flex flex-col gap-1 items-center">
-                        {(med.frequency_times || []).map(time => {
-                          const action = entryMap[med.id]?.[dateStr]?.[time];
-                          return (
-                            <button
-                              key={time}
-                              title={isElectronicMode ? `${time} - Click to log` : `${time} - Paper MAR Only`}
-                              onClick={() => isElectronicMode && !action && handleLog(med, dateStr, time)}
-                              disabled={!isElectronicMode || !!action}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
-                                action === 'given' ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20' :
-                                action === 'refused' ? 'bg-red-500 text-white' :
-                                action === 'held' ? 'bg-amber-500 text-white' :
-                                logging?.medId === med.id && logging?.date === dateStr && logging?.time === time
-                                  ? 'bg-amber-500 text-white animate-pulse'
-                                  : isElectronicMode
-                                    ? 'bg-slate-100 text-slate-400 hover:bg-slate-200 cursor-pointer'
-                                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                              }`}
-                            >
-                              {action === 'given' ? <Check size={10} /> : 
-                               action === 'refused' ? 'R' :
-                               action === 'held' ? 'H' :
-                               ''}
-                            </button>
-                          );
-                        })}
+                        {isPRN ? (
+                          <>
+                            {entries
+                              .filter(e => e.medication_id === med.id && e.scheduled_date === dateStr)
+                              .map(entry => (
+                                <div key={entry.id} className="relative group flex items-center justify-center">
+                                  <button
+                                    disabled
+                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                                    title={`PRN Given at ${entry.scheduled_time}`}
+                                  >
+                                    <Check size={10} />
+                                  </button>
+                                  <span className="absolute -top-7 bg-slate-900 text-white text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-md">
+                                    {entry.scheduled_time} - Given
+                                  </span>
+                                </div>
+                              ))}
+                            {isElectronicMode && (
+                              <button
+                                title="Log PRN dose"
+                                onClick={async () => {
+                                  const defaultTime = new Date().toLocaleTimeString('en-US', {
+                                    hour12: false,
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  });
+                                  const time = prompt("Enter administration time (HH:MM):", defaultTime);
+                                  if (!time) return;
+                                  try {
+                                    await logAdministration({
+                                      medication_id: med.id,
+                                      scheduled_date: dateStr,
+                                      scheduled_time: time,
+                                      action: 'given'
+                                    });
+                                  } catch (err) {
+                                    alert(`Error: ${(err as Error).message}`);
+                                  }
+                                }}
+                                className="w-5 h-5 rounded-full flex items-center justify-center border border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400 text-[10px] font-black cursor-pointer transition-colors"
+                              >
+                                +
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          (med.frequency_times || []).map(time => {
+                            const action = entryMap[med.id]?.[dateStr]?.[time];
+                            return (
+                              <button
+                                key={time}
+                                title={isElectronicMode ? `${time} - Click to log` : `${time} - Paper MAR Only`}
+                                onClick={() => isElectronicMode && !action && handleLog(med, dateStr, time)}
+                                disabled={!isElectronicMode || !!action}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
+                                  action === 'given' ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20' :
+                                  action === 'refused' ? 'bg-red-500 text-white' :
+                                  action === 'held' ? 'bg-amber-500 text-white' :
+                                  logging?.medId === med.id && logging?.date === dateStr && logging?.time === time
+                                    ? 'bg-amber-500 text-white animate-pulse'
+                                    : isElectronicMode
+                                      ? 'bg-slate-100 text-slate-400 hover:bg-slate-200 cursor-pointer'
+                                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                                }`}
+                              >
+                                {action === 'given' ? <Check size={10} /> : 
+                                 action === 'refused' ? 'R' :
+                                 action === 'held' ? 'H' :
+                                 ''}
+                              </button>
+                            );
+                          })
+                        )}
                       </div>
                     </td>
                   );

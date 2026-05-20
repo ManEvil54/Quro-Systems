@@ -116,32 +116,59 @@ export function useMedications(patientId: string) {
       // If any signed/acknowledged medication order in provider_orders does not have a medication document, create one.
       for (const order of orders) {
         if (order.order_type === 'medication' && order.status !== 'cancelled' && order.status !== 'draft') {
-          const hasMatchingMed = meds.some(m => m.order_id === order.id);
-          if (!hasMatchingMed && !transcribingOrderIds.current.has(order.id)) {
+          const matchingMed = meds.find(m => m.order_id === order.id);
+          if (!matchingMed && !transcribingOrderIds.current.has(order.id)) {
             transcribingOrderIds.current.add(order.id);
             console.log(`Auto-sync: Transcribing provider order ${order.id} to medications collection.`);
             try {
               const parsed = parseOrderText(order.order_text);
+              const generic_name = order.generic_name || parsed.generic_name;
+              const strength = order.strength || parsed.strength;
+              const dose = order.dose || null;
+              const dosage = order.dosage || parsed.dosage;
+              const route = order.route || parsed.route;
+              const frequency = order.frequency || parsed.frequency;
+              const indication = order.indication || '';
+              const prn_reason = order.prn_reason || null;
+              const prn_interval = order.prn_interval || null;
+              const is_psychotropic = order.is_psychotropic || false;
+              const requires_vitals = order.requires_vitals || false;
+              const vital_threshold_low = order.vital_threshold_low || null;
+              const vital_threshold_high = order.vital_threshold_high || null;
+              const vital_type = order.vital_type || null;
+
               const newMedsRef = collection(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications');
               
               // Map frequency to standard MAR times
-              let frequency_times = ['09:00'];
-              if (parsed.frequency === 'BID') frequency_times = ['09:00', '17:00'];
-              else if (parsed.frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
-              else if (parsed.frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
-              else if (parsed.frequency === 'QHS') frequency_times = ['21:00'];
+              let frequency_times = order.frequency_times || ['09:00'];
+              if (!order.frequency_times || order.frequency_times.length === 0) {
+                if (frequency === 'BID') frequency_times = ['09:00', '17:00'];
+                else if (frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
+                else if (frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
+                else if (frequency === 'QHS') frequency_times = ['21:00'];
+                else if (frequency === 'PRN') frequency_times = [];
+              }
 
               await addDoc(newMedsRef, {
-                generic_name: parsed.generic_name,
+                generic_name,
                 brand_name: '',
-                strength: parsed.strength,
-                dosage: parsed.dosage,
-                route: parsed.route,
-                frequency: parsed.frequency,
+                strength,
+                dose,
+                dosage,
+                route,
+                frequency,
                 frequency_times,
+                indication,
+                prn_reason,
+                prn_interval,
+                is_psychotropic,
+                requires_vitals,
+                vital_threshold_low,
+                vital_threshold_high,
+                vital_type,
                 start_date: order.signed_at || new Date().toISOString(),
                 status: 'active', // immediately active on MAR
-                special_instructions: order.order_text,
+                special_instructions: order.special_instructions || order.order_text,
                 order_id: order.id,
                 rxcui: order.rxcui || null,
                 org_id: staff.org_id,
@@ -151,6 +178,65 @@ export function useMedications(patientId: string) {
               });
             } catch (err) {
               console.error(`Failed to auto-transcribe order ${order.id}:`, err);
+            }
+          } else if (matchingMed) {
+            // Sync any updates from order to medication
+            const orderTimes = order.frequency_times || [];
+            const medTimes = matchingMed.frequency_times || [];
+            const timesMatch = orderTimes.length === medTimes.length && orderTimes.every((t, idx) => t === medTimes[idx]);
+            
+            if (
+              matchingMed.generic_name !== order.generic_name ||
+              matchingMed.strength !== order.strength ||
+              matchingMed.dose !== (order.dose || null) ||
+              matchingMed.dosage !== order.dosage ||
+              matchingMed.route !== order.route ||
+              matchingMed.frequency !== order.frequency ||
+              !timesMatch ||
+              matchingMed.indication !== order.indication ||
+              matchingMed.prn_reason !== (order.prn_reason || null) ||
+              matchingMed.prn_interval !== (order.prn_interval || null) ||
+              matchingMed.is_psychotropic !== (order.is_psychotropic || false) ||
+              matchingMed.requires_vitals !== (order.requires_vitals || false) ||
+              matchingMed.vital_type !== (order.vital_type || null) ||
+              matchingMed.vital_threshold_low !== (order.vital_threshold_low || null) ||
+              matchingMed.vital_threshold_high !== (order.vital_threshold_high || null) ||
+              matchingMed.special_instructions !== (order.special_instructions || '')
+            ) {
+              console.log(`Auto-sync: Updating medication ${matchingMed.id} to match edited provider order ${order.id}`);
+              try {
+                const medRef = doc(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications', matchingMed.id);
+                let frequency_times = order.frequency_times;
+                if (!frequency_times || frequency_times.length === 0) {
+                  if (order.frequency === 'BID') frequency_times = ['09:00', '17:00'];
+                  else if (order.frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
+                  else if (order.frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
+                  else if (order.frequency === 'QHS') frequency_times = ['21:00'];
+                  else if (order.frequency === 'PRN') frequency_times = [];
+                  else frequency_times = ['09:00'];
+                }
+                await updateDoc(medRef, {
+                  generic_name: order.generic_name || matchingMed.generic_name,
+                  strength: order.strength || matchingMed.strength,
+                  dose: order.dose || null,
+                  dosage: order.dosage || matchingMed.dosage,
+                  route: order.route || matchingMed.route,
+                  frequency: order.frequency || matchingMed.frequency,
+                  frequency_times,
+                  indication: order.indication || '',
+                  prn_reason: order.prn_reason || null,
+                  prn_interval: order.prn_interval || null,
+                  is_psychotropic: order.is_psychotropic || false,
+                  requires_vitals: order.requires_vitals || false,
+                  vital_type: order.vital_type || null,
+                  vital_threshold_low: order.vital_threshold_low || null,
+                  vital_threshold_high: order.vital_threshold_high || null,
+                  special_instructions: order.special_instructions || '',
+                  updated_at: serverTimestamp()
+                });
+              } catch (err) {
+                console.error(`Failed to auto-update medication ${matchingMed.id}:`, err);
+              }
             }
           }
         }
