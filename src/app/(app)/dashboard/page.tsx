@@ -3,14 +3,18 @@
 // ============================================================
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
   ShieldAlert,
   Bell,
   Search,
   X,
-  Building2
+  Building2,
+  Sparkles,
+  Activity,
+  ClipboardCheck,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
@@ -22,7 +26,7 @@ const RT_Assessment_Inlay = dynamic(() => import('@/components/clinical/RTAssess
 const GT_Feeding_Inlay = dynamic(() => import('@/components/clinical/GTFeedingInlay'), { ssr: false });
 
 import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
-import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
@@ -32,6 +36,50 @@ export default function DashboardPage() {
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
+
+  const [shiftBriefing, setShiftBriefing] = useState<{
+    summary?: string;
+    created_at?: string;
+    shift_type?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!organization?.id || !activeFacility?.id) {
+      setShiftBriefing(null);
+      return;
+    }
+
+    const briefingRef = doc(
+      db, 
+      'organizations', 
+      organization.id, 
+      'facilities', 
+      activeFacility.id, 
+      'shift_briefings', 
+      'active_briefing'
+    );
+
+    const unsubscribe = onSnapshot(briefingRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setShiftBriefing(docSnap.data() as any);
+      } else {
+        setShiftBriefing(null);
+      }
+    }, (err) => {
+      console.error('Error listening to shift briefing:', err);
+    });
+
+    return () => unsubscribe();
+  }, [organization?.id, activeFacility?.id]);
+
+  const parseBullets = (summaryText: string) => {
+    if (!summaryText) return [];
+    return summaryText
+      .split(/\n+/)
+      .map(line => line.replace(/^[\s*\-•\d.]+\s*/, '').trim())
+      .filter(line => line.length > 0)
+      .slice(0, 3);
+  };
   
   // Specialized RT/GT State for Inlays
   const [rtData, setRtData] = useState<RespiratoryState>({
@@ -344,6 +392,107 @@ export default function DashboardPage() {
         <div className="mb-10">
           <GlobalIntelligenceBar />
         </div>
+
+        {/* Live AI Shift Handoff Briefing */}
+        {shiftBriefing && (
+          <div className="mb-10 p-6 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden border border-slate-800 shadow-2xl shadow-slate-950/20 animate-in fade-in slide-in-from-top-6 duration-500 animate-in duration-500">
+            {/* Ambient gradients */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col gap-6">
+              {/* Card Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center shadow-lg shadow-teal-500/10 border border-teal-500/30">
+                    <Sparkles size={20} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400">
+                        Live AI Shift Handoff Briefing
+                      </span>
+                    </div>
+                    <h3 className="text-base font-black uppercase tracking-tight text-white mt-0.5">
+                      Facility Synthesis Hub
+                    </h3>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg">
+                    {shiftBriefing.shift_type || 'Custom'} Rotation
+                  </span>
+                  <span>
+                    Generated: {shiftBriefing.created_at ? new Date(shiftBriefing.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bullet Points Grid */}
+              {(() => {
+                const bullets = parseBullets(shiftBriefing.summary || '');
+                if (bullets.length > 0) {
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {bullets.map((bullet, idx) => {
+                        const cardConfig = [
+                          {
+                            icon: <AlertCircle className="text-rose-400" size={18} />,
+                            bg: 'bg-rose-500/5 border-rose-500/10 hover:border-rose-500/20',
+                            title: 'Critical Alerts & Safety'
+                          },
+                          {
+                            icon: <Activity className="text-amber-400" size={18} />,
+                            bg: 'bg-amber-500/5 border-amber-500/10 hover:border-amber-500/20',
+                            title: 'Vital Activity & Monitoring'
+                          },
+                          {
+                            icon: <ClipboardCheck className="text-emerald-400" size={18} />,
+                            bg: 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/20',
+                            title: 'Task & Routine Compliance'
+                          }
+                        ][idx] || {
+                          icon: <Sparkles className="text-teal-400" size={18} />,
+                          bg: 'bg-teal-500/5 border-teal-500/10 hover:border-teal-500/20',
+                          title: 'Clinical Summary Bullet'
+                        };
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${cardConfig.bg} group/item hover:translate-y-[-2px]`}
+                          >
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="p-1.5 rounded-lg bg-white/5">
+                                  {cardConfig.icon}
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-300">
+                                  {cardConfig.title}
+                                </span>
+                              </div>
+                              <p className="text-xs font-bold leading-relaxed text-slate-100">
+                                {bullet}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                } else {
+                  return (
+                    <p className="text-xs text-slate-300 italic font-medium leading-relaxed">
+                      {shiftBriefing.summary}
+                    </p>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Bed Grid */}
         <div className={`grid gap-10 ${viewType === 'boutique' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'}`}>

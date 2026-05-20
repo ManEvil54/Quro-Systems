@@ -27,6 +27,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBeds } from '@/hooks/useBeds';
+import ShiftConfigurator from '@/components/admin/ShiftConfigurator';
 
 interface TemplateItem {
   id: string;
@@ -48,6 +49,7 @@ export default function FacilitySettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [facilityName, setFacilityName] = useState('');
+  const [shiftConfig, setShiftConfig] = useState<{ type: '8hr' | '12hr'; intervals: string[] }>({ type: '8hr', intervals: ['07:00', '15:00', '23:00'] });
 
   const { rooms, beds, addRoom, addBed, deleteBed } = useBeds(targetFacilityId || '');
 
@@ -66,6 +68,11 @@ export default function FacilitySettingsPage() {
       if (fDoc.exists()) {
         const data = fDoc.data();
         setFacilityName(data.name);
+        if (data.shiftConfiguration) {
+          setShiftConfig(data.shiftConfiguration);
+        } else {
+          setShiftConfig({ type: '8hr', intervals: ['07:00', '15:00', '23:00'] });
+        }
         if (data.mar_template) {
           setTemplate(data.mar_template);
         } else {
@@ -162,7 +169,7 @@ export default function FacilitySettingsPage() {
       {activeTab === 'clinical' ? (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-500 font-medium italic">Standardize daily charting (BM, Meals, Foley) across this facility.</p>
+            <p className="text-sm text-slate-500 font-medium italic">Standardize daily charting and shift schedules across this facility.</p>
             <button 
               onClick={handleSave}
               disabled={isSaving}
@@ -173,78 +180,88 @@ export default function FacilitySettingsPage() {
             </button>
           </div>
 
-          <div className="glass-card p-10 space-y-8">
-            <div className="flex items-center gap-4 border-b border-slate-100 pb-8">
-              <div className="w-12 h-12 bg-quro-teal/10 rounded-2xl flex items-center justify-center text-quro-teal">
-                <ClipboardList size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Clinical Monitoring Grid</h3>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Dynamic MAR Compliance Table</p>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-1">
+              <ShiftConfigurator 
+                key={`${targetFacilityId}_${shiftConfig.type}`}
+                facilityId={targetFacilityId || ''} 
+                initialType={shiftConfig.type} 
+              />
             </div>
 
-            <div className="space-y-4">
-              {template.map((item, index) => (
-                <div key={item.id} className="flex gap-4 items-center group animate-in slide-in-from-left-4" style={{ animationDelay: `${index * 50}ms` }}>
-                  <GripVertical className="text-slate-200 group-hover:text-slate-400 transition-colors cursor-grab" size={20} />
-                  
-                  <div className="flex-1 grid grid-cols-12 gap-4 bg-slate-50 p-3 rounded-[24px] border-2 border-transparent group-hover:border-slate-100 transition-all">
-                    <div className="col-span-6">
-                      <input 
-                        placeholder="Entry Name (e.g. BM Charting)"
-                        className="w-full bg-white border-2 border-transparent rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-quro-teal transition-all"
-                        value={item.label}
-                        onChange={e => updateItem(item.id, 'label', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <select 
-                        className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
-                        value={item.category}
-                        onChange={e => updateItem(item.id, 'category', e.target.value as any)}
-                      >
-                        <option value="ADL">ADL / Care</option>
-                        <option value="monitoring">Monitoring</option>
-                        <option value="vital">Vitals/Labs</option>
-                        <option value="treatment">Treatment</option>
-                      </select>
-                    </div>
-                    <div className="col-span-3">
-                      <select 
-                        className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
-                        value={item.frequency}
-                        onChange={e => updateItem(item.id, 'frequency', e.target.value)}
-                      >
-                        <option value="Daily">Daily</option>
-                        <option value="qShift">Every Shift</option>
-                        <option value="TID">TID (Meals)</option>
-                        <option value="BID">BID</option>
-                        <option value="PRN">PRN</option>
-                        <option value="Weekly">Weekly</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => removeItem(item.id)}
-                    className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+            <div className="lg:col-span-2 glass-card p-10 space-y-8">
+              <div className="flex items-center gap-4 border-b border-slate-100 pb-8">
+                <div className="w-12 h-12 bg-quro-teal/10 rounded-2xl flex items-center justify-center text-quro-teal">
+                  <ClipboardList size={24} />
                 </div>
-              ))}
-            </div>
-
-            <button 
-              onClick={addItem}
-              className="w-full py-6 border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 text-xs font-bold hover:border-quro-teal hover:text-quro-teal hover:bg-teal-50/10 transition-all flex items-center justify-center gap-3 group"
-            >
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-500 group-hover:text-white transition-all">
-                <Plus size={16} />
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Clinical Monitoring Grid</h3>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Dynamic MAR Compliance Table</p>
+                </div>
               </div>
-              ADD CLINICAL MONITORING ROW
-            </button>
+
+              <div className="space-y-4">
+                {template.map((item, index) => (
+                  <div key={item.id} className="flex gap-4 items-center group animate-in slide-in-from-left-4" style={{ animationDelay: `${index * 50}ms` }}>
+                    <GripVertical className="text-slate-200 group-hover:text-slate-400 transition-colors cursor-grab" size={20} />
+                    
+                    <div className="flex-1 grid grid-cols-12 gap-4 bg-slate-50 p-3 rounded-[24px] border-2 border-transparent group-hover:border-slate-100 transition-all">
+                      <div className="col-span-6">
+                        <input 
+                          placeholder="Entry Name (e.g. BM Charting)"
+                          className="w-full bg-white border-2 border-transparent rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-quro-teal transition-all"
+                          value={item.label}
+                          onChange={e => updateItem(item.id, 'label', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <select 
+                          className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
+                          value={item.category}
+                          onChange={e => updateItem(item.id, 'category', e.target.value as any)}
+                        >
+                          <option value="ADL">ADL / Care</option>
+                          <option value="monitoring">Monitoring</option>
+                          <option value="vital">Vitals/Labs</option>
+                          <option value="treatment">Treatment</option>
+                        </select>
+                      </div>
+                      <div className="col-span-3">
+                        <select 
+                          className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
+                          value={item.frequency}
+                          onChange={e => updateItem(item.id, 'frequency', e.target.value)}
+                        >
+                          <option value="Daily">Daily</option>
+                          <option value="qShift">Every Shift</option>
+                          <option value="TID">TID (Meals)</option>
+                          <option value="BID">BID</option>
+                          <option value="PRN">PRN</option>
+                          <option value="Weekly">Weekly</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => removeItem(item.id)}
+                      className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                onClick={addItem}
+                className="w-full py-6 border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 text-xs font-bold hover:border-quro-teal hover:text-quro-teal hover:bg-teal-50/10 transition-all flex items-center justify-center gap-3 group"
+              >
+                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-500 group-hover:text-white transition-all">
+                  <Plus size={16} />
+                </div>
+                ADD CLINICAL MONITORING ROW
+              </button>
+            </div>
           </div>
         </div>
       ) : (

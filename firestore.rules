@@ -134,6 +134,16 @@ service cloud.firestore {
             hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId)
           );
         }
+
+        match /shift_briefings/{briefingId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && (hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+        }
+
+        match /clinical_logs/{logId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && (hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'nurse', 'physician', 'FACILITY_ADMIN']) || isOrgPrimaryContact(orgId));
+        }
       }
 
       // 4. Patients: Deeply Scoped
