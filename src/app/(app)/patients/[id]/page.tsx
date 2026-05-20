@@ -46,9 +46,8 @@ import { useVitals } from '@/hooks/useVitals';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/hooks/useOrders';
 import { useBeds } from '@/hooks/useBeds';
-import { doc, updateDoc, collection, getDocs, query, where, addDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import type { Staff } from '@/lib/firebase/types';
 import VitalsTrendChart from '@/components/clinical/VitalsTrendChart';
 import VoiceToSOAP from '@/components/clinical/VoiceToSOAP';
 import TreatmentPortal from '@/components/clinical/TreatmentPortal';
@@ -57,21 +56,7 @@ import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
 import CarePlanManager from '@/components/clinical/CarePlanManager';
 import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
-import { MedRoute, MedFrequency, ProviderOrder, Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
-
-const formatDate = (dateValue: unknown) => {
-  if (!dateValue) return 'N/A';
-  if (typeof dateValue === 'object' && dateValue !== null) {
-    if ('seconds' in dateValue && typeof (dateValue as { seconds?: unknown }).seconds === 'number') {
-      return new Date((dateValue as { seconds: number }).seconds * 1000).toLocaleDateString();
-    }
-    if ('toDate' in dateValue && typeof (dateValue as { toDate?: unknown }).toDate === 'function') {
-      return (dateValue as { toDate: () => Date }).toDate().toLocaleDateString();
-    }
-  }
-  const d = new Date(dateValue as string | number | Date);
-  return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
-};
+import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 export default function PatientChartPage() {
   const params = useParams();
@@ -79,11 +64,11 @@ export default function PatientChartPage() {
   const id = params.id as string;
   const { activeFacility, staff, organization } = useAuth();
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
-  const { medications, loading: medsLoading, addMedication, updateMedication } = useMedications(id);
+  const { medications, loading: medsLoading, updateMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
   const { notes, saveNote, updateNote } = useNotes(id);
   const { vitals } = useVitals(id);
-  const { orders, loading: ordersLoading, addOrder, updateOrderStatus } = useOrders(id);
+  const { orders, loading: ordersLoading } = useOrders(id);
   
   const activeMeds = useMemo(() => {
     return medications.filter(m => {
