@@ -18,7 +18,9 @@ import {
   getDocs, 
   query, 
   where, 
-  orderBy
+  orderBy,
+  getDoc,
+  doc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,10 +30,12 @@ import { safeFormat } from '@/lib/dateUtils';
 
 interface Props {
   patientId: string;
+  patientRoom?: string;
+  patientName?: string;
 }
 
-export default function TreatmentPortal({ patientId }: Props) {
-  const { staff, organization } = useAuth();
+export default function TreatmentPortal({ patientId, patientRoom, patientName }: Props) {
+  const { staff, organization, activeFacility } = useAuth();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -128,6 +132,42 @@ export default function TreatmentPortal({ patientId }: Props) {
         collection(db, 'organizations', organization.id, 'patients', patientId, 'treatment_entries'),
         entry
       );
+
+      // Resolve patient room, name, and facility ID
+      let room = patientRoom;
+      let name = patientName;
+      let facId = activeFacility?.id;
+
+      if (!room || !name || !facId) {
+        try {
+          const patientSnap = await getDoc(doc(db, 'organizations', organization.id, 'patients', patientId));
+          if (patientSnap.exists()) {
+            const pData = patientSnap.data();
+            room = room || pData.room_number || "Room TBD";
+            name = name || `${pData.first_name || ""} ${pData.last_name || ""}`.trim() || "Patient";
+            facId = facId || pData.facility_id;
+          }
+        } catch (e) {
+          console.error("Error fetching patient details for fallback:", e);
+        }
+      }
+
+      facId = facId || 'platinum-health-hub';
+      room = room || 'Room TBD';
+      name = name || 'Patient';
+
+      // Log structured entry into facility clinical_logs sub-collection
+      const logEntry = {
+        patientRoom: room,
+        patientName: name,
+        timestamp: new Date(),
+        type: "THERAPY",
+        summaryText: `Therapeutic treatment administered: ${treatment.treatment_name} to site: ${treatment.site || 'General'}. Scheduled freq: ${treatment.frequency}.`,
+        chartedBy: staff ? `${staff.role || 'RN'}-${staff.id.slice(0, 4)}` : 'RN-9921'
+      };
+
+      const logsRef = collection(db, 'organizations', organization.id, 'facilities', facId, 'clinical_logs');
+      await addDoc(logsRef, logEntry);
 
       alert('Treatment documented successfully.');
     } catch (err) {

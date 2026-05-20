@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
 import GlobalIntelligenceBar from '@/components/dashboard/GlobalIntelligenceBar';
+import ActiveShiftIntelligenceBanner from '@/components/clinical/ActiveShiftIntelligenceBanner';
 
 const VitalsInlay = dynamic(() => import('@/components/clinical/VitalsInlay'), { ssr: false });
 const RT_Assessment_Inlay = dynamic(() => import('@/components/clinical/RTAssessmentInlay'), { ssr: false });
@@ -37,49 +38,7 @@ export default function DashboardPage() {
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
 
-  const [shiftBriefing, setShiftBriefing] = useState<{
-    summary?: string;
-    created_at?: string;
-    shift_type?: string;
-  } | null>(null);
 
-  useEffect(() => {
-    if (!organization?.id || !activeFacility?.id) {
-      setShiftBriefing(null);
-      return;
-    }
-
-    const briefingRef = doc(
-      db, 
-      'organizations', 
-      organization.id, 
-      'facilities', 
-      activeFacility.id, 
-      'shift_briefings', 
-      'active_briefing'
-    );
-
-    const unsubscribe = onSnapshot(briefingRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setShiftBriefing(docSnap.data() as any);
-      } else {
-        setShiftBriefing(null);
-      }
-    }, (err) => {
-      console.error('Error listening to shift briefing:', err);
-    });
-
-    return () => unsubscribe();
-  }, [organization?.id, activeFacility?.id]);
-
-  const parseBullets = (summaryText: string) => {
-    if (!summaryText) return [];
-    return summaryText
-      .split(/\n+/)
-      .map(line => line.replace(/^[\s*\-•\d.]+\s*/, '').trim())
-      .filter(line => line.length > 0)
-      .slice(0, 3);
-  };
   
   // Specialized RT/GT State for Inlays
   const [rtData, setRtData] = useState<RespiratoryState>({
@@ -322,6 +281,86 @@ export default function DashboardPage() {
     }, { merge: true });
   };
 
+  const getPatientRoom = (patientId: string) => {
+    const bed = beds.find(b => b.patient?.id === patientId);
+    if (!bed) return "Room TBD";
+    return `${bed.room_name || 'Room'} - ${bed.bed_name || 'Bed'}`;
+  };
+
+  const handleRTSubmit = async () => {
+    if (!organization?.id || !activeFacility?.id || !selectedPatientForRT) return;
+
+    try {
+      const roomStr = getPatientRoom(selectedPatientForRT.id);
+      
+      const logEntry = {
+        patientRoom: roomStr,
+        patientName: selectedPatientForRT.full_name || "Unknown Patient",
+        timestamp: serverTimestamp(),
+        type: "RESPIRATORY" as const,
+        summaryText: `Respiratory assessment completed. O2 Delivery: ${rtData.o2_delivery} at ${rtData.lpm} LPM. Stoma: ${rtData.stoma_condition}. Secretions: ${rtData.secretions_consistency} & ${rtData.secretions_color}. Suction: ${rtData.suction_frequency}.`,
+        chartedBy: staff ? `${staff.role || 'RN'}-${staff.id.slice(0, 4)}` : 'RT-8842'
+      };
+
+      const logsRef = collection(db, 'organizations', organization.id, 'facilities', activeFacility.id, 'clinical_logs');
+      await addDoc(logsRef, logEntry);
+
+      // Save to patient's subcollection or doc
+      const patientRef = doc(db, 'organizations', organization.id, 'patients', selectedPatientForRT.id);
+      await setDoc(patientRef, {
+        respiratory_state: {
+          ...rtData,
+          updated_at: new Date().toISOString(),
+          updated_by: staff?.id || 'system'
+        },
+        updated_at: serverTimestamp()
+      }, { merge: true });
+
+      alert('Respiratory Assessment committed successfully.');
+      setSelectedPatientForRT(null);
+    } catch (err) {
+      console.error('Error committing RT Assessment:', err);
+      alert('Error committing assessment.');
+    }
+  };
+
+  const handleGTSubmit = async () => {
+    if (!organization?.id || !activeFacility?.id || !selectedPatientForGT) return;
+
+    try {
+      const roomStr = getPatientRoom(selectedPatientForGT.id);
+
+      const logEntry = {
+        patientRoom: roomStr,
+        patientName: selectedPatientForGT.full_name || "Unknown Patient",
+        timestamp: serverTimestamp(),
+        type: "ENTERAL" as const,
+        summaryText: `Enteral feeding synced. Formula: ${gtData.formula_name} via ${gtData.delivery_method} at ${gtData.rate_ml_hr} mL/hr. Flushes: ${gtData.water_flush_pre}mL pre / ${gtData.water_flush_post}mL post. Residual: ${gtData.last_residual_volume}mL. Site: ${gtData.site_condition}.`,
+        chartedBy: staff ? `${staff.role || 'RN'}-${staff.id.slice(0, 4)}` : 'RN-9021'
+      };
+
+      const logsRef = collection(db, 'organizations', organization.id, 'facilities', activeFacility.id, 'clinical_logs');
+      await addDoc(logsRef, logEntry);
+
+      // Save to patient's doc
+      const patientRef = doc(db, 'organizations', organization.id, 'patients', selectedPatientForGT.id);
+      await setDoc(patientRef, {
+        enteral_state: {
+          ...gtData,
+          updated_at: new Date().toISOString(),
+          updated_by: staff?.id || 'system'
+        },
+        updated_at: serverTimestamp()
+      }, { merge: true });
+
+      alert('Enteral feeding logs synced successfully.');
+      setSelectedPatientForGT(null);
+    } catch (err) {
+      console.error('Error syncing GT feeding:', err);
+      alert('Error syncing feeding logs.');
+    }
+  };
+
   return (
     <div className={`animate-in fade-in duration-700 min-h-screen bg-slate-50/30 ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
       
@@ -394,104 +433,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Live AI Shift Handoff Briefing */}
-        {shiftBriefing && (
-          <div className="mb-10 p-6 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden border border-slate-800 shadow-2xl shadow-slate-950/20 animate-in fade-in slide-in-from-top-6 duration-500 animate-in duration-500">
-            {/* Ambient gradients */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col gap-6">
-              {/* Card Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center shadow-lg shadow-teal-500/10 border border-teal-500/30">
-                    <Sparkles size={20} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400">
-                        Live AI Shift Handoff Briefing
-                      </span>
-                    </div>
-                    <h3 className="text-base font-black uppercase tracking-tight text-white mt-0.5">
-                      Facility Synthesis Hub
-                    </h3>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg">
-                    {shiftBriefing.shift_type || 'Custom'} Rotation
-                  </span>
-                  <span>
-                    Generated: {shiftBriefing.created_at ? new Date(shiftBriefing.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Bullet Points Grid */}
-              {(() => {
-                const bullets = parseBullets(shiftBriefing.summary || '');
-                if (bullets.length > 0) {
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {bullets.map((bullet, idx) => {
-                        const cardConfig = [
-                          {
-                            icon: <AlertCircle className="text-rose-400" size={18} />,
-                            bg: 'bg-rose-500/5 border-rose-500/10 hover:border-rose-500/20',
-                            title: 'Critical Alerts & Safety'
-                          },
-                          {
-                            icon: <Activity className="text-amber-400" size={18} />,
-                            bg: 'bg-amber-500/5 border-amber-500/10 hover:border-amber-500/20',
-                            title: 'Vital Activity & Monitoring'
-                          },
-                          {
-                            icon: <ClipboardCheck className="text-emerald-400" size={18} />,
-                            bg: 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/20',
-                            title: 'Task & Routine Compliance'
-                          }
-                        ][idx] || {
-                          icon: <Sparkles className="text-teal-400" size={18} />,
-                          bg: 'bg-teal-500/5 border-teal-500/10 hover:border-teal-500/20',
-                          title: 'Clinical Summary Bullet'
-                        };
-
-                        return (
-                          <div 
-                            key={idx} 
-                            className={`p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${cardConfig.bg} group/item hover:translate-y-[-2px]`}
-                          >
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="p-1.5 rounded-lg bg-white/5">
-                                  {cardConfig.icon}
-                                </div>
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-300">
-                                  {cardConfig.title}
-                                </span>
-                              </div>
-                              <p className="text-xs font-bold leading-relaxed text-slate-100">
-                                {bullet}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                } else {
-                  return (
-                    <p className="text-xs text-slate-300 italic font-medium leading-relaxed">
-                      {shiftBriefing.summary}
-                    </p>
-                  );
-                }
-              })()}
-            </div>
-          </div>
+        {activeFacility?.id && (
+          <ActiveShiftIntelligenceBanner facilityId={activeFacility.id} />
         )}
 
         {/* Bed Grid */}
@@ -535,7 +478,7 @@ export default function DashboardPage() {
             </div>
             <RT_Assessment_Inlay data={rtData} onChange={setRtData} />
             <div className="mt-10 flex justify-end">
-               <button onClick={() => setSelectedPatientForRT(null)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
+               <button onClick={handleRTSubmit} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
                  Commit Assessment
                </button>
             </div>
@@ -557,7 +500,7 @@ export default function DashboardPage() {
             </div>
             <GT_Feeding_Inlay data={gtData} onChange={setGtData} />
             <div className="mt-10 flex justify-end">
-               <button onClick={() => setSelectedPatientForGT(null)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
+               <button onClick={handleGTSubmit} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/20">
                  Sync Feeding Logs
                </button>
             </div>

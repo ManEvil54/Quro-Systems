@@ -1472,7 +1472,11 @@ export default function PatientChartPage() {
           {activeTab === 'treatments' && (
             <div className="animate-in fade-in slide-in-from-left-4">
               <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
-                <TreatmentPortal patientId={id} />
+                <TreatmentPortal 
+                  patientId={id} 
+                  patientRoom={patient.room_number || undefined} 
+                  patientName={patient ? `${patient.first_name} ${patient.last_name}` : undefined} 
+                />
               </div>
             </div>
           )}
