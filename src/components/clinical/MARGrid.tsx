@@ -144,9 +144,22 @@ export default function MARGrid({ patientId }: Props) {
                       <Pill size={16} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900 leading-tight">{med.generic_name}</p>
-                      <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight">
-                        {med.dosage} · {med.route} · {med.frequency}
+                      <p className="text-xs font-bold text-slate-900 leading-tight">
+                        {med.generic_name} {med.strength && <span className="text-[10px] text-slate-400 font-semibold ml-1">({med.strength})</span>}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight font-semibold">
+                        {med.dose ? (
+                          <>
+                            Dose: <span className="text-teal-600 font-bold">{med.dose}</span>
+                            <span className="text-slate-400 font-medium ml-1">({med.dosage})</span>
+                          </>
+                        ) : (
+                          med.dosage
+                        )}
+                        <span className="text-slate-300 mx-1">·</span>
+                        {med.route}
+                        <span className="text-slate-300 mx-1">·</span>
+                        <span className="text-teal-600 font-bold">{med.frequency}</span>
                       </p>
                       <div className="flex gap-1 mt-1">
                         {(med.frequency_times || []).map(t => (

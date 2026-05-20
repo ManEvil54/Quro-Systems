@@ -49,6 +49,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     setNewOrder({
       generic_name: '',
       strength: '',
+      dose: '',
       dosage: '',
       route: 'PO',
       frequency: 'QD',
@@ -79,6 +80,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     setNewOrder({
       generic_name: order.generic_name || '',
       strength: order.strength || '',
+      dose: order.dose || '',
       dosage: order.dosage || '',
       route: order.route || 'PO',
       frequency: order.frequency || 'QD',
@@ -115,6 +117,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       const orderData = {
         generic_name: order.generic_name || '',
         strength: order.strength || '',
+        dose: order.dose || null,
         dosage: order.dosage || '',
         route: order.route || 'PO',
         frequency: order.frequency || 'QD',
@@ -177,6 +180,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
   const [newOrder, setNewOrder] = useState({
     generic_name: '',
     strength: '',
+    dose: '',
     dosage: '',
     route: 'PO' as MedRoute,
     frequency: 'QD' as MedFrequency,
@@ -311,7 +315,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       }
 
       const isTelephone = newOrder.order_type === 'telephone';
-      const orderText = `${newOrder.generic_name} ${newOrder.strength} - ${newOrder.dosage} via ${newOrder.route} ${newOrder.frequency}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
+      const orderText = `${newOrder.generic_name} ${newOrder.strength} - Dose: ${newOrder.dose} (${newOrder.dosage}) via ${newOrder.route} ${newOrder.frequency}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
       
       let providerOrderRefId = editingDraftId;
       
@@ -328,6 +332,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         order_method: newOrder.order_type,
         generic_name: newOrder.generic_name,
         strength: newOrder.strength,
+        dose: newOrder.dose || null,
         dosage: newOrder.dosage,
         route: newOrder.route,
         frequency: newOrder.frequency,
@@ -364,6 +369,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         const orderData = {
           generic_name: newOrder.generic_name,
           strength: newOrder.strength,
+          dose: newOrder.dose || null,
           dosage: newOrder.dosage,
           route: newOrder.route,
           frequency: newOrder.frequency,
@@ -582,19 +588,23 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strength (Type or Select)</label>
-                  <input required list="strength-list" placeholder="e.g. 20mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" value={newOrder.strength} onChange={e => setNewOrder({...newOrder, strength: e.target.value})} />
+                  <input required list="strength-list" placeholder="e.g. 50mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal" value={newOrder.strength} onChange={e => setNewOrder({...newOrder, strength: e.target.value})} />
                   <datalist id="strength-list">
-                    {strengths.map(dose => (
-                      <option key={dose} value={dose} />
+                    {strengths.map(doseVal => (
+                      <option key={doseVal} value={doseVal} />
                     ))}
                   </datalist>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage (Type manually)</label>
-                  <input required placeholder="e.g. 1 Tablet" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" value={newOrder.dosage} onChange={e => setNewOrder({...newOrder, dosage: e.target.value})} />
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dose (Amount to give)</label>
+                  <input required placeholder="e.g. 25mg" className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal" value={newOrder.dose} onChange={e => setNewOrder({...newOrder, dose: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage Form / Qty</label>
+                  <input required placeholder="e.g. 0.5 Tablet" className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal" value={newOrder.dosage} onChange={e => setNewOrder({...newOrder, dosage: e.target.value})} />
                 </div>
               </div>
 
@@ -847,24 +857,35 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                     </p>
                   )}
                 </div>
-                
-                {order.status === 'draft' && (
-                  <div className="flex gap-2 mt-1">
+                               <div className="flex gap-2 mt-1">
+                  {order.status === 'draft' ? (
+                    <>
+                      <button
+                        onClick={() => handleEditDraft(order)}
+                        className="px-3 py-1 bg-white border border-slate-200 text-quro-charcoal rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider animate-pulse hover:animate-none"
+                      >
+                        Edit Draft
+                      </button>
+                      <button
+                        onClick={() => handleSignDirectly(order)}
+                        className="px-3 py-1 bg-quro-charcoal text-white rounded-lg text-[10px] font-bold hover:bg-slate-800 transition-colors uppercase tracking-wider flex items-center gap-1 shadow-md shadow-slate-900/10"
+                      >
+                        <ShieldCheck size={10} className="text-quro-teal" />
+                        Sign Now
+                      </button>
+                    </>
+                  ) : (
                     <button
                       onClick={() => handleEditDraft(order)}
-                      className="px-3 py-1 bg-white border border-slate-200 text-quro-charcoal rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider animate-pulse hover:animate-none"
+                      className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
                     >
-                      Edit Draft
+                      <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit Order
                     </button>
-                    <button
-                      onClick={() => handleSignDirectly(order)}
-                      className="px-3 py-1 bg-quro-charcoal text-white rounded-lg text-[10px] font-bold hover:bg-slate-800 transition-colors uppercase tracking-wider flex items-center gap-1 shadow-md shadow-slate-900/10"
-                    >
-                      <ShieldCheck size={10} className="text-quro-teal" />
-                      Sign Now
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>

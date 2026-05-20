@@ -34,6 +34,7 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     rxcui: initialData?.rxcui || null,
     brand_name: initialData?.brand_name || '',
     strength: initialData?.strength || '',
+    dose: initialData?.dose || '',
     dosage: initialData?.dosage || '',
     route: initialData?.route || 'PO',
     frequency: initialData?.frequency || 'QD',
@@ -150,9 +151,9 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               Dosage & Schedule
             </h3>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="col-span-2 md:col-span-1">
-                <label className="label">Strength (Type or Select)</label>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div>
+                <label className="label">Strength (Select or Type)</label>
                 <input 
                   type="text" required className="input" placeholder="50mg"
                   list="med-form-strength-list"
@@ -164,10 +165,17 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                   ))}
                 </datalist>
               </div>
-              <div className="col-span-2 md:col-span-1">
-                <label className="label">Dosage (Type manually)</label>
+              <div>
+                <label className="label">Dose (Amount to give)</label>
                 <input 
-                  type="text" required className="input" placeholder="1 tablet"
+                  type="text" required className="input" placeholder="25mg"
+                  value={form.dose || ''} onChange={e => setForm({...form, dose: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="label">Dosage Form / Qty</label>
+                <input 
+                  type="text" required className="input" placeholder="0.5 Tablet"
                   value={form.dosage} onChange={e => setForm({...form, dosage: e.target.value})}
                 />
               </div>

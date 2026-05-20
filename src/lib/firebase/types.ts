@@ -216,6 +216,7 @@ export interface Medication {
   rxcui?: string | null;
   brand_name?: string;
   strength: string;
+  dose?: string | null;
   dosage: string;
   route: MedRoute;
   frequency: MedFrequency;
@@ -304,6 +305,7 @@ export interface ProviderOrder {
   // Medication-specific structured order details (for drafts and signature tracking)
   generic_name?: string;
   strength?: string;
+  dose?: string | null;
   dosage?: string;
   route?: MedRoute;
   frequency?: MedFrequency;

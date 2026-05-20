@@ -94,8 +94,21 @@ export default function MedicationList({ patientId }: Props) {
                     <h4 className="font-bold text-slate-900">{med.generic_name}</h4>
                     {med.brand_name && <span className="text-xs text-slate-400">({med.brand_name})</span>}
                   </div>
-                  <p className="text-sm text-slate-600 font-medium">
-                    {med.dosage} · {med.route} · {med.frequency}
+                  <p className="text-sm text-slate-600 font-semibold mt-0.5">
+                    {med.strength && <span className="text-slate-800">{med.strength}</span>}
+                    {med.strength && <span className="text-slate-300 mx-1.5">·</span>}
+                    {med.dose ? (
+                      <>
+                        <span className="text-slate-500">Dose:</span> <span className="text-teal-600 font-bold">{med.dose}</span>
+                        <span className="text-slate-400 font-medium ml-1">({med.dosage})</span>
+                      </>
+                    ) : (
+                      <span className="text-slate-600">{med.dosage}</span>
+                    )}
+                    <span className="text-slate-300 mx-1.5">·</span>
+                    <span className="text-slate-500">{med.route}</span>
+                    <span className="text-slate-300 mx-1.5">·</span>
+                    <span className="text-teal-600 font-bold bg-teal-50/50 px-2 py-0.5 rounded text-xs">{med.frequency}</span>
                   </p>
                   
                   <div className="flex flex-wrap gap-3 mt-2">
