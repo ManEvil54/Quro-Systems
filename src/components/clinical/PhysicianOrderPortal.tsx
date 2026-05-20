@@ -252,7 +252,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       try {
         const res = await fetch(`https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=${encodeURIComponent(newOrder.generic_name)}&ef=STRENGTHS_AND_FORMS`);
         const data = await res.json();
-        const strengthsList = data[3]?.[0] || [];
+        const strengthsList = data[2]?.STRENGTHS_AND_FORMS?.[0] || [];
         setStrengths(strengthsList);
       } catch (err) {
         console.error('Error fetching strengths:', err);
@@ -608,14 +608,32 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication Name (Generic/Brand)</label>
                 <MedicationPicker 
                   value={newOrder.generic_name}
-                  onChange={(name, rxcui) => {
+                  onChange={(name, rxcui, details) => {
                     const match = COMMON_DRUGS.find(d => d.generic === name || `${d.generic} (${d.brand})` === name);
-                    setNewOrder({
-                      ...newOrder,
-                      generic_name: name,
-                      rxcui,
-                      is_psychotropic: match?.is_psychotropic || newOrder.is_psychotropic
-                    });
+                    if (details) {
+                      setNewOrder(f => ({
+                        ...f,
+                        generic_name: details.generic_name,
+                        rxcui: details.rxcui,
+                        is_psychotropic: match?.is_psychotropic || f.is_psychotropic || false,
+                        strength: details.strength || f.strength,
+                        dose: details.dose || f.dose,
+                        dosage: details.dosage || f.dosage,
+                        route: details.route || f.route,
+                        frequency: details.frequency || f.frequency,
+                        custom_times: details.frequency === 'PRN' ? [] : (details.frequency_times || f.custom_times)
+                      }));
+                      if (details.strengthsList) {
+                        setStrengths(details.strengthsList);
+                      }
+                    } else {
+                      setNewOrder(f => ({
+                        ...f,
+                        generic_name: name,
+                        rxcui,
+                        is_psychotropic: match?.is_psychotropic || f.is_psychotropic
+                      }));
+                    }
                   }}
                   className="bg-slate-50 border-none p-4"
                   placeholder="e.g. Lisinopril"

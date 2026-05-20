@@ -4,6 +4,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   ShieldAlert,
   Bell,
@@ -14,10 +15,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard, type DashboardBed } from '@/hooks/useDashboard';
 import PatientCard from '@/components/dashboard/PatientCard';
-import VitalsInlay from '@/components/clinical/VitalsInlay';
 import GlobalIntelligenceBar from '@/components/dashboard/GlobalIntelligenceBar';
-import RT_Assessment_Inlay from '@/components/clinical/RTAssessmentInlay';
-import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
+
+const VitalsInlay = dynamic(() => import('@/components/clinical/VitalsInlay'), { ssr: false });
+const RT_Assessment_Inlay = dynamic(() => import('@/components/clinical/RTAssessmentInlay'), { ssr: false });
+const GT_Feeding_Inlay = dynamic(() => import('@/components/clinical/GTFeedingInlay'), { ssr: false });
 
 import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
 import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';

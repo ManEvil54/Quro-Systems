@@ -99,14 +99,16 @@ body {
 
 .glass-card {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(8px) saturate(1.5);
+  -webkit-backdrop-filter: blur(8px) saturate(1.5);
   border: 1px solid rgba(15, 23, 42, 0.05);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
   transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   overflow: hidden;
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 /* Brushed-metal inner highlight */
@@ -151,9 +153,21 @@ body {
   50% { box-shadow: 0 0 24px rgba(239, 68, 68, 0.16), 0 0 60px rgba(239, 68, 68, 0.06); }
 }
 
-.glow-active { animation: var(--animate-pulse-teal); }
-.glow-warning { animation: pulse-glow-amber 3s ease-in-out infinite; }
-.glow-critical { animation: pulse-glow-red 2.5s ease-in-out infinite; }
+.glow-active {
+  animation: var(--animate-pulse-teal);
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+.glow-warning {
+  animation: pulse-glow-amber 3s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+.glow-critical {
+  animation: pulse-glow-red 2.5s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
 
 /* High-End Glassmorphism — Quro Deep Green Edition */
 .glass-card-quro {
@@ -638,6 +652,8 @@ body {
 
 .critical-ripple {
   animation: critical-card-ripple 2s infinite;
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .vital-grid-glass {

@@ -28,6 +28,7 @@ const frequencies: MedFrequency[] = ['QD', 'BID', 'TID', 'QID', 'Q4H', 'Q6H', 'Q
 export default function MedicationForm({ onClose, onSubmit, initialData }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formStrengths, setFormStrengths] = useState<string[]>([]);
 
   const [form, setForm] = useState<Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>>({
     generic_name: initialData?.generic_name || '',
@@ -116,15 +117,34 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               <label className="label">Generic Name (Required)</label>
               <MedicationPicker 
                 value={form.generic_name}
-                onChange={(name, rxcui) => {
+                onChange={(name, rxcui, details) => {
                   const match = COMMON_DRUGS.find(d => d.generic === name || `${d.generic} (${d.brand})` === name);
-                  setForm({
-                    ...form,
-                    generic_name: name,
-                    rxcui,
-                    brand_name: match?.brand || form.brand_name,
-                    is_psychotropic: match?.is_psychotropic || form.is_psychotropic
-                  });
+                  if (details) {
+                    setForm(f => ({
+                      ...f,
+                      generic_name: details.generic_name,
+                      rxcui: details.rxcui,
+                      brand_name: match?.brand || f.brand_name,
+                      is_psychotropic: match?.is_psychotropic || f.is_psychotropic || false,
+                      strength: details.strength || f.strength,
+                      dose: details.dose || f.dose,
+                      dosage: details.dosage || f.dosage,
+                      route: details.route || f.route,
+                      frequency: details.frequency || f.frequency,
+                      frequency_times: details.frequency_times || f.frequency_times
+                    }));
+                    if (details.strengthsList) {
+                      setFormStrengths(details.strengthsList);
+                    }
+                  } else {
+                    setForm({
+                      ...form,
+                      generic_name: name,
+                      rxcui,
+                      brand_name: match?.brand || form.brand_name,
+                      is_psychotropic: match?.is_psychotropic || form.is_psychotropic
+                    });
+                  }
                 }}
                 className="input px-4 py-2"
                 placeholder="E.G. Metoprolol Tartrate"
@@ -162,9 +182,12 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                   value={form.strength} onChange={e => setForm({...form, strength: e.target.value})}
                 />
                 <datalist id="med-form-strength-list">
-                  {COMMON_DRUGS.find(d => form.generic_name.includes(d.generic))?.common_dosages?.map(dose => (
-                    <option key={dose} value={dose} />
-                  ))}
+                  {formStrengths.length > 0 
+                    ? formStrengths.map(dose => <option key={dose} value={dose} />)
+                    : COMMON_DRUGS.find(d => form.generic_name.includes(d.generic))?.common_dosages?.map(dose => (
+                        <option key={dose} value={dose} />
+                      ))
+                  }
                 </datalist>
               </div>
               <div>
