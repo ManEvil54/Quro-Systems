@@ -9,9 +9,92 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient, Medication, MAREntry } from '@/lib/firebase/types';
+import type { Patient, Medication, MAREntry, ProviderOrder, MedRoute, MedFrequency } from '@/lib/firebase/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Edit2, Save, Plus, Trash2, Printer } from 'lucide-react';
+
+// Helper to parse unstructured order text into structured medication fields
+const parseOrderText = (text: string) => {
+  const words = text.split(/\s+/);
+  const generic_name = words[0] || 'Unknown Medication';
+  
+  // Try to find strength (e.g. 500mg, 5mg, 10ml, etc.)
+  const strengthMatch = text.match(/\b\d+(?:mg|mcg|ml|g)\b/i);
+  const strength = strengthMatch ? strengthMatch[0] : 'As ordered';
+
+  // Try to find route (PO, IV, IM, SC, PR, SL, Topical)
+  const routeMatch = text.match(/\b(PO|IV|IM|SC|PR|SL|Topical|Sublingual|NPO)\b/i);
+  const route = routeMatch ? routeMatch[0].toUpperCase() as MedRoute : 'PO';
+
+  // Try to find frequency (QD, Daily, BID, TID, QID, QHS, PRN, Weekly, Monthly)
+  const freqMatch = text.match(/\b(QD|Daily|BID|TID|QID|QHS|PRN|Weekly|Monthly)\b/i);
+  let frequency = 'QD' as MedFrequency;
+  if (freqMatch) {
+    const f = freqMatch[0].toUpperCase();
+    if (f === 'DAILY') frequency = 'QD';
+    else if (f === 'WEEKLY') frequency = 'WEEKLY';
+    else if (f === 'MONTHLY') frequency = 'MONTHLY';
+    else frequency = f as MedFrequency;
+  }
+
+  return { generic_name, strength, dosage: '1 tablet', route, frequency };
+};
+
+// Maps a ProviderOrder document to a Medication object schema on the fly
+const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientId: string): Medication => {
+  const parsed = parseOrderText(order.order_text || '');
+  
+  const generic_name = order.generic_name || parsed.generic_name;
+  const strength = order.strength || parsed.strength;
+  const dosage = order.dosage || parsed.dosage;
+  const route = order.route || parsed.route;
+  const frequency = order.frequency || parsed.frequency;
+  
+  let frequency_times = order.frequency_times || [];
+  if (frequency_times.length === 0) {
+    if (frequency === 'BID') frequency_times = ['09:00', '17:00'];
+    else if (frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
+    else if (frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
+    else if (frequency === 'QHS') frequency_times = ['21:00'];
+    else if (frequency === 'PRN') frequency_times = [];
+    else frequency_times = ['09:00'];
+  }
+
+  const status = order.status === 'cancelled' ? 'discontinued' : 'active';
+  
+  return {
+    id: order.id,
+    org_id: order.org_id || staffOrgId,
+    patient_id: order.patient_id || patientId,
+    generic_name,
+    brand_name: '',
+    strength,
+    dose: order.dose || null,
+    dosage,
+    route,
+    frequency,
+    frequency_times,
+    indication: order.indication || '',
+    prn_reason: order.prn_reason || null,
+    prn_interval: order.prn_interval || null,
+    prescriber_id: order.ordering_physician_id || null,
+    prescriber_name: order.ordering_physician_id || 'Attending Physician',
+    start_date: order.signed_at || order.created_at || new Date().toISOString(),
+    end_date: order.status === 'cancelled' ? (order.updated_at || new Date().toISOString()) : null,
+    status,
+    requires_vitals: order.requires_vitals || false,
+    vital_type: order.vital_type || null,
+    vital_threshold_low: order.vital_threshold_low || null,
+    vital_threshold_high: order.vital_threshold_high || null,
+    is_psychotropic: order.is_psychotropic || false,
+    special_instructions: order.special_instructions || order.order_text || '',
+    order_id: order.id,
+    order_type: order.order_method || 'direct',
+    created_at: order.created_at || new Date().toISOString(),
+    updated_at: order.updated_at || new Date().toISOString(),
+    rxcui: order.rxcui || null,
+  };
+};
 
 export default function MARPrintPage() {
   const { id: patientId } = useParams() as { id: string };
@@ -61,12 +144,21 @@ export default function MARPrintPage() {
           }
         }
 
-        // 3. Fetch Medications
-        const medsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'medications');
-        const medsQuery = query(medsRef, where('status', '==', 'active'));
+        // 3. Fetch Medications from active provider_orders (Option A SSOT)
+        const medsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders');
+        const medsQuery = query(
+          medsRef,
+          where('order_type', '==', 'medication'),
+          where('status', 'in', ['signed', 'acknowledged', 'sent_to_pharmacy'])
+        );
         const medsSnap = await getDocs(medsQuery);
-        const allMeds = medsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medication));
-        setMedications(allMeds);
+        const orders = medsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProviderOrder));
+        const projectedMeds = orders.map(order => mapOrderToMedication(order, organization.id, patientId));
+        // Sort in-memory to match active MAR ordering
+        const sortedMeds = projectedMeds.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setMedications(sortedMeds);
 
         // 3. Fetch MAR Entries for the month
         const start = startOfMonth(targetDate).toISOString();

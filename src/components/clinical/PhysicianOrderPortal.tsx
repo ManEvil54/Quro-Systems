@@ -160,60 +160,12 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     if (!staff || !organization) return;
     setIsSaving(true);
     try {
-      const isTelephone = order.order_method === 'telephone';
-      
       const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', order.id);
       await updateDoc(docRef, {
         status: 'signed',
         signed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-
-      // Map frequency to standard MAR times
-      let frequency_times = ['09:00'];
-      if (order.frequency === 'BID') frequency_times = ['09:00', '17:00'];
-      else if (order.frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
-      else if (order.frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
-      else if (order.frequency === 'QHS') frequency_times = ['21:00'];
-      else if (order.frequency === 'PRN') frequency_times = [];
-
-      const orderData = {
-        generic_name: order.generic_name || '',
-        strength: order.strength || '',
-        dose: order.dose || null,
-        dosage: order.dosage || '',
-        route: order.route || 'PO',
-        frequency: order.frequency || 'QD',
-        frequency_times,
-        indication: order.indication || '',
-        prn_reason: order.prn_reason || null,
-        prn_interval: order.prn_interval || null,
-        is_psychotropic: order.is_psychotropic || false,
-        requires_vitals: order.requires_vitals || false,
-        vital_type: order.requires_vitals ? order.vital_type : null,
-        special_instructions: order.special_instructions || '',
-        org_id: organization.id,
-        patient_id: patientId,
-        order_type: order.order_method || 'direct',
-        prescriber_id: order.ordering_physician_id || staff.id,
-        prescriber_name: isTelephone 
-          ? `Dr. Physician` 
-          : `${staff.first_name} ${staff.last_name}, ${staff.credential}`,
-        transcribed_by_id: isTelephone ? staff.id : null,
-        transcribed_by_name: isTelephone ? `${staff.first_name} ${staff.last_name}` : null,
-        status: 'active', 
-        start_date: new Date().toISOString(),
-        vital_threshold_low: order.vital_threshold_low ? Number(order.vital_threshold_low) : null,
-        vital_threshold_high: order.vital_threshold_high ? Number(order.vital_threshold_high) : null,
-        order_id: order.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      await addDoc(
-        collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
-        orderData
-      );
 
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
         action: 'MED_ORDER_SIGNED',
@@ -452,59 +404,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         providerOrderRefId = docRef.id;
       }
 
-      // If we signed the order, create or update the active medication document so that it goes live on the eMAR!
-      if (targetStatus === 'signed' && providerOrderRefId) {
-        const frequency_times = newOrder.frequency === 'PRN' ? [] : (newOrder.custom_times || ['09:00']);
 
-        const orderData = {
-          generic_name: newOrder.generic_name,
-          strength: newOrder.strength,
-          dose: newOrder.dose || null,
-          dosage: newOrder.dosage,
-          route: newOrder.route,
-          frequency: newOrder.frequency,
-          frequency_times,
-          indication: newOrder.indication,
-          prn_reason: newOrder.prn_reason || null,
-          prn_interval: newOrder.prn_interval || null,
-          is_psychotropic: newOrder.is_psychotropic,
-          requires_vitals: newOrder.requires_vitals,
-          vital_type: newOrder.requires_vitals ? newOrder.vital_type : null,
-          special_instructions: newOrder.special_instructions,
-          org_id: organization.id,
-          patient_id: patientId,
-          order_type: newOrder.order_type,
-          prescriber_id: isTelephone ? newOrder.physician_id : staff.id,
-          prescriber_name: isTelephone 
-            ? newOrder.physician_name 
-            : `${staff.first_name} ${staff.last_name}, ${staff.credential}`,
-          transcribed_by_id: isTelephone ? staff.id : null,
-          transcribed_by_name: isTelephone ? `${staff.first_name} ${staff.last_name}` : null,
-          status: 'active', 
-          start_date: new Date().toISOString(),
-          vital_threshold_low: newOrder.requires_vitals ? Number(newOrder.vital_threshold_low) : null,
-          vital_threshold_high: newOrder.requires_vitals ? Number(newOrder.vital_threshold_high) : null,
-          order_id: providerOrderRefId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-
-        // Check if a medication with this order_id already exists to avoid duplicates
-        const medQ = query(
-          collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
-          where('order_id', '==', providerOrderRefId)
-        );
-        const medSnap = await getDocs(medQ);
-        if (!medSnap.empty) {
-          const medDocId = medSnap.docs[0].id;
-          await updateDoc(doc(db, 'organizations', organization.id, 'patients', patientId, 'medications', medDocId), orderData);
-        } else {
-          await addDoc(
-            collection(db, 'organizations', organization.id, 'patients', patientId, 'medications'),
-            orderData
-          );
-        }
-      }
 
       // Log to Audit Trail
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {

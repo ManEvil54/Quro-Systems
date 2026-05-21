@@ -1,10 +1,10 @@
 // ============================================================
 // Quro — Medication Management Hook
-// Handles patient medication orders and MAR validation
+// Handles patient medication orders and MAR validation using Option A (SSOT)
 // ============================================================
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   collection, 
   query, 
@@ -12,13 +12,12 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  serverTimestamp,
-  orderBy
+  where
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Medication, ProviderOrder, MedRoute, MedFrequency } from '@/lib/firebase/types';
-import { DEMO_MEDICATIONS, DEMO_ORDERS } from '@/lib/demoData';
+import { DEMO_ORDERS } from '@/lib/demoData';
 
 // Helper to parse unstructured order text into structured medication fields
 const parseOrderText = (text: string) => {
@@ -47,14 +46,68 @@ const parseOrderText = (text: string) => {
   return { generic_name, strength, dosage: '1 tablet', route, frequency };
 };
 
+// Maps a ProviderOrder document to a Medication object schema on the fly
+const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientId: string): Medication => {
+  const parsed = parseOrderText(order.order_text || '');
+  
+  const generic_name = order.generic_name || parsed.generic_name;
+  const strength = order.strength || parsed.strength;
+  const dosage = order.dosage || parsed.dosage;
+  const route = order.route || parsed.route;
+  const frequency = order.frequency || parsed.frequency;
+  
+  let frequency_times = order.frequency_times || [];
+  if (frequency_times.length === 0) {
+    if (frequency === 'BID') frequency_times = ['09:00', '17:00'];
+    else if (frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
+    else if (frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
+    else if (frequency === 'QHS') frequency_times = ['21:00'];
+    else if (frequency === 'PRN') frequency_times = [];
+    else frequency_times = ['09:00'];
+  }
+
+  // Derive active/discontinued status from order status
+  const status = order.status === 'cancelled' ? 'discontinued' : 'active';
+  
+  return {
+    id: order.id, // Primary Binding: Medication ID mirrors the Physician Order ID exactly
+    org_id: order.org_id || staffOrgId,
+    patient_id: order.patient_id || patientId,
+    generic_name,
+    brand_name: '',
+    strength,
+    dose: order.dose || null,
+    dosage,
+    route,
+    frequency,
+    frequency_times,
+    indication: order.indication || '',
+    prn_reason: order.prn_reason || null,
+    prn_interval: order.prn_interval || null,
+    prescriber_id: order.ordering_physician_id || null,
+    prescriber_name: order.ordering_physician_id || 'Attending Physician',
+    start_date: order.signed_at || order.created_at || new Date().toISOString(),
+    end_date: order.status === 'cancelled' ? (order.updated_at || new Date().toISOString()) : null,
+    status,
+    requires_vitals: order.requires_vitals || false,
+    vital_type: order.vital_type || null,
+    vital_threshold_low: order.vital_threshold_low || null,
+    vital_threshold_high: order.vital_threshold_high || null,
+    is_psychotropic: order.is_psychotropic || false,
+    special_instructions: order.special_instructions || order.order_text || '',
+    order_id: order.id,
+    order_type: order.order_method || 'direct',
+    created_at: order.created_at || new Date().toISOString(),
+    updated_at: order.updated_at || new Date().toISOString(),
+    rxcui: order.rxcui || null,
+  };
+};
+
 export function useMedications(patientId: string) {
   const { staff } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Set to track order IDs being processed to avoid duplicate creations
-  const transcribingOrderIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!staff?.org_id || !patientId) {
@@ -62,278 +115,136 @@ export function useMedications(patientId: string) {
       return;
     }
 
-    const medsRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'medications');
-    const mq = query(medsRef, orderBy('created_at', 'desc'));
-
+    // Direct Physician Order Reference (Option A Single Source of Truth)
     const ordersRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders');
-    const oq = query(ordersRef, orderBy('created_at', 'desc'));
+    
+    // Composite constraint structure optimized to prevent implicit index errors
+    const q = query(
+      ordersRef,
+      where('order_type', '==', 'medication'),
+      where('status', 'in', ['signed', 'acknowledged', 'sent_to_pharmacy', 'cancelled'])
+    );
 
-    let currentMeds: Medication[] = [];
-    let currentOrders: ProviderOrder[] = [];
-    let medsLoaded = false;
-    let ordersLoaded = false;
-
-    const syncAndSet = async (meds: Medication[], orders: ProviderOrder[]) => {
-      // 1. Map medications dynamically: If active but their matching order is cancelled, return as discontinued
-      const processedMeds = meds.map(med => {
-        if (med.status === 'active') {
-          const matchingOrder = orders.find(o => o.id === med.order_id);
-          if (matchingOrder && matchingOrder.status === 'cancelled') {
-            return { ...med, status: 'discontinued' as const };
-          }
-          const matchingDiscontinuedOrder = orders.find(o => 
-            o.status === 'cancelled' && 
-            (o.id === med.order_id || (med.generic_name && o.order_text.toLowerCase().includes(med.generic_name.toLowerCase())))
-          );
-          if (matchingDiscontinuedOrder) {
-            return { ...med, status: 'discontinued' as const };
-          }
-        }
-        return med;
-      });
-
-      // 2. Persistent Firestore Auto-discontinue sync:
-      // If any active medication in Firestore has a cancelled order, update it in the database.
-      for (const med of meds) {
-        if (med.status === 'active') {
-          const cancelledOrder = orders.find(o => 
-            o.status === 'cancelled' && 
-            (o.id === med.order_id || (med.generic_name && o.order_text.toLowerCase().includes(med.generic_name.toLowerCase())))
-          );
-          if (cancelledOrder) {
-            console.log(`Auto-sync: Discontinuing medication ${med.generic_name} due to cancelled provider order.`);
-            try {
-              const medRef = doc(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications', med.id);
-              await updateDoc(medRef, { status: 'discontinued', updated_at: serverTimestamp() });
-            } catch (err) {
-              console.error(`Failed to auto-discontinue medication ${med.id}:`, err);
-            }
-          }
-        }
-      }
-
-      // 3. Persistent Firestore Auto-transcribe sync:
-      // If any signed/acknowledged medication order in provider_orders does not have a medication document, create one.
-      for (const order of orders) {
-        if (order.order_type === 'medication' && order.status !== 'cancelled' && order.status !== 'draft') {
-          const matchingMed = meds.find(m => m.order_id === order.id);
-          if (!matchingMed && !transcribingOrderIds.current.has(order.id)) {
-            transcribingOrderIds.current.add(order.id);
-            console.log(`Auto-sync: Transcribing provider order ${order.id} to medications collection.`);
-            try {
-              const parsed = parseOrderText(order.order_text);
-              const generic_name = order.generic_name || parsed.generic_name;
-              const strength = order.strength || parsed.strength;
-              const dose = order.dose || null;
-              const dosage = order.dosage || parsed.dosage;
-              const route = order.route || parsed.route;
-              const frequency = order.frequency || parsed.frequency;
-              const indication = order.indication || '';
-              const prn_reason = order.prn_reason || null;
-              const prn_interval = order.prn_interval || null;
-              const is_psychotropic = order.is_psychotropic || false;
-              const requires_vitals = order.requires_vitals || false;
-              const vital_threshold_low = order.vital_threshold_low || null;
-              const vital_threshold_high = order.vital_threshold_high || null;
-              const vital_type = order.vital_type || null;
-
-              const newMedsRef = collection(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications');
-              
-              // Map frequency to standard MAR times
-              let frequency_times = order.frequency_times || ['09:00'];
-              if (!order.frequency_times || order.frequency_times.length === 0) {
-                if (frequency === 'BID') frequency_times = ['09:00', '17:00'];
-                else if (frequency === 'TID') frequency_times = ['09:00', '13:00', '17:00'];
-                else if (frequency === 'QID') frequency_times = ['09:00', '13:00', '17:00', '21:00'];
-                else if (frequency === 'QHS') frequency_times = ['21:00'];
-                else if (frequency === 'PRN') frequency_times = [];
-              }
-
-              await addDoc(newMedsRef, {
-                generic_name,
-                brand_name: '',
-                strength,
-                dose,
-                dosage,
-                route,
-                frequency,
-                frequency_times,
-                indication,
-                prn_reason,
-                prn_interval,
-                is_psychotropic,
-                requires_vitals,
-                vital_threshold_low,
-                vital_threshold_high,
-                vital_type,
-                start_date: order.signed_at || new Date().toISOString(),
-                status: 'active', // immediately active on MAR
-                special_instructions: order.special_instructions || order.order_text,
-                order_id: order.id,
-                rxcui: order.rxcui || null,
-                org_id: staff.org_id,
-                patient_id: patientId,
-                created_at: serverTimestamp(),
-                updated_at: serverTimestamp(),
-              });
-            } catch (err) {
-              console.error(`Failed to auto-transcribe order ${order.id}:`, err);
-            }
-          } else if (matchingMed) {
-            // Define unified target expected values to avoid mismatch / infinite auto-sync loops
-            const targetGenericName = order.generic_name || matchingMed.generic_name || 'Unknown Medication';
-            const targetStrength = order.strength || matchingMed.strength || 'As ordered';
-            const targetDose = order.dose || null;
-            const targetDosage = order.dosage || matchingMed.dosage || '1 tablet';
-            const targetRoute = order.route || matchingMed.route || 'PO';
-            const targetFrequency = order.frequency || matchingMed.frequency || 'QD';
-
-            let targetTimes: string[] = order.frequency_times || [];
-            if (targetTimes.length === 0) {
-              if (targetFrequency === 'BID') targetTimes = ['09:00', '17:00'];
-              else if (targetFrequency === 'TID') targetTimes = ['09:00', '13:00', '17:00'];
-              else if (targetFrequency === 'QID') targetTimes = ['09:00', '13:00', '17:00', '21:00'];
-              else if (targetFrequency === 'QHS') targetTimes = ['21:00'];
-              else if (targetFrequency === 'PRN') targetTimes = [];
-              else targetTimes = ['09:00'];
-            }
-
-            const targetIndication = order.indication || '';
-            const targetPrnReason = order.prn_reason || null;
-            const targetPrnInterval = order.prn_interval || null;
-            const targetIsPsychotropic = order.is_psychotropic || false;
-            const targetRequiresVitals = order.requires_vitals || false;
-            const targetVitalType = order.vital_type || null;
-            const targetVitalThresholdLow = order.vital_threshold_low || null;
-            const targetVitalThresholdHigh = order.vital_threshold_high || null;
-            const targetSpecialInstructions = order.special_instructions || '';
-
-            const medTimes = matchingMed.frequency_times || [];
-            const timesMatch = targetTimes.length === medTimes.length && targetTimes.every((t: string, idx: number) => t === medTimes[idx]);
-            
-            if (
-              matchingMed.generic_name !== targetGenericName ||
-              matchingMed.strength !== targetStrength ||
-              matchingMed.dose !== targetDose ||
-              matchingMed.dosage !== targetDosage ||
-              matchingMed.route !== targetRoute ||
-              matchingMed.frequency !== targetFrequency ||
-              !timesMatch ||
-              matchingMed.indication !== targetIndication ||
-              matchingMed.prn_reason !== targetPrnReason ||
-              matchingMed.prn_interval !== targetPrnInterval ||
-              matchingMed.is_psychotropic !== targetIsPsychotropic ||
-              matchingMed.requires_vitals !== targetRequiresVitals ||
-              matchingMed.vital_type !== targetVitalType ||
-              matchingMed.vital_threshold_low !== targetVitalThresholdLow ||
-              matchingMed.vital_threshold_high !== targetVitalThresholdHigh ||
-              matchingMed.special_instructions !== targetSpecialInstructions
-            ) {
-              console.log(`Auto-sync: Updating medication ${matchingMed.id} to match edited provider order ${order.id}`);
-              try {
-                const medRef = doc(db, 'organizations', staff.org_id!, 'patients', patientId, 'medications', matchingMed.id);
-                await updateDoc(medRef, {
-                  generic_name: targetGenericName,
-                  strength: targetStrength,
-                  dose: targetDose,
-                  dosage: targetDosage,
-                  route: targetRoute,
-                  frequency: targetFrequency,
-                  frequency_times: targetTimes,
-                  indication: targetIndication,
-                  prn_reason: targetPrnReason,
-                  prn_interval: targetPrnInterval,
-                  is_psychotropic: targetIsPsychotropic,
-                  requires_vitals: targetRequiresVitals,
-                  vital_type: targetVitalType,
-                  vital_threshold_low: targetVitalThresholdLow,
-                  vital_threshold_high: targetVitalThresholdHigh,
-                  special_instructions: targetSpecialInstructions,
-                  updated_at: serverTimestamp()
-                });
-              } catch (err) {
-                console.error(`Failed to auto-update medication ${matchingMed.id}:`, err);
-              }
-            }
-          }
-        }
-      }
-
-      setMedications(processedMeds);
-      setLoading(false);
-    };
-
-    const unsubscribeMeds = onSnapshot(mq, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Medication[];
-      
-      if (docs.length === 0 && DEMO_MEDICATIONS[patientId]) {
-        currentMeds = DEMO_MEDICATIONS[patientId];
-      } else {
-        currentMeds = docs;
-      }
-      
-      medsLoaded = true;
-      if (ordersLoaded) {
-        syncAndSet(currentMeds, currentOrders);
-      } else {
-        setMedications(currentMeds);
-      }
-    }, (err) => {
-      console.error('Error fetching medications:', err);
-      setError('Failed to load medications.');
-      setLoading(false);
-    });
-
-    const unsubscribeOrders = onSnapshot(oq, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as ProviderOrder[];
       
+      let currentOrders = docs;
       if (docs.length === 0 && DEMO_ORDERS[patientId]) {
-        currentOrders = DEMO_ORDERS[patientId];
-      } else {
-        currentOrders = docs;
+        currentOrders = DEMO_ORDERS[patientId].filter(o => 
+          o.order_type === 'medication' && 
+          ['signed', 'acknowledged', 'sent_to_pharmacy', 'cancelled'].includes(o.status)
+        );
       }
       
-      ordersLoaded = true;
-      if (medsLoaded) {
-        syncAndSet(currentMeds, currentOrders);
-      }
+      // Project all active and cancelled medication orders onto the Medication schema
+      const projectedMeds = currentOrders.map(order => 
+        mapOrderToMedication(order, staff.org_id!, patientId)
+      );
+
+      // client-side sorting by created_at desc to guarantee correct layout without Firestore index overhead
+      const sortedMeds = projectedMeds.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setMedications(sortedMeds);
+      setLoading(false);
     }, (err) => {
-      console.error('Error fetching orders for med sync:', err);
+      console.error('Error fetching medication orders:', err);
+      setError('Failed to load medications.');
+      setLoading(false);
     });
 
-    return () => {
-      unsubscribeMeds();
-      unsubscribeOrders();
-    };
+    return () => unsubscribe();
   }, [staff?.org_id, patientId]);
 
   const addMedication = async (data: Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => {
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
-    const medsRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'medications');
-    return await addDoc(medsRef, {
-      ...data,
+    const ordersRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders');
+    
+    const isPRN = data.frequency === 'PRN';
+    const frequencyText = isPRN 
+      ? `PRN (every ${data.prn_interval || '8 hours'} as needed for ${data.prn_reason || data.indication || 'pain'})` 
+      : data.frequency;
+    const orderText = `${data.generic_name} ${data.strength} - Dose: ${data.dose} (${data.dosage}) via ${data.route} ${frequencyText}${data.special_instructions ? `. Special Instructions: ${data.special_instructions}` : ''}`;
+
+    return await addDoc(ordersRef, {
       org_id: staff.org_id,
       patient_id: patientId,
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
+      facility_id: staff.facility_id || '',
+      ordering_physician_id: data.prescriber_id || staff.id,
+      order_type: 'medication',
+      order_text: orderText,
+      priority: 'routine',
+      status: 'acknowledged', // Nurse manual override is active immediately
+      order_method: data.order_type || 'telephone',
+      generic_name: data.generic_name,
+      strength: data.strength,
+      dose: data.dose || null,
+      dosage: data.dosage,
+      route: data.route,
+      frequency: data.frequency,
+      frequency_times: data.frequency_times || [],
+      indication: data.indication || '',
+      prn_reason: data.prn_reason || null,
+      prn_interval: data.prn_interval || null,
+      is_psychotropic: data.is_psychotropic || false,
+      requires_vitals: data.requires_vitals || false,
+      vital_type: data.requires_vitals ? data.vital_type : null,
+      vital_threshold_low: data.vital_threshold_low !== undefined && data.vital_threshold_low !== null ? Number(data.vital_threshold_low) : null,
+      vital_threshold_high: data.vital_threshold_high !== undefined && data.vital_threshold_high !== null ? Number(data.vital_threshold_high) : null,
+      special_instructions: data.special_instructions || '',
+      rxcui: data.rxcui || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      signed_at: new Date().toISOString(),
+      acknowledged_at: new Date().toISOString(),
     });
   };
 
   const updateMedication = async (medicationId: string, data: Partial<Medication>) => {
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
-    const medRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'medications', medicationId);
-    return await updateDoc(medRef, {
-      ...data,
-      updated_at: serverTimestamp(),
-    });
+    const orderRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders', medicationId);
+    
+    const orderUpdates: any = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (data.status !== undefined) {
+      if (data.status === 'discontinued') {
+        orderUpdates.status = 'cancelled';
+      } else if (data.status === 'active') {
+        orderUpdates.status = 'acknowledged';
+      }
+    }
+    
+    if (data.generic_name !== undefined) orderUpdates.generic_name = data.generic_name;
+    if (data.strength !== undefined) orderUpdates.strength = data.strength;
+    if (data.dose !== undefined) orderUpdates.dose = data.dose;
+    if (data.dosage !== undefined) orderUpdates.dosage = data.dosage;
+    if (data.route !== undefined) orderUpdates.route = data.route;
+    if (data.frequency !== undefined) orderUpdates.frequency = data.frequency;
+    if (data.frequency_times !== undefined) orderUpdates.frequency_times = data.frequency_times;
+    if (data.indication !== undefined) orderUpdates.indication = data.indication;
+    if (data.prn_reason !== undefined) orderUpdates.prn_reason = data.prn_reason;
+    if (data.prn_interval !== undefined) orderUpdates.prn_interval = data.prn_interval;
+    if (data.is_psychotropic !== undefined) orderUpdates.is_psychotropic = data.is_psychotropic;
+    if (data.requires_vitals !== undefined) orderUpdates.requires_vitals = data.requires_vitals;
+    if (data.vital_type !== undefined) orderUpdates.vital_type = data.vital_type;
+    if (data.vital_threshold_low !== undefined) {
+      orderUpdates.vital_threshold_low = data.vital_threshold_low !== null ? Number(data.vital_threshold_low) : null;
+    }
+    if (data.vital_threshold_high !== undefined) {
+      orderUpdates.vital_threshold_high = data.vital_threshold_high !== null ? Number(data.vital_threshold_high) : null;
+    }
+    if (data.special_instructions !== undefined) orderUpdates.special_instructions = data.special_instructions;
+    if (data.rxcui !== undefined) orderUpdates.rxcui = data.rxcui;
+
+    return await updateDoc(orderRef, orderUpdates);
   };
 
   return { medications, loading, error, addMedication, updateMedication };
