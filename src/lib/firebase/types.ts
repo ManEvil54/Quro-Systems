@@ -12,7 +12,7 @@ export type StaffRole =
   | 'billing';       // Support
 export type MedRoute = 'PO' | 'SL' | 'IM' | 'IV' | 'SC' | 'PR' | 'TOP' | 'INH' | 'OPH' | 'OTC' | 'NGT' | 'PATCH';
 export type MedFrequency = 'QD' | 'BID' | 'TID' | 'QID' | 'Q4H' | 'Q6H' | 'Q8H' | 'Q12H' | 'QHS' | 'QAM' | 'QPM' | 'PRN' | 'STAT' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
-export type MedStatus = 'active' | 'discontinued' | 'on_hold' | 'completed' | 'signed';
+export type MedStatus = 'active' | 'discontinued' | 'on_hold' | 'completed' | 'signed' | 'pending_acknowledgment';
 export type OrderStatus = 'draft' | 'signed' | 'acknowledged' | 'sent_to_pharmacy' | 'filled' | 'cancelled';
 export type Shift = 'day' | 'evening' | 'night';
 

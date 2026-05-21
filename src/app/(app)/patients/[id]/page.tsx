@@ -56,6 +56,7 @@ import GT_Feeding_Inlay from '@/components/clinical/GTFeedingInlay';
 import CarePlanManager from '@/components/clinical/CarePlanManager';
 import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
+import OrderAcknowledgment from '@/components/clinical/OrderAcknowledgment';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 // Helper to safely format raw Firestore timestamps or ISO strings
@@ -1037,6 +1038,7 @@ export default function PatientChartPage() {
 
           {activeTab === 'medications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <OrderAcknowledgment patientId={id} />
               <MedicationList patientId={id} />
             </div>
           )}
@@ -1133,44 +1135,54 @@ export default function PatientChartPage() {
                       >
                         <Printer size={14} /> Print Hybrid MAR
                       </button>
-                      <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
-                        <div className="w-2 h-2 rounded-full bg-rose-400 ml-2 animate-pulse" /> Overdue
-                      </div>
+                      {organization?.clinical_settings?.emar_mode !== false && (
+                        <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          <div className="w-2 h-2 rounded-full bg-blue-400" /> Upcoming
+                          <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" /> Ready
+                          <div className="w-2 h-2 rounded-full bg-rose-400 ml-2 animate-pulse" /> Overdue
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {scheduledMeds.length > 0 ? scheduledMeds.map((med) => {
+                      const isElectronicMode = organization?.clinical_settings?.emar_mode !== false;
                       // Logic for Time Window Alerts
                       // Simplified for demo: assume current time vs 09:00
-                      const status = med.is_psychotropic ? 'overdue' : 'ready'; // Mock status
+                      const status = isElectronicMode ? (med.is_psychotropic ? 'overdue' : 'ready') : 'scheduled';
                       const requiresVitals = med.generic_name.toLowerCase().includes('lisinopril') || med.generic_name.toLowerCase().includes('metoprolol');
 
                       return (
                         <div 
                           key={med.id} 
                           className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
-                            status === 'overdue' ? 'shadow-2xl shadow-rose-100' : 
-                            status === 'ready' ? 'shadow-2xl shadow-emerald-100' : 'shadow-lg shadow-slate-100'
+                            isElectronicMode && status === 'overdue' ? 'shadow-2xl shadow-rose-100' : 
+                            isElectronicMode && status === 'ready' ? 'shadow-2xl shadow-emerald-100' : 'shadow-lg shadow-slate-100'
                           }`}
                         >
                           {/* Status Pulse Glow */}
                           <div className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 ${
-                            status === 'overdue' ? 'bg-rose-500' : 
-                            status === 'ready' ? 'bg-emerald-500' : 'bg-blue-500'
+                            isElectronicMode 
+                              ? (status === 'overdue' ? 'bg-rose-500' : status === 'ready' ? 'bg-emerald-500' : 'bg-blue-500')
+                              : 'bg-slate-500'
                           }`} />
                           
                           <div className="relative glass-card p-8 bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] h-full flex flex-col">
                             {/* Top Badge */}
                             <div className="flex items-center justify-between mb-6">
-                              <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                status === 'overdue' ? 'bg-rose-500 text-white' : 
-                                status === 'ready' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
-                              }`}>
-                                {status === 'overdue' ? 'Overdue 1h 22m' : status === 'ready' ? 'Ready Now' : 'Upcoming (12:00)'}
-                              </span>
+                              {isElectronicMode ? (
+                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  status === 'overdue' ? 'bg-rose-500 text-white' : 
+                                  status === 'ready' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                                }`}>
+                                  {status === 'overdue' ? 'Overdue 1h 22m' : status === 'ready' ? 'Ready Now' : 'Upcoming (12:00)'}
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 border border-slate-200">
+                                  Scheduled
+                                </span>
+                              )}
                             </div>
 
                             <div className="mb-6">

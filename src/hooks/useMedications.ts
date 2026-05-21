@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Medication, ProviderOrder, MedRoute, MedFrequency } from '@/lib/firebase/types';
+import type { Medication, ProviderOrder, MedRoute, MedFrequency, MedStatus } from '@/lib/firebase/types';
 import { DEMO_ORDERS } from '@/lib/demoData';
 
 // Helper to parse unstructured order text into structured medication fields
@@ -66,8 +66,16 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     else frequency_times = ['09:00'];
   }
 
-  // Derive active/discontinued status from order status
-  const status = order.status === 'cancelled' ? 'discontinued' : 'active';
+  // Derive active/discontinued/pending status from order status
+  let status: MedStatus = 'pending_acknowledgment';
+  if (order.status === 'cancelled') {
+    status = 'discontinued';
+  } else if (order.status === 'signed') {
+    status = 'pending_acknowledgment';
+  } else if (['acknowledged', 'sent_to_pharmacy', 'filled'].includes(order.status)) {
+    status = 'active';
+  }
+
   
   return {
     id: order.id, // Primary Binding: Medication ID mirrors the Physician Order ID exactly
@@ -122,7 +130,7 @@ export function useMedications(patientId: string) {
     const q = query(
       ordersRef,
       where('order_type', '==', 'medication'),
-      where('status', 'in', ['signed', 'acknowledged', 'sent_to_pharmacy', 'cancelled'])
+      where('status', 'in', ['signed', 'acknowledged', 'sent_to_pharmacy', 'filled', 'cancelled'])
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -135,7 +143,7 @@ export function useMedications(patientId: string) {
       if (docs.length === 0 && DEMO_ORDERS[patientId]) {
         currentOrders = DEMO_ORDERS[patientId].filter(o => 
           o.order_type === 'medication' && 
-          ['signed', 'acknowledged', 'sent_to_pharmacy', 'cancelled'].includes(o.status)
+          ['signed', 'acknowledged', 'sent_to_pharmacy', 'filled', 'cancelled'].includes(o.status)
         );
       }
       
@@ -171,6 +179,8 @@ export function useMedications(patientId: string) {
       : data.frequency;
     const orderText = `${data.generic_name} ${data.strength} - Dose: ${data.dose} (${data.dosage}) via ${data.route} ${frequencyText}${data.special_instructions ? `. Special Instructions: ${data.special_instructions}` : ''}`;
 
+    const isTelephone = data.order_type === 'telephone' || !data.order_type;
+
     return await addDoc(ordersRef, {
       org_id: staff.org_id,
       patient_id: patientId,
@@ -179,8 +189,8 @@ export function useMedications(patientId: string) {
       order_type: 'medication',
       order_text: orderText,
       priority: 'routine',
-      status: 'acknowledged', // Nurse manual override is active immediately
-      order_method: data.order_type || 'telephone',
+      status: isTelephone ? 'acknowledged' : 'signed', // Telephone orders go live immediately, direct orders need nursing ack
+      order_method: isTelephone ? 'telephone' : 'direct',
       generic_name: data.generic_name,
       strength: data.strength,
       dose: data.dose || null,
@@ -200,8 +210,9 @@ export function useMedications(patientId: string) {
       rxcui: data.rxcui || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      signed_at: new Date().toISOString(),
-      acknowledged_at: new Date().toISOString(),
+      signed_at: isTelephone ? null : new Date().toISOString(),
+      acknowledged_at: isTelephone ? new Date().toISOString() : null,
+      acknowledging_nurse_id: isTelephone ? staff.id : null,
     });
   };
 

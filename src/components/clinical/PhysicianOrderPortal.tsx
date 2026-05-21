@@ -183,6 +183,35 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     }
   };
 
+  const handleCoSignOrder = async (orderId: string) => {
+    if (!staff || !organization) return;
+    setIsSaving(true);
+    try {
+      const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', orderId);
+      await updateDoc(docRef, {
+        signed_at: new Date().toISOString(),
+        ordering_physician_id: staff.id, // Formalizing physician responsibility
+        updated_at: new Date().toISOString()
+      });
+
+      const order = providerOrders.find(o => o.id === orderId);
+
+      await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+        action: 'MED_ORDER_CO_SIGNED',
+        staff_id: staff.id,
+        patient_id: patientId,
+        details: `Physician co-signed telephone order for ${order?.generic_name || order?.order_text || 'Medication/Diet'}`,
+        timestamp: new Date().toISOString()
+      });
+
+      fetchOrders();
+    } catch (err) {
+      console.error('Error co-signing order:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // New Order Form State
   const [orderCategory, setOrderCategory] = useState<'medication' | 'diet'>('medication');
   
@@ -321,8 +350,11 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
             order_type: 'diet',
             order_text: dietString + (newDietOrder.instructions ? `. Instructions: ${newDietOrder.instructions}` : ''),
             priority: 'routine',
-            status: 'signed',
+            status: isTelephone ? 'acknowledged' : 'signed',
             order_method: newDietOrder.order_type,
+            signed_at: isTelephone ? null : new Date().toISOString(),
+            acknowledged_at: isTelephone ? new Date().toISOString() : null,
+            acknowledging_nurse_id: isTelephone ? staff.id : null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -365,7 +397,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         order_text: orderText,
         rxcui: newOrder.rxcui,
         priority: 'routine',
-        status: targetStatus,
+        status: targetStatus === 'signed' && isTelephone ? 'acknowledged' : targetStatus,
         order_method: newOrder.order_type,
         generic_name: newOrder.generic_name,
         strength: newOrder.strength,
@@ -387,7 +419,13 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       };
 
       if (targetStatus === 'signed') {
-        providerOrderData.signed_at = new Date().toISOString();
+        if (isTelephone) {
+          providerOrderData.signed_at = null as any;
+          providerOrderData.acknowledged_at = new Date().toISOString();
+          providerOrderData.acknowledging_nurse_id = staff.id;
+        } else {
+          providerOrderData.signed_at = new Date().toISOString();
+        }
       }
 
       if (editingDraftId) {
@@ -449,6 +487,71 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           </button>
         )}
       </div>
+
+      {/* Co-Sign Portal Section */}
+      {staff && staff.role === 'physician' && (
+        (() => {
+          const pendingCoSign = providerOrders.filter(o => 
+            o.order_method === 'telephone' && 
+            !o.signed_at && 
+            o.status !== 'cancelled'
+          );
+          if (pendingCoSign.length === 0) return null;
+
+          return (
+            <div className="space-y-4 mb-8 bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-[2.5rem] p-8 animate-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-teal-900/20">
+                    <ShieldCheck size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-quro-charcoal uppercase tracking-tight">Orders Pending Co-Signature</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CFR Part 11 / HIPAA Compliant Co-Signature Portal</p>
+                  </div>
+                </div>
+                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+                  {pendingCoSign.length} Pending
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {pendingCoSign.map(order => (
+                  <div key={order.id} className="bg-white/80 border border-slate-100 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:bg-white hover:shadow-md">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
+                          order.order_type === 'diet' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'
+                        }`}>
+                          {order.order_type}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold">
+                          Transcribed by Nurse @ {order.created_at ? safeFormat(order.created_at, 'MMM dd, HH:mm') : ''}
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-quro-charcoal uppercase leading-snug">
+                        {order.generic_name || order.order_text?.split(' - ')[0] || 'Clinical Order'} {order.strength || ''}
+                      </h4>
+                      <p className="text-xs font-semibold text-slate-600">
+                        {order.order_text}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => handleCoSignOrder(order.id)}
+                      disabled={isSaving}
+                      className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-teal-900/15 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <ShieldCheck size={16} />
+                      Co-Sign Order
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()
+      )}
 
       {/* New Order Form */}
       {isOrdering && (
@@ -952,11 +1055,19 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                     <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
                       order.status === 'draft' 
                         ? 'bg-amber-100 text-amber-700 border border-amber-300' 
-                        : order.status === 'signed' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-emerald-100 text-emerald-700'
+                        : (order.order_method === 'telephone' && !order.signed_at)
+                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                          : order.status === 'signed' 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'bg-emerald-100 text-emerald-700'
                     }`}>
-                      {order.status === 'draft' ? 'Draft / Unsigned' : order.status === 'signed' ? 'Signed / Pending Ack' : order.status}
+                      {order.status === 'draft' 
+                        ? 'Draft / Unsigned' 
+                        : (order.order_method === 'telephone' && !order.signed_at)
+                          ? 'T.O. / Pending MD Signature'
+                          : order.status === 'signed' 
+                            ? 'Signed / Pending Ack' 
+                            : order.status}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
