@@ -8,14 +8,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
   Users,
-  Pill,
   ClipboardList,
   Activity,
   ShieldAlert,
+  Shield,
   Settings,
   LogOut,
   Building2,
-  Stethoscope,
   ChevronDown,
   Ghost
 } from 'lucide-react';
@@ -77,8 +76,7 @@ export default function Sidebar() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/patients', label: 'Patients', icon: Activity },
-    { href: '/orders', label: 'Clinical Orders', icon: Stethoscope },
-    { href: '/medications', label: 'MAR Grid', icon: Pill },
+    { href: '/falls', label: 'Safety & Incidents', icon: ShieldAlert },
     { href: '/handover', label: 'Handover', icon: ClipboardList },
   ];
 
@@ -235,6 +233,15 @@ export default function Sidebar() {
             >
               <Settings size={18} />
               <span className="font-bold">Global Settings</span>
+            </Link>
+            <Link
+              href="/audit"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                pathname === '/audit' ? 'bg-white/5 text-teal-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Shield size={18} />
+              <span className="font-bold">Compliance Audits</span>
             </Link>
           </div>
         )}
