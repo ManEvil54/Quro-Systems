@@ -17,7 +17,7 @@ import {
 import { collection, query, where, getDocs, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Medication, ProviderOrder, MedRoute, MedFrequency } from '@/lib/firebase/types';
+import type { Medication, ProviderOrder, MedRoute, MedFrequency, MedStatus } from '@/lib/firebase/types';
 import { format } from 'date-fns';
 import { safeFormat } from '@/lib/dateUtils';
 
@@ -68,7 +68,14 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     else frequency_times = ['09:00'];
   }
 
-  const status = order.status === 'cancelled' ? 'discontinued' : 'active';
+  let status: MedStatus = 'pending_acknowledgment';
+  if (order.status === 'cancelled') {
+    status = 'discontinued';
+  } else if (order.status === 'signed') {
+    status = 'pending_acknowledgment';
+  } else if (['acknowledged', 'sent_to_pharmacy', 'filled'].includes(order.status)) {
+    status = 'active';
+  }
   
   return {
     id: order.id,

@@ -9,7 +9,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Patient, Medication, MAREntry, ProviderOrder, MedRoute, MedFrequency } from '@/lib/firebase/types';
+import type { Patient, Medication, MAREntry, ProviderOrder, MedRoute, MedFrequency, MedStatus } from '@/lib/firebase/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Edit2, Save, Plus, Trash2, Printer } from 'lucide-react';
 
@@ -60,7 +60,14 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     else frequency_times = ['09:00'];
   }
 
-  const status = order.status === 'cancelled' ? 'discontinued' : 'active';
+  let status: MedStatus = 'pending_acknowledgment';
+  if (order.status === 'cancelled') {
+    status = 'discontinued';
+  } else if (order.status === 'signed') {
+    status = 'pending_acknowledgment';
+  } else if (['acknowledged', 'sent_to_pharmacy', 'filled'].includes(order.status)) {
+    status = 'active';
+  }
   
   return {
     id: order.id,
