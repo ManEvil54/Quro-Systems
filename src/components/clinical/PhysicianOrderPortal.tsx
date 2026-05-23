@@ -78,6 +78,27 @@ const calculateDosageFormQty = (dose: string, strength: string, currentDosage: s
   return `${ratio} ${formName}`;
 };
 
+// Helper to evaluate if a medication belongs to a psychotropic class (Antipsychotic, Antianxiety, Antidepressant, Hypnotic)
+const isPsychotropicClass = (genericName: string): boolean => {
+  const nameClean = (genericName || '').toLowerCase().trim();
+  // Find in COMMON_DRUGS library
+  const drug = COMMON_DRUGS.find(d => 
+    d.generic.toLowerCase() === nameClean || 
+    (d.brand && d.brand.toLowerCase() === nameClean) ||
+    nameClean.includes(d.generic.toLowerCase())
+  );
+  if (drug) {
+    if (drug.is_psychotropic) return true;
+    const cls = (drug.class || '').toLowerCase();
+    if (cls.includes('antipsychotic') || cls.includes('antianxiety') || cls.includes('anxiolytic') || cls.includes('antidepressant') || cls.includes('hypnotic')) {
+      return true;
+    }
+  }
+  // Fallback string matching for typical psychotropic classes
+  const classes = ['antipsychotic', 'anxiolytic', 'antianxiety', 'antidepressant', 'hypnotic', 'sedative'];
+  return classes.some(cls => nameClean.includes(cls));
+};
+
 interface Props {
   patientId: string;
 }
@@ -472,6 +493,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         }
       }
 
+      // Evaluate if the incoming order belongs to a psychotropic class
+      const isPsych = newOrder.is_psychotropic || isPsychotropicClass(newOrder.generic_name);
+      let parentOrderId = editingDraftId;
+
       if (editingDraftId) {
         // Update existing draft order
         const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', editingDraftId);
@@ -479,10 +504,45 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       } else {
         // Create new order
         providerOrderData.created_at = new Date().toISOString();
-        await addDoc(
+        const mainOrderRef = await addDoc(
           collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
           providerOrderData
         );
+        parentOrderId = mainOrderRef.id;
+      }
+
+      // Generate secondary child order for shift-level psychotropic monitoring
+      const isSigned = targetStatus === 'signed';
+      if (isPsych && isSigned && parentOrderId) {
+        const childQuery = query(
+          collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+          where('parent_order_id', '==', parentOrderId)
+        );
+        const childSnap = await getDocs(childQuery);
+        if (childSnap.empty) {
+          const childOrderData = {
+            org_id: organization.id,
+            patient_id: patientId,
+            facility_id: patient?.facility_id || '',
+            ordering_physician_id: isTelephone ? newOrder.physician_id : staff.id,
+            order_type: 'treatment',
+            order_text: `Psychotropic Monitoring: Check patient for side effects related to ${newOrder.generic_name} ${newOrder.strength || ''}. Document findings.`,
+            title: `Psychotropic Monitoring: ${newOrder.generic_name}`,
+            instructions: `Monitor for shift-level side effects related to ${newOrder.generic_name} ${newOrder.strength || ''} (e.g., sedation, EPS, gait instability, orthostatic changes). Log in shift logs.`,
+            priority: 'routine',
+            status: targetStatus === 'signed' && isTelephone ? 'acknowledged' : targetStatus,
+            frequency: 'QD',
+            frequency_times: ['DAY', 'EVENING', 'NIGHT'], // Shift-level TAR tracking
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            parent_order_id: parentOrderId
+          };
+          
+          await addDoc(
+            collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+            childOrderData
+          );
+        }
       }
 
       // Log to Audit Trail
