@@ -1028,7 +1028,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         { title: "Vitals Check: BP & Pulse", instructions: "Check blood pressure and heart rate twice daily (AM and PM shift)." },
                         { title: "Turn & Position", instructions: "Turn and position patient every 2 hours to prevent pressure injuries." },
                         { title: "Trach Care", instructions: "Perform tracheostomy care and suctioning every shift and PRN." },
-                        { title: "GT Flush", instructions: "Flush gastrostomy tube with 30mL water before and after feeding." }
+                        { title: "GT Flush", instructions: "Flush gastrostomy tube with 30mL water before and after feeding." },
+                        { title: "Bowel Movement Charting", instructions: "Monitor and record bowel movements every shift. Document size, consistency, and character." }
                       ].map((preset) => (
                         <button
                           key={preset.title}
