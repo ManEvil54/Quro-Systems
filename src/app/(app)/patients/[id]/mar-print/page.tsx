@@ -1,6 +1,6 @@
 // ============================================================
-// Quro — Surveyor-Grade MAR Binder Print ready
-// Configuration: Landscape Letter Layout with Blank Matrix
+// Quro — Surveyor-Grade MAR & TAR Print Engine
+// Configuration: Landscape Letter Layout with Combined MAR/TAR Matrix
 // ============================================================
 "use client";
 
@@ -10,22 +10,23 @@ import { collection, query, where, getDocs, getDoc, doc } from "firebase/firesto
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface ProjectedMedication {
+interface ProjectedOrder {
   id: string;
-  generic_name: string;
-  strength: string;
-  route: string;
+  title: string;
+  details: string;
   frequency: string;
   frequency_times: string[];
+  order_type: string;
 }
 
-export default function MarPrintPage() {
+export default function MarTarPrintPage() {
   const params = useParams() as { id: string };
   const { organization } = useAuth();
   
-  const [medications, setMedications] = useState<ProjectedMedication[]>([]);
+  const [medications, setMedications] = useState<ProjectedOrder[]>([]);
+  const [treatments, setTreatments] = useState<ProjectedOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Patient Details State for dynamic surveyor header
   const [patientName, setPatientName] = useState("");
   const [patientRoom, setPatientRoom] = useState("");
@@ -33,12 +34,8 @@ export default function MarPrintPage() {
   const [patientAllergies, setPatientAllergies] = useState<string[]>([]);
   const [currentMonthName, setCurrentMonthName] = useState("");
 
-  // Generate an array representing the 31 days of the month for the grid headers
-  const totalDays = 31;
-  const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
-  
-  // Define how many blank manual entry rows to inject at the bottom of the sheet
-  const blankRowsCount = 4; 
+  const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
+  const blankRowsCount = 3;
 
   useEffect(() => {
     const month = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
@@ -50,7 +47,7 @@ export default function MarPrintPage() {
       if (!organization || !params.id) return;
       
       try {
-        // 1. Fetch Patient Record dynamically
+        // 1. Fetch Patient Record dynamically for header card
         const pDoc = await getDoc(doc(db, "organizations", organization.id, "patients", params.id));
         if (pDoc.exists()) {
           const pData = pDoc.data();
@@ -66,43 +63,52 @@ export default function MarPrintPage() {
           }
         }
 
-        // 2. Query Active Provider Orders Projection (Option A SSOT)
+        // 2. Query All Active Provider Orders (Option A SSOT)
         const ordersRef = collection(db, "organizations", organization.id, "patients", params.id, "provider_orders");
         const q = query(
           ordersRef,
-          where("order_type", "==", "medication"),
           where("status", "in", ["signed", "acknowledged", "sent_to_pharmacy", "filled"])
         );
         
         const snapshot = await getDocs(q);
-        const projected: ProjectedMedication[] = [];
+        const meds: ProjectedOrder[] = [];
+        const txs: ProjectedOrder[] = [];
         
         snapshot.forEach((doc) => {
           const data = doc.data();
+          const orderType = data.order_type || "medication";
           
           // Parse times fallback
           let times = data.frequency_times || [];
           if (times.length === 0) {
             const freq = (data.frequency || "QD").toUpperCase();
             if (freq === "BID") times = ["09:00", "17:00"];
-            else if (freq === "TID") times = ["09:00", "13:00", '17:00'];
+            else if (freq === "TID") times = ["09:00", "13:00", "17:00"];
             else if (freq === "QID") times = ["09:00", "13:00", "17:00", "21:00"];
             else if (freq === "QHS") times = ["21:00"];
             else if (freq === "PRN") times = [];
             else times = ["09:00"];
           }
 
-          projected.push({
+          const order: ProjectedOrder = {
             id: doc.id,
-            generic_name: data.generic_name || "Unspecified Agent",
-            strength: data.strength || "",
-            route: data.route || "PO",
+            title: data.generic_name || data.title || "Unspecified Order",
+            details: data.instructions || data.special_instructions || data.order_text || `Route: ${data.route || "N/A"} | Freq: ${data.frequency || "QD"}`,
             frequency: data.frequency || "QD",
-            frequency_times: times
-          });
+            frequency_times: times,
+            order_type: orderType
+          };
+
+          if (orderType === "medication") {
+            meds.push(order);
+          } else {
+            // Group diet, treatment, therapy, and acuity checks under TAR
+            txs.push(order);
+          }
         });
         
-        setMedications(projected);
+        setMedications(meds);
+        setTreatments(txs);
       } catch (err) {
         console.error("Print pre-render query fault:", err);
       } finally {
@@ -112,7 +118,7 @@ export default function MarPrintPage() {
     loadPrintData();
   }, [organization, params.id]);
 
-  if (loading) return <div className="p-8 text-xs uppercase tracking-widest font-mono">Compiling Document Layout...</div>;
+  if (loading) return <div className="p-8 text-xs font-mono">Compiling Document Layout...</div>;
 
   return (
     <div className="p-4 bg-white text-black min-h-screen">
@@ -120,7 +126,7 @@ export default function MarPrintPage() {
       {/* Print Control Header Bar (Hidden during actual hardware print execution) */}
       <div className="no-print mb-6 flex justify-between items-center bg-slate-900 text-white p-4 rounded-2xl">
         <div>
-          <h1 className="text-sm font-bold tracking-wider uppercase text-teal-400">MAR Binder Print Ready</h1>
+          <h1 className="text-sm font-bold tracking-wider uppercase text-teal-400">MAR & TAR Binder Print Ready</h1>
           <p className="text-xs text-slate-400 font-light">Configured for landscape letter ledger layouts.</p>
         </div>
         <button 
@@ -136,8 +142,8 @@ export default function MarPrintPage() {
       <div className="border border-black mb-4 grid grid-cols-12 text-[10px] uppercase font-mono tracking-tight divide-x divide-black">
         {/* Left MAR Title Block */}
         <div className="col-span-2 p-2 flex flex-col justify-center">
-          <div className="text-xs font-black tracking-tighter leading-none">MAR</div>
-          <div className="text-[7px] leading-tight text-slate-500 font-bold mt-1">Medication Administration Record</div>
+          <div className="text-xs font-black tracking-tighter leading-none">MAR / TAR</div>
+          <div className="text-[7px] leading-tight text-slate-500 font-bold mt-1">Physician Order Sheet & Records</div>
         </div>
 
         {/* Month Selector Grid */}
@@ -181,49 +187,87 @@ export default function MarPrintPage() {
         </div>
       </div>
 
-      {/* Primary Standalone Medication Grid Structure */}
-      <table className="w-full border-collapse border border-black text-[10px]">
+      {/* ================= SECTION 1: MAR GRID ================= */}
+      <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700">1. Medication Administration Record (MAR)</h2>
+      <table className="w-full border-collapse border border-black text-[10px] mb-8">
         <thead>
           <tr className="bg-slate-100">
-            <th className="border border-black p-2 text-left w-1/4 uppercase font-bold">Medication Order Details</th>
-            <th className="border border-black p-2 text-center w-12 uppercase font-bold">Hour</th>
+            <th className="border border-black p-2 text-left w-1/4 font-bold">Medication Details</th>
+            <th className="border border-black p-2 text-center w-12 font-bold">Hour</th>
             {daysArray.map((day) => (
               <th key={day} className="border border-black w-6 text-center font-mono text-[9px]">{day}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          
-          {/* Section A: Digitally Projected Orders (Option A) */}
           {medications.map((med) => (
             <React.Fragment key={med.id}>
               {med.frequency_times.map((time, timeIdx) => (
                 <tr key={`${med.id}-${timeIdx}`} className="h-10">
-                  {timeIdx === 0 ? (
-                    <td 
-                      rowSpan={med.frequency_times.length} 
-                      className="border border-black p-2 font-light align-top bg-white print-border"
-                    >
-                      <div className="font-bold uppercase text-xs tracking-tight text-black">{med.generic_name} {med.strength}</div>
-                      <div className="text-[9px] mt-1 text-slate-600 font-mono">Route: {med.route} | Freq: {med.frequency}</div>
+                  {timeIdx === 0 && (
+                    <td rowSpan={med.frequency_times.length} className="border border-black p-2 align-top bg-white print-border">
+                      <div className="font-bold uppercase text-[10px] text-black">{med.title}</div>
+                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
                     </td>
-                  ) : null}
+                  )}
                   <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
                   {daysArray.map((day) => (
-                    <td key={day} className="border border-black bg-white print-border relative" />
+                    <td key={day} className="border border-black bg-white print-border" />
+                  ))}
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+          
+          {medications.length === 0 && (
+            <tr>
+              <td colSpan={33} className="border border-black p-4 text-center text-slate-400 italic text-[10px]">No active scheduled medication records.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* ================= SECTION 2: TAR GRID (Treatments, Weights, Meals) ================= */}
+      <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700">2. Treatment Administration Record (TAR)</h2>
+      <table className="w-full border-collapse border border-black text-[10px] mb-8">
+        <thead>
+          <tr className="bg-slate-50">
+            <th className="border border-black p-2 text-left w-1/4 font-bold">Treatment / Task Details</th>
+            <th className="border border-black p-2 text-center w-12 font-bold">Shift</th>
+            {daysArray.map((day) => (
+              <th key={day} className="border border-black w-6 text-center font-mono text-[9px]">{day}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {treatments.map((tx) => (
+            <React.Fragment key={tx.id}>
+              {tx.frequency_times.map((time, timeIdx) => (
+                <tr key={`${tx.id}-${timeIdx}`} className="h-12">
+                  {timeIdx === 0 && (
+                    <td rowSpan={tx.frequency_times.length} className="border border-black p-2 align-top bg-white print-border">
+                      <div className="font-bold uppercase text-teal-950 text-[10px]">{tx.title}</div>
+                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{tx.details}</div>
+                    </td>
+                  )}
+                  <td className="border border-black text-center font-mono text-[9px] bg-white print-border">{time}</td>
+                  {daysArray.map((day) => (
+                    <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[8px] text-slate-400">
+                      {tx.title.toLowerCase().includes("meal") ? "%" : ""}
+                      {tx.title.toLowerCase().includes("weight") ? "lbs" : ""}
+                    </td>
                   ))}
                 </tr>
               ))}
             </React.Fragment>
           ))}
 
-          {/* Section B: Automated Blank Space Injection for Manual Overrides/Telephone Orders */}
+          {/* Section B: Automated Blank Space Injection for Manual Overrides */}
           {Array.from({ length: blankRowsCount }).map((_, rowIndex) => (
             <tr key={`blank-${rowIndex}`} className="h-14">
-              <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-300">
-                Write Telephone / PRN Order Details Here
+              <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-400">
+                Additional Dr. Orders / Treatments Scribed Here Manually
                 <div className="h-[1px] bg-slate-200 mt-2 w-full" />
-                <div className="h-[1px] bg-slate-200 mt-2 w-3/4" />
               </td>
               <td className="border border-black text-center bg-white print-border" />
               {daysArray.map((day) => (
@@ -231,7 +275,6 @@ export default function MarPrintPage() {
               ))}
             </tr>
           ))}
-
         </tbody>
       </table>
 
