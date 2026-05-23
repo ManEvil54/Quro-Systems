@@ -1134,10 +1134,10 @@ export default function PatientChartPage() {
                     </h3>
                     <div className="flex gap-4 items-center">
                       <button 
-                        onClick={() => window.print()}
+                        onClick={() => window.open(`/patients/${id}/mar/print`, '_blank')}
                         className="no-print flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-all"
                       >
-                        <Printer size={14} /> Print Hybrid MAR
+                        <Printer size={14} /> Print Surveyor MAR/TAR
                       </button>
                       {organization?.clinical_settings?.emar_mode !== false && (
                         <div className="flex gap-2 items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
