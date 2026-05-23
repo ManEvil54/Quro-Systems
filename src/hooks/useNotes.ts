@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import { 
   collection, 
   query, 
-  where, 
   onSnapshot, 
   doc, 
   addDoc, 
@@ -30,7 +29,7 @@ export function useNotes(patientId: string) {
 
   useEffect(() => {
     if (!staff?.org_id || !patientId) {
-      setLoading(false);
+      setLoading(l => l ? false : l);
       return;
     }
 

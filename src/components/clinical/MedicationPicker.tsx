@@ -66,8 +66,8 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
 
   useEffect(() => {
     if (!query || query.length < 2) {
-      setSuggestions([]);
-      setIsOpen(false);
+      setSuggestions(s => s.length > 0 ? [] : s);
+      setIsOpen(o => o ? false : o);
       return;
     }
 
@@ -102,24 +102,21 @@ export default function MedicationPicker({ value, onChange, placeholder = "Searc
         );
         const data = await response.json();
         
-        setSuggestions(prev => {
-          // Merge local and external API suggestions, keeping local first and removing duplicates
-          const merged = [...localMatches];
-          const existingGenerics = new Set(merged.map(m => m.genericName.toLowerCase()));
-          
-          for (const apiTerm of (data.terms || [])) {
-            if (!existingGenerics.has(apiTerm.genericName.toLowerCase())) {
-              merged.push({
-                displayName: apiTerm.displayName,
-                genericName: apiTerm.genericName,
-                strengthsList: apiTerm.strengthsList || [],
-                rxcui: apiTerm.rxcui
-              });
-              existingGenerics.add(apiTerm.genericName.toLowerCase());
-            }
+        const merged = [...localMatches];
+        const existingGenerics = new Set(merged.map(m => m.genericName.toLowerCase()));
+        
+        for (const apiTerm of (data.terms || [])) {
+          if (!existingGenerics.has(apiTerm.genericName.toLowerCase())) {
+            merged.push({
+              displayName: apiTerm.displayName,
+              genericName: apiTerm.genericName,
+              strengthsList: apiTerm.strengthsList || [],
+              rxcui: apiTerm.rxcui
+            });
+            existingGenerics.add(apiTerm.genericName.toLowerCase());
           }
-          return merged;
-        });
+        }
+        setSuggestions(merged);
         setIsOpen(true);
       } catch (err) {
         console.error('Error fetching RxNav suggestions:', err);

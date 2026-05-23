@@ -5,13 +5,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { useParams, useSearchParams } from 'next/navigation';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Patient, Medication, MAREntry, ProviderOrder, MedRoute, MedFrequency, MedStatus } from '@/lib/firebase/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDate } from 'date-fns';
 import { Edit2, Save, Plus, Trash2, Printer } from 'lucide-react';
+
+interface TemplateItem {
+  id: string;
+  label: string;
+  category: 'vital' | 'monitoring' | 'treatment' | 'ADL';
+  frequency: string;
+}
 
 // Helper to parse unstructured order text into structured medication fields
 const parseOrderText = (text: string) => {
@@ -115,7 +122,7 @@ export default function MARPrintPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [customRows, setCustomRows] = useState<string[]>([]);
   const [specialNotes, setSpecialNotes] = useState('');
-  const [facilityTemplate, setFacilityTemplate] = useState<any[]>([]);
+  const [facilityTemplate, setFacilityTemplate] = useState<TemplateItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const monthParam = searchParams.get('month') || format(new Date(), 'yyyy-MM');
@@ -129,6 +136,9 @@ export default function MARPrintPage() {
   useEffect(() => {
     async function fetchData() {
       if (!organization || !patientId) return;
+
+      const [y, m] = monthParam.split('-').map(Number);
+      const localTargetDate = new Date(y, m - 1, 1);
 
       try {
         // 1. Fetch Patient
@@ -168,8 +178,8 @@ export default function MARPrintPage() {
         setMedications(sortedMeds);
 
         // 3. Fetch MAR Entries for the month
-        const start = startOfMonth(targetDate).toISOString();
-        const end = endOfMonth(targetDate).toISOString();
+        const start = startOfMonth(localTargetDate).toISOString();
+        const end = endOfMonth(localTargetDate).toISOString();
         const marRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'mar_entries');
         const marQuery = query(marRef, where('scheduled_date', '>=', start), where('scheduled_date', '<=', end));
         const marSnap = await getDocs(marQuery);
@@ -314,7 +324,7 @@ export default function MARPrintPage() {
                       onChange={(e) => updateCustomRow(idx, e.target.value)}
                       placeholder="Enter custom medication or instruction..."
                     />
-                    <button onClick={() => removeCustomRow(idx)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                    <button onClick={() => removeCustomRow(idx)} title="Remove custom row" className="text-red-500 hover:bg-red-50 p-1 rounded">
                       <Trash2 size={12} />
                     </button>
                   </div>
@@ -432,7 +442,7 @@ export default function MARPrintPage() {
                 <p>3 = INTERMITTENT / SEE NOTES</p>
               </div>
               <div className="mt-3 text-[7px] text-gray-500 italic">
-                Note: Side effects include EPS, TD, Sedation, or Involuntary Movements. Any entry of '2' or '3' requires a clinical note.
+                Note: Side effects include EPS, TD, Sedation, or Involuntary Movements. Any entry of &apos;2&apos; or &apos;3&apos; requires a clinical note.
               </div>
             </div>
           </>

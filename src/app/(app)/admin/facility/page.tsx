@@ -4,23 +4,17 @@
 // ============================================================
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
-  Settings, 
   Plus, 
   Trash2, 
   Save, 
   GripVertical,
   ClipboardList,
-  Stethoscope,
-  Activity,
-  Droplets,
-  Utensils,
   LayoutGrid,
   Bed as BedIcon,
   Home,
-  CheckCircle2,
   X
 } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -53,15 +47,9 @@ export default function FacilitySettingsPage() {
 
   const { rooms, beds, addRoom, addBed, deleteBed } = useBeds(targetFacilityId || '');
 
-  const [newRoom, setNewRoom] = useState({ name: '', type: 'private' as any });
+  const [newRoom, setNewRoom] = useState<{ name: string; type: 'private' | 'semi-private' | 'ward' }>({ name: '', type: 'private' });
 
-  useEffect(() => {
-    if (targetFacilityId) {
-      fetchFacilityConfig();
-    }
-  }, [targetFacilityId, organization]);
-
-  async function fetchFacilityConfig() {
+  const fetchFacilityConfig = useCallback(async () => {
     if (!targetFacilityId || !organization?.id) return;
     try {
       const fDoc = await getDoc(doc(db, 'organizations', organization.id, 'facilities', targetFacilityId));
@@ -89,7 +77,13 @@ export default function FacilitySettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [targetFacilityId, organization?.id]);
+
+  useEffect(() => {
+    if (targetFacilityId) {
+      fetchFacilityConfig();
+    }
+  }, [targetFacilityId, fetchFacilityConfig]);
 
   const addItem = () => {
     const newItem: TemplateItem = {
@@ -202,7 +196,7 @@ export default function FacilitySettingsPage() {
 
               <div className="space-y-4">
                 {template.map((item, index) => (
-                  <div key={item.id} className="flex gap-4 items-center group animate-in slide-in-from-left-4" style={{ animationDelay: `${index * 50}ms` }}>
+                  <div key={item.id} className={`flex gap-4 items-center group animate-in slide-in-from-left-4 delay-stagger-${Math.min(10, index)}`}>
                     <GripVertical className="text-slate-200 group-hover:text-slate-400 transition-colors cursor-grab" size={20} />
                     
                     <div className="flex-1 grid grid-cols-12 gap-4 bg-slate-50 p-3 rounded-[24px] border-2 border-transparent group-hover:border-slate-100 transition-all">
@@ -216,9 +210,10 @@ export default function FacilitySettingsPage() {
                       </div>
                       <div className="col-span-3">
                         <select 
+                          title="Category"
                           className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
                           value={item.category}
-                          onChange={e => updateItem(item.id, 'category', e.target.value as any)}
+                          onChange={e => updateItem(item.id, 'category', e.target.value as 'vital' | 'monitoring' | 'treatment' | 'ADL')}
                         >
                           <option value="ADL">ADL / Care</option>
                           <option value="monitoring">Monitoring</option>
@@ -228,6 +223,7 @@ export default function FacilitySettingsPage() {
                       </div>
                       <div className="col-span-3">
                         <select 
+                          title="Frequency"
                           className="w-full bg-white border-2 border-transparent rounded-xl px-3 py-3 text-[10px] font-black uppercase text-slate-500 outline-none focus:border-quro-teal transition-all"
                           value={item.frequency}
                           onChange={e => updateItem(item.id, 'frequency', e.target.value)}
@@ -244,6 +240,7 @@ export default function FacilitySettingsPage() {
 
                     <button 
                       onClick={() => removeItem(item.id)}
+                      title="Remove item"
                       className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                     >
                       <Trash2 size={20} />
@@ -287,11 +284,11 @@ export default function FacilitySettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Room Type</label>
-                    <select 
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Room Type</label>                    <select 
+                      title="Room Type"
                       className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
                       value={newRoom.type}
-                      onChange={e => setNewRoom({...newRoom, type: e.target.value})}
+                      onChange={e => setNewRoom({...newRoom, type: e.target.value as 'private' | 'semi-private' | 'ward'})}
                     >
                       <option value="private">Private (1 Bed)</option>
                       <option value="semi-private">Semi-Private (2 Beds)</option>
@@ -304,7 +301,7 @@ export default function FacilitySettingsPage() {
                 </form>
               </div>
             </div>
-
+ 
             {/* Room List */}
             <div className="lg:col-span-2 space-y-6">
               {rooms.length === 0 && (
@@ -340,7 +337,7 @@ export default function FacilitySettingsPage() {
                         </button>
                       </div>
                     </div>
-
+ 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {beds.filter(b => b.room_id === room.id).map(bed => (
                         <div key={bed.id} className="bg-slate-50 p-5 rounded-2xl border-2 border-transparent hover:border-teal-500/20 transition-all group/bed">
@@ -349,7 +346,11 @@ export default function FacilitySettingsPage() {
                               <BedIcon size={18} className="text-slate-400 group-hover/bed:text-teal-500 transition-colors" />
                               <span className="text-sm font-black text-slate-900">{bed.name}</span>
                             </div>
-                            <button onClick={() => deleteBed(bed.id)} className="p-1.5 text-slate-300 hover:text-rose-500 opacity-0 group-hover/bed:opacity-100 transition-all">
+                            <button 
+                              onClick={() => deleteBed(bed.id)} 
+                              title="Delete bed"
+                              className="p-1.5 text-slate-300 hover:text-rose-500 opacity-0 group-hover/bed:opacity-100 transition-all"
+                            >
                               <X size={14} />
                             </button>
                           </div>

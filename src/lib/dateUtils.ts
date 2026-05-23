@@ -16,24 +16,25 @@ import { format as dateFnsFormat } from 'date-fns';
  * 
  * Returns null if the value is invalid or cannot be parsed.
  */
-export const parseSafeDate = (val: any): Date | null => {
+export const parseSafeDate = (val: unknown): Date | null => {
   if (!val) return null;
   try {
     let d: Date;
-    if (typeof val === 'object') {
-      if (typeof val.toDate === 'function') {
-        d = val.toDate();
-      } else if (val.seconds !== undefined) {
-        d = new Date(val.seconds * 1000 + Math.floor((val.nanoseconds || 0) / 1000000));
+    if (typeof val === 'object' && val !== null) {
+      const valObj = val as Record<string, any>;
+      if (typeof valObj.toDate === 'function') {
+        d = valObj.toDate();
+      } else if (valObj.seconds !== undefined) {
+        d = new Date(valObj.seconds * 1000 + Math.floor((valObj.nanoseconds || 0) / 1000000));
       } else if (val instanceof Date) {
         d = val;
       } else {
-        d = new Date(val);
+        d = new Date(val as any);
       }
     } else if (typeof val === 'number') {
       d = new Date(val);
     } else {
-      d = new Date(val);
+      d = new Date(val as any);
     }
 
     if (isNaN(d.getTime())) {
@@ -51,7 +52,7 @@ export const parseSafeDate = (val: any): Date | null => {
  * Returns the fallback string if the date is invalid.
  */
 export const safeFormat = (
-  val: any,
+  val: unknown,
   formatStr: string,
   fallback: string = 'Pending...'
 ): string => {
@@ -70,14 +71,14 @@ export const safeFormat = (
  * Returns fallback if invalid.
  */
 export const safeLocaleDateString = (
-  val: any,
+  val: unknown,
   fallback: string = 'Pending...'
 ): string => {
   const d = parseSafeDate(val);
   if (!d) return fallback;
   try {
     return d.toLocaleDateString();
-  } catch (e) {
+  } catch {
     return fallback;
   }
 };
@@ -87,14 +88,14 @@ export const safeLocaleDateString = (
  * Returns fallback if invalid.
  */
 export const safeLocaleString = (
-  val: any,
+  val: unknown,
   fallback: string = 'Pending...'
 ): string => {
   const d = parseSafeDate(val);
   if (!d) return fallback;
   try {
     return d.toLocaleString();
-  } catch (e) {
+  } catch {
     return fallback;
   }
 };

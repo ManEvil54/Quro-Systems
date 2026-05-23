@@ -98,6 +98,7 @@ export default function OrderList({ patientId }: Props) {
                 <div className="relative">
                   <button 
                     onClick={() => setActiveDropdownId(activeDropdownId === order.id ? null : order.id)}
+                    title="Order options"
                     className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 group-hover:text-slate-600 transition-colors"
                   >
                     <MoreVertical size={16} />

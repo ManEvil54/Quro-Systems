@@ -3,12 +3,13 @@
 // ModernQure LLC
 // ============================================================
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache,
   persistentMultipleTabManager,
-  memoryLocalCache
+  memoryLocalCache,
+  Firestore
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -29,7 +30,7 @@ const app = getApps().length
   : (isConfigValid ? initializeApp(firebaseConfig) : undefined);
 
 // Safely export services (will be undefined during build if config is missing)
-export const auth = app ? getAuth(app) : ({} as any);
+export const auth = app ? getAuth(app) : ({} as Auth);
 
 // Safely configure Firestore cache with multi-tab support and graceful memory fallback
 let localCacheConfig;
@@ -48,6 +49,6 @@ try {
 
 export const db = app ? initializeFirestore(app, {
   localCache: localCacheConfig,
-}) : ({} as any);
+}) : ({} as Firestore);
 
 export default app;

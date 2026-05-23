@@ -230,6 +230,7 @@ export default function ShiftHandoff({ patientId }: Props) {
               </div>
             </div>
             <select 
+              title="Shift Type Selection"
               value={formData.shift_type}
               onChange={(e) => setFormData({...formData, shift_type: e.target.value as Shift})}
               className="bg-slate-100 border-none rounded-lg text-xs font-bold px-4 py-2 outline-none focus:ring-2 ring-teal-500"

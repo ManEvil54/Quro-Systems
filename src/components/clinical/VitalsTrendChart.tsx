@@ -136,7 +136,9 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
         <div className="flex flex-wrap justify-end gap-2 max-w-[60%]">
           {streams.map(s => (
             <div key={s.name} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+              <svg className="w-2 h-2" viewBox="0 0 8 8">
+                <circle cx="4" cy="4" r="4" fill={s.color} />
+              </svg>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{s.name}</span>
             </div>
           ))}
@@ -145,6 +147,15 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
 
       <div className="relative h-64 w-full">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+          {/* SVG Glow Filters for each stream */}
+          <defs>
+            {streams.map(stream => (
+              <filter key={stream.name} id={`glow-${stream.name}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor={stream.color} floodOpacity="0.2" />
+              </filter>
+            ))}
+          </defs>
+
           {/* Grid Lines */}
           {[0, 1, 2, 3, 4].map(i => (
             <line 
@@ -174,7 +185,7 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   className="transition-all duration-1000 ease-out"
-                  style={{ filter: `drop-shadow(0 4px 6px ${stream.color}33)` }}
+                  filter={`url(#glow-${stream.name})`}
                 />
                 {stream.points.map((p, idx) => (
                   <circle 
@@ -222,7 +233,7 @@ const VitalsTrendChart: React.FC<VitalsTrendChartProps> = ({ vitals }) => {
           return (
             <div key={s.name} className="p-4 rounded-3xl bg-slate-50 border border-slate-100 group hover:bg-white hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-2 mb-2 text-slate-400 group-hover:text-quro-charcoal transition-colors">
-                <div style={{ color: s.color }}>{s.icon}</div>
+                <div>{React.cloneElement(s.icon, { color: s.color })}</div>
                 <span className="text-[10px] font-black uppercase tracking-widest">{s.name}</span>
               </div>
               <div className="flex items-baseline gap-1">

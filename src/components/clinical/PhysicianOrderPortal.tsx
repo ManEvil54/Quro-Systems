@@ -4,7 +4,7 @@
 // ============================================================
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   FilePlus, 
   PenTool, 
@@ -27,7 +27,6 @@ import {
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MedRoute, MedFrequency, Staff, Patient, ProviderOrder } from '@/lib/firebase/types';
-import { format } from 'date-fns';
 import { safeFormat } from '@/lib/dateUtils';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
@@ -249,14 +248,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
   const [patient, setPatient] = useState<Patient | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchPhysicians();
-    fetchPatient();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientId, organization]);
-
-  async function fetchPatient() {
+  const fetchPatient = useCallback(async () => {
     if (!organization || !patientId) return;
     try {
       const { getDoc } = await import('firebase/firestore');
@@ -267,7 +259,40 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     } catch (err) {
       console.error('Error fetching patient in order portal:', err);
     }
-  }
+  }, [organization, patientId]);
+
+  const fetchPhysicians = useCallback(async () => {
+    if (!organization) return;
+    try {
+      const q = query(collection(db, 'organizations', organization.id, 'staff'), where('role', '==', 'physician'));
+      const snap = await getDocs(q);
+      setPhysicians(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff)));
+    } catch (err) {
+      console.error('Error fetching physicians:', err);
+    }
+  }, [organization]);
+
+  const fetchOrders = useCallback(async () => {
+    if (!organization || !patientId) return;
+    try {
+      const q = query(
+        collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+        orderBy('created_at', 'desc')
+      );
+      const snap = await getDocs(q);
+      setProviderOrders(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProviderOrder)));
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [organization, patientId]);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchPhysicians();
+    fetchPatient();
+  }, [fetchOrders, fetchPhysicians, fetchPatient]);
 
   useEffect(() => {
     if (!newOrder.generic_name || newOrder.generic_name.length < 3) {
@@ -300,34 +325,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         }));
       }
     }
-  }, [newOrder.strength, newOrder.dose]);
-
-  async function fetchPhysicians() {
-    if (!organization) return;
-    try {
-      const q = query(collection(db, 'organizations', organization.id, 'staff'), where('role', '==', 'physician'));
-      const snap = await getDocs(q);
-      setPhysicians(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff)));
-    } catch (err) {
-      console.error('Error fetching physicians:', err);
-    }
-  }
-
-  async function fetchOrders() {
-    if (!organization || !patientId) return;
-    try {
-      const q = query(
-        collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
-        orderBy('created_at', 'desc')
-      );
-      const snap = await getDocs(q);
-      setProviderOrders(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProviderOrder)));
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [newOrder.strength, newOrder.dose, newOrder.dosage]);
 
   async function handleSubmitOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -386,8 +384,6 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         : newOrder.frequency;
       const orderText = `${newOrder.generic_name} ${newOrder.strength} - Dose: ${newOrder.dose} (${newOrder.dosage}) via ${newOrder.route} ${frequencyText}${newOrder.special_instructions ? `. Special Instructions: ${newOrder.special_instructions}` : ''}`;
       
-      let providerOrderRefId = editingDraftId;
-      
       const providerOrderData: Partial<ProviderOrder> = {
         org_id: organization.id,
         patient_id: patientId,
@@ -420,7 +416,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
       if (targetStatus === 'signed') {
         if (isTelephone) {
-          providerOrderData.signed_at = null as any;
+          providerOrderData.signed_at = null as unknown as string;
           providerOrderData.acknowledged_at = new Date().toISOString();
           providerOrderData.acknowledging_nurse_id = staff.id;
         } else {
@@ -435,11 +431,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       } else {
         // Create new order
         providerOrderData.created_at = new Date().toISOString();
-        const docRef = await addDoc(
+        await addDoc(
           collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
           providerOrderData
         );
-        providerOrderRefId = docRef.id;
       }
 
 
@@ -630,6 +625,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
               <label className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-2 block">Selecting Prescribing Physician</label>
               <select 
                 required
+                title="Prescribing Physician"
                 className="w-full bg-white border-none rounded-xl p-3 text-sm font-bold text-quro-charcoal"
                 value={orderCategory === 'medication' ? newOrder.physician_id : newDietOrder.physician_id}
                 onChange={e => {
@@ -725,7 +721,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</label>
-                  <select className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold" value={newOrder.route} onChange={e => setNewOrder({...newOrder, route: e.target.value as MedRoute})}>
+                  <select title="Route" className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold" value={newOrder.route} onChange={e => setNewOrder({...newOrder, route: e.target.value as MedRoute})}>
                     <option value="PO">PO (By Mouth)</option>
                     <option value="SL">Sublingual</option>
                     <option value="IM">Intramuscular</option>
@@ -737,6 +733,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Frequency</label>
                   <select 
+                    title="Frequency"
                     className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal" 
                     value={newOrder.frequency} 
                     onChange={e => {
@@ -772,6 +769,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                       <div key={i} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl pl-3 pr-1.5 py-1.5 shadow-sm">
                         <input 
                           type="time" 
+                          title="Administration time"
                           className="border-none p-0 text-xs font-black focus:ring-0 w-20 text-quro-charcoal"
                           value={time} 
                           onChange={e => {
@@ -783,6 +781,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         {(newOrder.custom_times || ['09:00']).length > 1 && (
                           <button 
                             type="button" 
+                            title="Remove administration time"
                             onClick={() => {
                               const newTimes = (newOrder.custom_times || ['09:00']).filter((_, idx) => idx !== i);
                               setNewOrder({...newOrder, custom_times: newTimes});
@@ -897,12 +896,13 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
                 <div className="flex items-center gap-3 pt-2">
                   <input 
+                    id="psychotropic-checkbox"
                     type="checkbox" 
                     className="rounded border-slate-300 text-rose-500 focus:ring-rose-500"
                     checked={newOrder.is_psychotropic}
                     onChange={e => setNewOrder({...newOrder, is_psychotropic: e.target.checked})}
                   />
-                  <span className="text-[10px] font-black text-rose-500 uppercase">Classify as Psychotropic</span>
+                  <label htmlFor="psychotropic-checkbox" className="text-[10px] font-black text-rose-500 uppercase cursor-pointer">Classify as Psychotropic</label>
                 </div>
               </div>
 
@@ -965,6 +965,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diet Type</label>
                   <select 
+                    title="Diet Type"
                     className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal"
                     value={newDietOrder.diet_type}
                     onChange={e => setNewDietOrder({...newDietOrder, diet_type: e.target.value})}
@@ -983,6 +984,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consistency / Liquid Type</label>
                   <select 
+                    title="Consistency / Liquid Type"
                     className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal"
                     value={newDietOrder.consistency}
                     onChange={e => setNewDietOrder({...newDietOrder, consistency: e.target.value})}

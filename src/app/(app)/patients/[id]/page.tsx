@@ -60,29 +60,30 @@ import OrderAcknowledgment from '@/components/clinical/OrderAcknowledgment';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 // Helper to safely format raw Firestore timestamps or ISO strings
-const safeFormatDate = (val: any): string => {
+const safeFormatDate = (val: unknown): string => {
   if (!val) return 'Pending...';
   try {
     let d: Date;
-    if (typeof val === 'object') {
-      if (typeof val.toDate === 'function') {
-        d = val.toDate();
-      } else if (val.seconds !== undefined) {
-        d = new Date(val.seconds * 1000 + Math.floor((val.nanoseconds || 0) / 1000000));
+    if (typeof val === 'object' && val !== null) {
+      const valObj = val as Record<string, any>;
+      if (typeof valObj.toDate === 'function') {
+        d = valObj.toDate();
+      } else if (valObj.seconds !== undefined) {
+        d = new Date(valObj.seconds * 1000 + Math.floor((valObj.nanoseconds || 0) / 1000000));
       } else if (val instanceof Date) {
         d = val;
       } else {
-        d = new Date(val);
+        d = new Date(val as any);
       }
     } else {
-      d = new Date(val);
+      d = new Date(val as any);
     }
     
     if (isNaN(d.getTime())) {
       return 'Pending...';
     }
     return d.toLocaleString();
-  } catch (e) {
+  } catch {
     return 'Pending...';
   }
 };
@@ -698,10 +699,10 @@ export default function PatientChartPage() {
           <div className="p-6 bg-slate-900/5 rounded-[2rem] border border-slate-900/5">
              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Comm</p>
              <div className="flex gap-2">
-                <button className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
+                <button title="Call Attending" className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
                    <Phone size={14} className="mx-auto" />
                 </button>
-                <button className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
+                <button title="Send message" className="flex-1 p-3 bg-white rounded-xl text-slate-400 hover:text-quro-teal transition-all shadow-sm">
                    <Send size={14} className="mx-auto" />
                 </button>
              </div>
@@ -1246,6 +1247,7 @@ export default function PatientChartPage() {
                                     setPendingAction('held');
                                     setShowDelayReasonModal(true);
                                   }}
+                                  title="Hold Medication"
                                   className="px-4 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black hover:bg-slate-50 transition-all"
                                 >
                                   <X size={18} />
@@ -1545,7 +1547,7 @@ export default function PatientChartPage() {
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Temperature</p>
                         <div className="flex items-center gap-2">
-                          <input 
+                          <input title="Temperature" 
                             type="number" 
                             step="0.1"
                             value={assessments.vitals.temp} 
@@ -1559,7 +1561,7 @@ export default function PatientChartPage() {
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">B/P (Sys/Dia)</p>
                         <div className="flex items-center gap-1.5">
-                          <input 
+                          <input title="B/P (Sys/Dia)" 
                             type="number" 
                             value={assessments.vitals.bp_systolic} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value)}})}
@@ -1567,7 +1569,7 @@ export default function PatientChartPage() {
                             placeholder="Sys"
                           />
                           <span className="text-slate-600 font-black text-xs">/</span>
-                          <input 
+                          <input title="Input Field" 
                             type="number" 
                             value={assessments.vitals.bp_diastolic} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value)}})}
@@ -1580,7 +1582,7 @@ export default function PatientChartPage() {
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pulse / Resp</p>
                         <div className="flex items-center gap-1.5">
-                          <input 
+                          <input title="Pulse / Resp" 
                             type="number" 
                             value={assessments.vitals.pulse} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value)}})}
@@ -1588,7 +1590,7 @@ export default function PatientChartPage() {
                             placeholder="HR"
                           />
                           <span className="text-slate-600 font-black text-xs">/</span>
-                          <input 
+                          <input title="Input Field" 
                             type="number" 
                             value={assessments.vitals.resp} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value)}})}
@@ -1601,7 +1603,7 @@ export default function PatientChartPage() {
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">SpO2</p>
                         <div className="flex items-center gap-2">
-                          <input 
+                          <input title="SpO2" 
                             type="number" 
                             value={assessments.vitals.spo2} 
                             onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, spo2: parseInt(e.target.value)}})}
@@ -1613,7 +1615,7 @@ export default function PatientChartPage() {
 
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Site</p>
-                        <select 
+                        <select title="BP Site" 
                           value={assessments.vitals.bp_site} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_site: e.target.value as "L-Arm" | "R-Arm" | "Thigh"}})}
                           className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
@@ -1626,7 +1628,7 @@ export default function PatientChartPage() {
 
                       <div className="space-y-2">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">BP Position</p>
-                        <select 
+                        <select title="BP Position" 
                           value={assessments.vitals.bp_position} 
                           onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_position: e.target.value as "Sitting" | "Standing" | "Supine"}})}
                           className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-black text-[10px] uppercase outline-none focus:border-quro-teal transition-all"
@@ -1671,7 +1673,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Level of Consciousness</p>
-                            <select value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as 'Alert' | 'Lethargic' | 'Obtunded' | 'Comatose'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <select title="Level of Consciousness" value={assessments.neuro.loc} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, loc: e.target.value as 'Alert' | 'Lethargic' | 'Obtunded' | 'Comatose'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Alert</option>
                               <option>Lethargic</option>
                               <option>Obtunded</option>
@@ -1680,7 +1682,7 @@ export default function PatientChartPage() {
                           </div>
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Pupils</p>
-                            <select value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as 'PERRLA' | 'Sluggish' | 'Non-reactive'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <select title="Pupils" value={assessments.neuro.pupils} onChange={e => setAssessments({...assessments, neuro: {...assessments.neuro, pupils: e.target.value as 'PERRLA' | 'Sluggish' | 'Non-reactive'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>PERRLA</option>
                               <option>Sluggish</option>
                               <option>Non-reactive</option>
@@ -1715,7 +1717,7 @@ export default function PatientChartPage() {
                         </div>
                         <div>
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Decision Making</p>
-                          <select value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as 'Independent' | 'Modified Independence' | 'Moderately Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                          <select title="Decision Making" value={assessments.cognitive.decision_making} onChange={e => setAssessments({...assessments, cognitive: {...assessments.cognitive, decision_making: e.target.value as 'Independent' | 'Modified Independence' | 'Moderately Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                             <option>Independent</option>
                             <option>Modified Independence</option>
                             <option>Moderately Impaired</option>
@@ -1737,7 +1739,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Hearing</p>
-                              <select value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as 'Adequate' | 'Minimal Difficulty' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Hearing" value={assessments.sensory.hearing} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, hearing: e.target.value as 'Adequate' | 'Minimal Difficulty' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Minimal Difficulty</option>
                                 <option>Highly Impaired</option>
@@ -1746,7 +1748,7 @@ export default function PatientChartPage() {
                            </div>
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Vision</p>
-                              <select value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as 'Adequate' | 'Impaired' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Vision" value={assessments.sensory.vision} onChange={e => setAssessments({...assessments, sensory: {...assessments.sensory, vision: e.target.value as 'Adequate' | 'Impaired' | 'Highly Impaired' | 'Severely Impaired'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Adequate</option>
                                 <option>Impaired</option>
                                 <option>Highly Impaired</option>
@@ -1795,7 +1797,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="pt-2 border-t border-slate-100">
                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Indicator Frequency</p>
-                           <select value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as 'Never' | '2-6 Days' | '7-11 Days' | '12-14 Days'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                           <select title="Indicator Frequency" value={assessments.mood.frequency} onChange={e => setAssessments({...assessments, mood: {...assessments.mood, frequency: e.target.value as 'Never' | '2-6 Days' | '7-11 Days' | '12-14 Days'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>Never</option>
                               <option>2-6 Days</option>
                               <option>7-11 Days</option>
@@ -1833,7 +1835,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Frequency</p>
-                              <select value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as 'None' | '1-3 times' | '4-6 times' | 'Daily'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Frequency" value={assessments.behavior.frequency} onChange={e => setAssessments({...assessments, behavior: {...assessments.behavior, frequency: e.target.value as 'None' | '1-3 times' | '4-6 times' | 'Daily'}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>None</option>
                                 <option>1-3 times</option>
                                 <option>4-6 times</option>
@@ -1842,7 +1844,7 @@ export default function PatientChartPage() {
                            </div>
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Intervention</p>
-                              <input 
+                              <input title="Intervention" 
                                 type="text" 
                                 placeholder="e.g. Redirected"
                                 value={assessments.behavior.intervention}
@@ -1874,7 +1876,7 @@ export default function PatientChartPage() {
                           <div key={adl} className="grid grid-cols-2 gap-4 items-center">
                             <p className="text-[10px] font-black uppercase tracking-wider">{adl}</p>
                             <div className="grid grid-cols-2 gap-2">
-                               <select 
+                               <select title="{adl}" 
                                  value={assessments.functional.self_perf[adl.toLowerCase() as keyof typeof assessments.functional.self_perf]} 
                                  onChange={e => setAssessments({...assessments, functional: {...assessments.functional, self_perf: {...assessments.functional.self_perf, [adl.toLowerCase()]: e.target.value}}})}
                                  className="bg-slate-50 border border-slate-100 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-emerald-900 text-center"
@@ -1885,7 +1887,7 @@ export default function PatientChartPage() {
                                  <option>Ext.</option>
                                  <option>Total</option>
                                </select>
-                               <select 
+                               <select title="Selection Options" 
                                  value={assessments.functional.support[adl.toLowerCase() as keyof typeof assessments.functional.support]} 
                                  onChange={e => setAssessments({...assessments, functional: {...assessments.functional, support: {...assessments.functional.support, [adl.toLowerCase()]: e.target.value}}})}
                                  className="bg-slate-50 border border-slate-100 p-1.5 rounded-lg font-black text-[8px] uppercase outline-none text-emerald-900 text-center"
@@ -1912,7 +1914,7 @@ export default function PatientChartPage() {
                       <div className="space-y-4">
                         <div>
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Breathing Pattern</p>
-                          <select value={assessments.resp.pattern} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, pattern: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                          <select title="Breathing Pattern" value={assessments.resp.pattern} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, pattern: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                             <option>Even/Unlabored</option>
                             <option>Labored</option>
                             <option>Shallow</option>
@@ -1933,7 +1935,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4 pt-2">
                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
                               <p className="text-[8px] font-black text-emerald-900 uppercase mb-1">Oxygen</p>
-                              <select value={assessments.resp.oxygen} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, oxygen: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
+                              <select title="Oxygen" value={assessments.resp.oxygen} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, oxygen: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
                                 <option>Room Air</option>
                                 <option>NC</option>
                                 <option>CPAP/BiPAP</option>
@@ -1941,7 +1943,7 @@ export default function PatientChartPage() {
                            </div>
                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
                               <p className="text-[8px] font-black text-emerald-900 uppercase mb-1">Flow (LPM)</p>
-                              <input type="number" value={assessments.resp.o2_flow} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, o2_flow: parseInt(e.target.value)}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none" />
+                              <input title="Flow (LPM)" type="number" value={assessments.resp.o2_flow} onChange={e => setAssessments({...assessments, resp: {...assessments.resp, o2_flow: parseInt(e.target.value)}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none" />
                            </div>
                         </div>
                       </div>
@@ -1982,7 +1984,7 @@ export default function PatientChartPage() {
                         </div>
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-1">Pulses (Radial/Pedal)</p>
-                          <select value={assessments.cardio.pulses} onChange={e => setAssessments({...assessments, cardio: {...assessments.cardio, pulses: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
+                          <select title="Pulses (Radial/Pedal)" value={assessments.cardio.pulses} onChange={e => setAssessments({...assessments, cardio: {...assessments.cardio, pulses: e.target.value}})} className="w-full bg-transparent font-black text-[10px] uppercase outline-none">
                             <option>Strong</option>
                             <option>Weak</option>
                             <option>Absent</option>
@@ -2015,11 +2017,11 @@ export default function PatientChartPage() {
                             <p className="text-[8px] font-black text-emerald-900 uppercase">Bristol Stool Scale</p>
                             <span className="text-[10px] font-black text-orange-700">Type {assessments.gi.stool_bristol}</span>
                           </div>
-                          <input type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
+                          <input title="Bristol Stool Scale" type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
                         </div>
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Fluid Intake (mL)</p>
-                          <input 
+                          <input title="Fluid Intake (mL)" 
                             type="number" 
                             value={assessments.gi.fluids_in_ml} 
                             onChange={e => setAssessments({...assessments, gi: {...assessments.gi, fluids_in_ml: parseInt(e.target.value)}})}
@@ -2041,7 +2043,7 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Device</p>
-                              <select value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Device" value={assessments.gu.catheter} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, catheter: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>None</option>
                                 <option>Foley</option>
                                 <option>Texas</option>
@@ -2050,7 +2052,7 @@ export default function PatientChartPage() {
                            </div>
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Urine</p>
-                              <select value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Urine" value={assessments.gu.urine_appearance} onChange={e => setAssessments({...assessments, gu: {...assessments.gu, urine_appearance: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Clear</option>
                                 <option>Cloudy</option>
                                 <option>Sediment</option>
@@ -2081,14 +2083,14 @@ export default function PatientChartPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Turgor</p>
-                              <select value={assessments.skin.turgor} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, turgor: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Turgor" value={assessments.skin.turgor} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, turgor: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Elastic</option>
                                 <option>Tenting</option>
                               </select>
                            </div>
                            <div>
                               <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Temperature</p>
-                              <select value={assessments.skin.temp} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, temp: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                              <select title="Temperature" value={assessments.skin.temp} onChange={e => setAssessments({...assessments, skin: {...assessments.skin, temp: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                                 <option>Warm</option>
                                 <option>Cool</option>
                                 <option>Hot</option>
@@ -2120,6 +2122,7 @@ export default function PatientChartPage() {
                         <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100 shadow-sm">
                            <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Ulcers Present</p>
                            <button 
+                             title="Toggle Pressure Ulcers Presence"
                              onClick={() => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, present: !assessments.pressure_ulcers.present}})}
                              className={`w-12 h-6 rounded-full transition-all relative ${assessments.pressure_ulcers.present ? 'bg-rose-500' : 'bg-slate-200'}`}
                            >
@@ -2130,7 +2133,7 @@ export default function PatientChartPage() {
                           <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div>
                                <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Highest Stage</p>
-                               <select value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as 'N/A' | '1' | '2' | '3' | '4' | 'Unstageable' | 'DTI'}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
+                               <select title="Highest Stage" value={assessments.pressure_ulcers.stage} onChange={e => setAssessments({...assessments, pressure_ulcers: {...assessments.pressure_ulcers, stage: e.target.value as 'N/A' | '1' | '2' | '3' | '4' | 'Unstageable' | 'DTI'}})} className="w-full bg-white border border-rose-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none text-rose-600">
                                  <option>1</option>
                                  <option>2</option>
                                  <option>3</option>
@@ -2141,7 +2144,7 @@ export default function PatientChartPage() {
                             </div>
                             <div>
                                <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Primary Site</p>
-                               <input 
+                               <input title="Primary Site" 
                                  type="text" 
                                  placeholder="e.g. Coccyx"
                                  value={assessments.pressure_ulcers.site}
@@ -2167,16 +2170,16 @@ export default function PatientChartPage() {
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Pain Level (0-10)</p>
                           <span className={`px-3 py-1 rounded-full text-xs font-black ${assessments.pain.level > 5 ? 'bg-rose-500 text-white' : 'bg-slate-100 text-emerald-900'}`}>{assessments.pain.level}</span>
                         </div>
-                        <input type="range" min="0" max="10" step="1" value={assessments.pain.level} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, level: parseInt(e.target.value)}})} className="w-full accent-rose-500 mb-4" />
+                        <input title="Pain Level (0-10)" type="range" min="0" max="10" step="1" value={assessments.pain.level} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, level: parseInt(e.target.value)}})} className="w-full accent-rose-500 mb-4" />
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Location</p>
-                            <input type="text" placeholder="e.g. Back" value={assessments.pain.location} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, location: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] outline-none" />
+                            <input title="Location" type="text" placeholder="e.g. Back" value={assessments.pain.location} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, location: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] outline-none" />
                           </div>
                           <div>
                             <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Type</p>
-                            <select value={assessments.pain.type} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, type: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
+                            <select title="Type" value={assessments.pain.type} onChange={e => setAssessments({...assessments, pain: {...assessments.pain, type: e.target.value}})} className="w-full bg-slate-50 border border-slate-100 p-2 rounded-lg font-black text-[10px] uppercase outline-none">
                               <option>None</option>
                               <option>Aching</option>
                               <option>Sharp</option>
@@ -2231,7 +2234,7 @@ export default function PatientChartPage() {
                           <h3 className="text-xs font-black text-emerald-900 uppercase tracking-[0.2em] mb-2">Clinical Narrative Progress Note</h3>
                           <p className="text-[10px] font-medium text-emerald-900 uppercase tracking-widest">Document the clinical story of the shift (DAR/SOAP Format).</p>
                         </div>
-                        <select 
+                        <select title="Document the clinical story of the shift (DAR/SOAP Format)." 
                           value={noteFocus} 
                           onChange={e => setNoteFocus(e.target.value)}
                           className="bg-slate-50 border border-slate-100 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest outline-none text-emerald-900"
@@ -2810,7 +2813,7 @@ export default function PatientChartPage() {
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Pressure (Systolic)</label>
-                <input 
+                <input title="Blood Pressure (Systolic)" 
                   type="number"
                   placeholder="---"
                   value={vitalsEntry.bp_sys}
@@ -2820,7 +2823,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Pressure (Diastolic)</label>
-                <input 
+                <input title="Blood Pressure (Diastolic)" 
                   type="number"
                   placeholder="---"
                   value={vitalsEntry.bp_dia}
@@ -2830,7 +2833,7 @@ export default function PatientChartPage() {
               </div>
               <div className="col-span-2 space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Heart Rate (BPM)</label>
-                <input 
+                <input title="Heart Rate (BPM)" 
                   type="number"
                   placeholder="---"
                   value={vitalsEntry.hr}
@@ -2986,7 +2989,7 @@ export default function PatientChartPage() {
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Physician Name</label>
-              <input 
+              <input title="Physician Name" 
                 type="text"
                 placeholder="Dr. Jane Doe, MD"
                 value={tempPhysician}
@@ -3178,7 +3181,7 @@ export default function PatientChartPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Provider Name</label>
-                <input 
+                <input title="Provider Name" 
                   type="text"
                   placeholder="e.g. Medicare / Blue Cross"
                   value={tempInsurance.provider_name}
@@ -3188,7 +3191,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy / Member ID</label>
-                <input 
+                <input title="Policy / Member ID" 
                   type="text"
                   placeholder="e.g. 123456789"
                   value={tempInsurance.policy_number}
@@ -3198,7 +3201,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Group Number</label>
-                <input 
+                <input title="Group Number" 
                   type="text"
                   placeholder="e.g. G-98765"
                   value={tempInsurance.group_number}
@@ -3208,7 +3211,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2 col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payer Support Phone</label>
-                <input 
+                <input title="Payer Support Phone" 
                   type="text"
                   placeholder="e.g. (800) 555-0199"
                   value={tempInsurance.phone}
@@ -3253,7 +3256,7 @@ export default function PatientChartPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pharmacy Name</label>
-                <input 
+                <input title="Pharmacy Name" 
                   type="text"
                   placeholder="e.g. CVS Pharmacy #1043"
                   value={tempPharmacy.name}
@@ -3263,7 +3266,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
-                <input 
+                <input title="Phone Number" 
                   type="text"
                   placeholder="e.g. (555) 012-3456"
                   value={tempPharmacy.phone}
@@ -3273,7 +3276,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fax Number</label>
-                <input 
+                <input title="Fax Number" 
                   type="text"
                   placeholder="e.g. (555) 012-3457"
                   value={tempPharmacy.fax}
@@ -3283,7 +3286,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2 col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pharmacy Address</label>
-                <input 
+                <input title="Pharmacy Address" 
                   type="text"
                   placeholder="e.g. 100 Main St, Metropolis, NY"
                   value={tempPharmacy.address}
@@ -3330,7 +3333,7 @@ export default function PatientChartPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                <input 
+                <input title="Full Name" 
                   type="text"
                   placeholder="e.g. John Doe"
                   value={tempFamilyMember.name}
@@ -3340,7 +3343,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Relationship</label>
-                <input 
+                <input title="Relationship" 
                   type="text"
                   placeholder="e.g. Spouse / Son / Guardian"
                   value={tempFamilyMember.relationship}
@@ -3350,7 +3353,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
-                <input 
+                <input title="Phone Number" 
                   type="text"
                   placeholder="e.g. (555) 012-3456"
                   value={tempFamilyMember.phone}
@@ -3360,7 +3363,7 @@ export default function PatientChartPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email (Optional)</label>
-                <input 
+                <input title="Email (Optional)" 
                   type="email"
                   placeholder="e.g. name@example.com"
                   value={tempFamilyMember.email}
@@ -3369,7 +3372,7 @@ export default function PatientChartPage() {
                 />
               </div>
               <div className="col-span-2 flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl mt-2">
-                <input 
+                <input title="Input Field" 
                   id="primary_emergency_contact"
                   type="checkbox"
                   checked={tempFamilyMember.is_emergency_contact}

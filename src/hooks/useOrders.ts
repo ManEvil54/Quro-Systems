@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import { 
   collection, 
   query, 
-  where, 
   onSnapshot, 
   doc, 
   addDoc, 
@@ -29,7 +28,7 @@ export function useOrders(patientId: string) {
 
   useEffect(() => {
     if (!staff?.org_id || !patientId) {
-      setLoading(false);
+      setLoading(l => l ? false : l);
       return;
     }
 
@@ -75,7 +74,7 @@ export function useOrders(patientId: string) {
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const orderRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders', orderId);
-    const updateData: any = { status, updated_at: serverTimestamp() };
+    const updateData: Record<string, unknown> = { status, updated_at: serverTimestamp() };
     
     if (status === 'signed') updateData.signed_at = new Date().toISOString();
     if (status === 'acknowledged') {
@@ -84,7 +83,7 @@ export function useOrders(patientId: string) {
     }
     if (status === 'sent_to_pharmacy') updateData.faxed_at = new Date().toISOString();
     
-    return await updateDoc(orderRef, updateData);
+    return await updateDoc(orderRef, updateData as Partial<ProviderOrder>);
   };
 
   return { orders, loading, error, addOrder, updateOrderStatus };

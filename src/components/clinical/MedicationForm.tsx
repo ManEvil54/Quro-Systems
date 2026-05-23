@@ -109,17 +109,7 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     order_type: initialData?.order_type || 'direct',
   });
 
-  useEffect(() => {
-    if (form.strength && form.dose) {
-      const calculated = calculateDosageFormQty(form.dose, form.strength, form.dosage);
-      if (calculated !== form.dosage) {
-        setForm(prev => ({
-          ...prev,
-          dosage: calculated
-        }));
-      }
-    }
-  }, [form.strength, form.dose]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +147,7 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               <p className="text-xs text-slate-500 mt-1">{initialData ? 'Modify active prescription parameters' : 'Clinical administration protocol'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+          <button onClick={onClose} title="Close" className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
             <X size={20} />
           </button>
         </div>
@@ -238,7 +228,16 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                 <input 
                   type="text" required className="input" placeholder="50mg"
                   list="med-form-strength-list"
-                  value={form.strength} onChange={e => setForm({...form, strength: e.target.value})}
+                  value={form.strength} 
+                  onChange={e => {
+                    const newStrength = e.target.value;
+                    const calculated = calculateDosageFormQty(form.dose || '', newStrength, form.dosage || '');
+                    setForm(prev => ({
+                      ...prev,
+                      strength: newStrength,
+                      dosage: calculated
+                    }));
+                  }}
                 />
                 <datalist id="med-form-strength-list">
                   {formStrengths.length > 0 
@@ -253,7 +252,16 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                 <label className="label">Dose (Amount to give)</label>
                 <input 
                   type="text" required className="input" placeholder="25mg"
-                  value={form.dose || ''} onChange={e => setForm({...form, dose: e.target.value})}
+                  value={form.dose || ''} 
+                  onChange={e => {
+                    const newDose = e.target.value;
+                    const calculated = calculateDosageFormQty(newDose, form.strength || '', form.dosage || '');
+                    setForm(prev => ({
+                      ...prev,
+                      dose: newDose,
+                      dosage: calculated
+                    }));
+                  }}
                 />
               </div>
               <div>
@@ -265,13 +273,13 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               </div>
               <div>
                 <label className="label">Route</label>
-                <select className="input" value={form.route} onChange={e => setForm({...form, route: e.target.value as MedRoute})}>
+                <select title="Route" className="input" value={form.route} onChange={e => setForm({...form, route: e.target.value as MedRoute})}>
                   {routes.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
                 <label className="label">Frequency</label>
-                <select className="input" value={form.frequency} onChange={e => {
+                <select title="Frequency" className="input" value={form.frequency} onChange={e => {
                   const freq = e.target.value as MedFrequency;
                   const currentTimes = form.frequency_times || [];
                   setForm({
@@ -343,11 +351,13 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                 {(form.frequency_times || []).map((time, i) => (
                   <div key={i} className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg pl-3 pr-1 py-1 shadow-sm">
                     <input 
-                      type="time" className="border-none p-0 text-sm focus:ring-0 w-20"
+                      type="time" 
+                      title="Administration time"
+                      className="border-none p-0 text-sm focus:ring-0 w-20"
                       value={time} onChange={e => updateTime(i, e.target.value)}
                     />
                     {(form.frequency_times || []).length > 1 && (
-                      <button type="button" onClick={() => removeTime(i)} className="p-1 text-slate-300 hover:text-red-500">
+                      <button type="button" onClick={() => removeTime(i)} title="Remove administration time" className="p-1 text-slate-300 hover:text-red-500">
                         <X size={14} />
                       </button>
                     )}
@@ -380,7 +390,7 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
               <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                 <div>
                   <label className="label">Vital Type</label>
-                  <select className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value as 'bp' | 'hr' | 'glucose' | 'spO2'})}>
+                  <select title="Vital Type" className="input" value={form.vital_type || ''} onChange={e => setForm({...form, vital_type: e.target.value as 'bp' | 'hr' | 'glucose' | 'spO2'})}>
                     <option value="bp">Blood Pressure</option>
                     <option value="hr">Heart Rate</option>
                     <option value="glucose">Blood Glucose</option>

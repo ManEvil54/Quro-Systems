@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, RotateCw, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Clock, RotateCw, Check, AlertCircle } from 'lucide-react';
 
 interface ShiftConfiguratorProps {
   facilityId: string;
@@ -44,9 +44,10 @@ export default function ShiftConfigurator({ facilityId, initialType }: ShiftConf
       setShiftType(type);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update facility schedule configuration:', err);
-      setError(err?.message || 'Failed to update schedule structure.');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update schedule structure.';
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }

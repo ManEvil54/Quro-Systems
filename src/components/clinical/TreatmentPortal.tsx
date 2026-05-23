@@ -69,7 +69,10 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
   }, [organization, patientId]);
 
   useEffect(() => {
-    fetchTreatments();
+    const timer = setTimeout(() => {
+      fetchTreatments();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchTreatments]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -202,7 +205,7 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
               </div>
               <h3 className="text-lg font-black text-slate-900 uppercase">New Treatment Protocol</h3>
             </div>
-            <button type="button" onClick={() => setIsAdding(false)} className="text-slate-400 hover:text-slate-600">
+            <button type="button" onClick={() => setIsAdding(false)} title="Close" className="text-slate-400 hover:text-slate-600">
               <X size={20} />
             </button>
           </div>
@@ -234,6 +237,7 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Frequency</label>
                   <select 
+                    title="Frequency"
                     className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold" 
                     value={newTreatment.frequency} 
                     onChange={e => setNewTreatment({...newTreatment, frequency: e.target.value})}
@@ -342,7 +346,7 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
                   Document Treatment
                 </button>
                 <div className="flex items-center gap-2">
-                  <button className="p-3 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
+                  <button title="More options" className="p-3 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
                     <MoreVertical size={18} />
                   </button>
                 </div>

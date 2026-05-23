@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import { 
   collection, 
   query, 
-  where, 
   onSnapshot, 
   doc, 
   addDoc, 
