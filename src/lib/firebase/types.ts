@@ -295,6 +295,7 @@ export interface ProviderOrder {
   ordering_physician_id: string;
   acknowledging_nurse_id?: string;
   order_type: 'medication' | 'lab' | 'imaging' | 'therapy' | 'diet' | 'treatment' | 'other';
+  title?: string;
   order_text: string;
   rxcui?: string | null;
   priority: 'routine' | 'urgent' | 'stat';
