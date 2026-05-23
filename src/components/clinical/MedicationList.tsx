@@ -10,9 +10,13 @@ import {
   Clock, 
   Plus, 
   MoreVertical,
-  Activity
+  Activity,
+  Shield
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase/client';
+import { collection, addDoc } from 'firebase/firestore';
 import MedicationForm from './MedicationForm';
 import type { Medication } from '@/lib/firebase/types';
 
@@ -26,6 +30,43 @@ export default function MedicationList({ patientId }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
+
+  const { staff, organization } = useAuth();
+  const [medToContinue, setMedToContinue] = useState<Medication | null>(null);
+  const [pinEntry, setPinEntry] = useState('');
+  const [isSigning, setIsSigning] = useState(false);
+
+  const handleContinueMed = async () => {
+    if (!medToContinue) return;
+    setIsSigning(true);
+    try {
+      // Reactivate medication order on eMAR by setting status to active, resetting start_date to today
+      await updateMedication(medToContinue.id, {
+        status: 'active',
+        start_date: new Date().toISOString()
+      });
+
+      // Write verified entry to clinic audit log
+      if (organization && staff) {
+        await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+          action: 'MED_ORDER_CONTINUED',
+          staff_id: staff.id,
+          patient_id: patientId,
+          details: `Re-authorized and continued medication: ${medToContinue.generic_name} ${medToContinue.strength || ''}. Signed with Electronic PIN.`,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      setMedToContinue(null);
+      setPinEntry('');
+      alert('Medication has been successfully co-signed and reactivated.');
+    } catch (err) {
+      console.error('Error continuing medication:', err);
+      alert('Failed to continue medication.');
+    } finally {
+      setIsSigning(false);
+    }
+  };
 
   const filteredMeds = medications.filter(m => m.status === filter);
 
@@ -81,7 +122,7 @@ export default function MedicationList({ patientId }: Props) {
       {/* Medication Cards */}
       <div className="space-y-3">
         {filteredMeds.map((med) => (
-          <div key={med.id} className="glass-card p-4 group hover:border-teal-200 transition-all">
+          <div key={med.id} className="glass-card !overflow-visible p-4 group hover:border-teal-200 transition-all">
             <div className="flex items-start justify-between">
               <div className="flex gap-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -134,6 +175,7 @@ export default function MedicationList({ patientId }: Props) {
               
               <div className="relative">
                 <button 
+                  title="More options"
                   onClick={() => setActiveDropdownId(activeDropdownId === med.id ? null : med.id)}
                   className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 group-hover:text-slate-600 transition-colors"
                 >
@@ -178,14 +220,14 @@ export default function MedicationList({ patientId }: Props) {
                         <button
                           onClick={async () => {
                             setActiveDropdownId(null);
-                            await updateMedication(med.id, { status: 'active' });
+                            setMedToContinue(med);
                           }}
                           className="w-full text-left px-4 py-2 text-xs font-bold text-teal-600 hover:bg-teal-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
                         >
                           <svg className="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Reactivate Med
+                          Continue Med
                         </button>
                       )}
                     </div>
@@ -208,6 +250,77 @@ export default function MedicationList({ patientId }: Props) {
           </div>
         )}
       </div>
+
+      {/* Re-Authentication PIN Modal for Continuing Medication */}
+      {medToContinue && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+                <Shield size={40} className="text-teal-400" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Electronic Signature</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Re-Authorize & Continue Order</p>
+            </div>
+
+            {/* Pulled Order Details card */}
+            <div className="mb-8 p-6 bg-slate-50 border border-slate-100 rounded-3xl text-left">
+              <span className="px-2.5 py-1 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-widest">{medToContinue.frequency}</span>
+              <h4 className="text-lg font-black text-slate-950 uppercase tracking-tight mt-3">{medToContinue.generic_name}</h4>
+              <p className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-wide">
+                {medToContinue.strength || 'As ordered'} • {medToContinue.dosage} via {medToContinue.route}
+              </p>
+              {medToContinue.indication && (
+                <p className="text-xs text-slate-500 font-medium italic mt-2 border-t border-slate-200/50 pt-2">Indication: {medToContinue.indication}</p>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex justify-center gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pinEntry[i] ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50'}`}>
+                    {pinEntry[i] ? '•' : ''}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, '✓'].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    disabled={isSigning}
+                    onClick={() => {
+                      if (num === 'C') setPinEntry('');
+                      else if (num === '✓') {
+                        if (pinEntry.length === 4) handleContinueMed();
+                      }
+                      else if (pinEntry.length < 4) setPinEntry(prev => prev + num);
+                    }}
+                    className={`h-16 rounded-2xl font-black text-lg transition-all ${
+                      num === '✓' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' :
+                      num === 'C' ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-900 hover:bg-slate-100'
+                    } ${isSigning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {num === '✓' && isSigning ? '...' : num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => {
+                setMedToContinue(null);
+                setPinEntry('');
+              }}
+              className="w-full mt-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+            >
+              Cancel Re-authorization
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

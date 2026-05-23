@@ -390,7 +390,10 @@ export default function PatientChartPage() {
       last_bm: new Date().toISOString().split('T')[0],
       stool_bristol: 4,
       diet_type: 'Regular',
-      fluids_in_ml: 240
+      fluids_in_ml: 240,
+      bm_this_shift: 'No' as 'Yes' | 'No',
+      bm_count: 0,
+      bm_consistency: 'Normal' as 'Normal' | 'Hard' | 'Loose' | 'Liquid'
     },
     gu: { 
       voiding: 'Continent',
@@ -1558,43 +1561,51 @@ export default function PatientChartPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-2 sm:col-span-1">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">B/P (Sys/Dia)</p>
                         <div className="flex items-center gap-1.5">
                           <input title="B/P (Sys/Dia)" 
-                            type="number" 
-                            value={assessments.vitals.bp_systolic} 
-                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value)}})}
-                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            type="text" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={assessments.vitals.bp_systolic || ''} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_systolic: parseInt(e.target.value) || 0}})}
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
                             placeholder="Sys"
                           />
                           <span className="text-slate-600 font-black text-xs">/</span>
                           <input title="Input Field" 
-                            type="number" 
-                            value={assessments.vitals.bp_diastolic} 
-                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value)}})}
-                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            type="text" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={assessments.vitals.bp_diastolic || ''} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, bp_diastolic: parseInt(e.target.value) || 0}})}
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
                             placeholder="Dia"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-2 sm:col-span-1">
                         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Pulse / Resp</p>
                         <div className="flex items-center gap-1.5">
                           <input title="Pulse / Resp" 
-                            type="number" 
-                            value={assessments.vitals.pulse} 
-                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value)}})}
-                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            type="text" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={assessments.vitals.pulse || ''} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, pulse: parseInt(e.target.value) || 0}})}
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
                             placeholder="HR"
                           />
                           <span className="text-slate-600 font-black text-xs">/</span>
                           <input title="Input Field" 
-                            type="number" 
-                            value={assessments.vitals.resp} 
-                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value)}})}
-                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl p-2 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
+                            type="text" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={assessments.vitals.resp || ''} 
+                            onChange={e => setAssessments({...assessments, vitals: {...assessments.vitals, resp: parseInt(e.target.value) || 0}})}
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 font-black text-sm outline-none focus:border-quro-teal transition-all text-center"
                             placeholder="RR"
                           />
                         </div>
@@ -2006,19 +2017,74 @@ export default function PatientChartPage() {
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Appetite / Intake</p>
                           <div className="flex gap-2">
                             {['Poor', 'Fair', 'Good'].map(val => (
-                              <button key={val} onClick={() => setAssessments({...assessments, gi: {...assessments.gi, appetite: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.appetite.includes(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
+                              <button type="button" key={val} onClick={() => setAssessments({...assessments, gi: {...assessments.gi, appetite: val}})} className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.appetite.includes(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}>
                                 {val}
                               </button>
                             ))}
                           </div>
                         </div>
-                        <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100">
-                          <div className="flex justify-between items-center mb-2">
-                            <p className="text-[8px] font-black text-emerald-900 uppercase">Bristol Stool Scale</p>
-                            <span className="text-[10px] font-black text-orange-700">Type {assessments.gi.stool_bristol}</span>
+
+                        {/* Bowel Movement Section */}
+                        <div className="pt-2 border-t border-slate-100/50">
+                          <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Bowel Movement this shift?</p>
+                          <div className="flex gap-2">
+                            {['No', 'Yes'].map(val => (
+                              <button 
+                                type="button"
+                                key={val} 
+                                onClick={() => setAssessments({
+                                  ...assessments, 
+                                  gi: {
+                                    ...assessments.gi, 
+                                    bm_this_shift: val as 'Yes' | 'No',
+                                    bm_count: val === 'Yes' ? Math.max(1, assessments.gi.bm_count) : 0
+                                  }
+                                })} 
+                                className={`flex-1 py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.bm_this_shift === val ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20' : 'bg-slate-50 text-emerald-900 border-slate-100'}`}
+                              >
+                                {val}
+                              </button>
+                            ))}
                           </div>
-                          <input title="Bristol Stool Scale" type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
                         </div>
+
+                        {assessments.gi.bm_this_shift === 'Yes' && (
+                          <div className="space-y-4 p-4 bg-orange-50/20 border border-orange-100/50 rounded-2xl animate-in fade-in duration-300">
+                            <div className="flex justify-between items-center">
+                              <p className="text-[9px] font-black text-emerald-900 uppercase">BM Count (Shift)</p>
+                              <div className="flex items-center gap-3">
+                                <button type="button" onClick={() => setAssessments({...assessments, gi: {...assessments.gi, bm_count: Math.max(1, assessments.gi.bm_count - 1)}})} className="w-6 h-6 rounded-full bg-white border border-orange-200 flex items-center justify-center font-black">-</button>
+                                <span className="font-black text-xs text-orange-955">{assessments.gi.bm_count}</span>
+                                <button type="button" onClick={() => setAssessments({...assessments, gi: {...assessments.gi, bm_count: assessments.gi.bm_count + 1}})} className="w-6 h-6 rounded-full bg-white border border-orange-200 flex items-center justify-center font-black">+</button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mb-2">Stool Consistency</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {['Normal', 'Hard', 'Loose', 'Liquid'].map(val => (
+                                  <button 
+                                    type="button"
+                                    key={val} 
+                                    onClick={() => setAssessments({...assessments, gi: {...assessments.gi, bm_consistency: val as any}})} 
+                                    className={`py-2 rounded-lg text-[9px] font-black border transition-all ${assessments.gi.bm_consistency === val ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-emerald-900 border-slate-100'}`}
+                                  >
+                                    {val}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="p-3 bg-white rounded-xl border border-orange-100">
+                              <div className="flex justify-between items-center mb-2">
+                                <p className="text-[8px] font-black text-emerald-900 uppercase">Bristol Stool Scale</p>
+                                <span className="text-[10px] font-black text-orange-700">Type {assessments.gi.stool_bristol}</span>
+                              </div>
+                              <input title="Bristol Stool Scale" type="range" min="1" max="7" step="1" value={assessments.gi.stool_bristol} onChange={e => setAssessments({...assessments, gi: {...assessments.gi, stool_bristol: parseInt(e.target.value)}})} className="w-full accent-orange-500" />
+                            </div>
+                          </div>
+                        )}
+
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
                           <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Fluid Intake (mL)</p>
                           <input title="Fluid Intake (mL)" 
