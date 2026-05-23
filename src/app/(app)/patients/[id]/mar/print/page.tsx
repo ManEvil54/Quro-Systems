@@ -19,6 +19,36 @@ interface ProjectedOrder {
   order_type: string;
 }
 
+// Derive a clean medication or treatment title, parsing order_text if structured fields are missing
+function deriveTitle(data: any): string {
+  if (data.generic_name && data.generic_name !== "Unspecified Order") {
+    return data.generic_name;
+  }
+  if (data.title && data.title !== "Unspecified Order") {
+    return data.title;
+  }
+  
+  if (data.order_text) {
+    // 1. Take the first part before any dash or newline
+    const firstPart = data.order_text.split(/ - |\n|,\s*Dose:/i)[0].trim();
+    
+    // 2. Try to find where the strength starts to extract the drug name
+    // e.g. "Donepezil (Aricept) 10mg" -> split at "10mg"
+    const strengthRegex = /\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|tab|caps|tablet|capsule|unit|u|meq|%)/i;
+    const match = firstPart.match(strengthRegex);
+    if (match && match.index !== undefined && match.index > 0) {
+      const derived = firstPart.substring(0, match.index).trim();
+      if (derived) {
+        // Clean up any trailing dashes, hyphens, or commas
+        return derived.replace(/[\s-–,]+$/, "");
+      }
+    }
+    return firstPart;
+  }
+  
+  return "Unspecified Order";
+}
+
 export default function MarTarPrintPage() {
   const params = useParams() as { id: string };
   const { organization } = useAuth();
@@ -92,7 +122,7 @@ export default function MarTarPrintPage() {
 
           const order: ProjectedOrder = {
             id: doc.id,
-            title: data.generic_name || data.title || "Unspecified Order",
+            title: deriveTitle(data),
             details: data.instructions || data.special_instructions || data.order_text || `Route: ${data.route || "N/A"} | Freq: ${data.frequency || "QD"}`,
             frequency: data.frequency || "QD",
             frequency_times: times,
