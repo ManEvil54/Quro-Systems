@@ -93,6 +93,15 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
   const [physicians, setPhysicians] = useState<Staff[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
 
+  const [orderType, setOrderType] = useState<'medication' | 'treatment'>('medication');
+  const [treatmentTitle, setTreatmentTitle] = useState('');
+  const [treatmentInstructions, setTreatmentInstructions] = useState('');
+  const [treatmentFrequency, setTreatmentFrequency] = useState('QD');
+  const [treatmentTimes, setTreatmentTimes] = useState<string[]>(['09:00']);
+  const [treatmentOrderMethod, setTreatmentOrderMethod] = useState<'direct' | 'telephone'>('direct');
+  const [treatmentPhysicianId, setTreatmentPhysicianId] = useState('');
+  const [treatmentPhysicianName, setTreatmentPhysicianName] = useState('');
+
   const resetForm = () => {
     setNewOrder({
       generic_name: '',
@@ -124,34 +133,52 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       physician_id: '',
       physician_name: ''
     });
+    setTreatmentTitle('');
+    setTreatmentInstructions('');
+    setTreatmentFrequency('QD');
+    setTreatmentTimes(['09:00']);
+    setTreatmentOrderMethod('direct');
+    setTreatmentPhysicianId('');
+    setTreatmentPhysicianName('');
     setEditingDraftId(null);
   };
 
   const handleEditDraft = (order: ProviderOrder) => {
-    setNewOrder({
-      generic_name: order.generic_name || '',
-      strength: order.strength || '',
-      dose: order.dose || '',
-      dosage: order.dosage || '',
-      route: order.route || 'PO',
-      frequency: order.frequency || 'QD',
-      custom_times: order.frequency_times || (order.frequency === 'PRN' ? [] : ['09:00']),
-      indication: order.indication || '',
-      prn_reason: order.prn_reason || '',
-      prn_interval: order.prn_interval || '',
-      is_psychotropic: order.is_psychotropic || false,
-      special_instructions: order.special_instructions || '',
-      requires_vitals: order.requires_vitals || false,
-      vital_type: order.vital_type || 'bp',
-      vital_threshold_low: order.vital_threshold_low ? String(order.vital_threshold_low) : '',
-      vital_threshold_high: order.vital_threshold_high ? String(order.vital_threshold_high) : '',
-      order_type: (order.order_method as 'direct' | 'telephone') || 'direct',
-      physician_id: order.ordering_physician_id || '',
-      physician_name: order.ordering_physician_id || '',
-      rxcui: order.rxcui || null
-    });
+    if (order.order_type === 'treatment') {
+      setTreatmentTitle(order.title || '');
+      setTreatmentInstructions(order.order_text || '');
+      setTreatmentFrequency(order.frequency || 'QD');
+      setTreatmentTimes(order.frequency_times || ['09:00']);
+      setTreatmentOrderMethod((order.order_method as 'direct' | 'telephone') || 'direct');
+      setTreatmentPhysicianId(order.ordering_physician_id || '');
+      setTreatmentPhysicianName(order.ordering_physician_id || '');
+      setOrderType('treatment');
+    } else {
+      setNewOrder({
+        generic_name: order.generic_name || '',
+        strength: order.strength || '',
+        dose: order.dose || '',
+        dosage: order.dosage || '',
+        route: order.route || 'PO',
+        frequency: order.frequency || 'QD',
+        custom_times: order.frequency_times || (order.frequency === 'PRN' ? [] : ['09:00']),
+        indication: order.indication || '',
+        prn_reason: order.prn_reason || '',
+        prn_interval: order.prn_interval || '',
+        is_psychotropic: order.is_psychotropic || false,
+        special_instructions: order.special_instructions || '',
+        requires_vitals: order.requires_vitals || false,
+        vital_type: order.vital_type || 'bp',
+        vital_threshold_low: order.vital_threshold_low ? String(order.vital_threshold_low) : '',
+        vital_threshold_high: order.vital_threshold_high ? String(order.vital_threshold_high) : '',
+        order_type: (order.order_method as 'direct' | 'telephone') || 'direct',
+        physician_id: order.ordering_physician_id || '',
+        physician_name: order.ordering_physician_id || '',
+        rxcui: order.rxcui || null
+      });
+      setOrderType('medication');
+    }
     setEditingDraftId(order.id);
-    setOrderCategory('medication');
     setIsOrdering(true);
   };
 
@@ -167,10 +194,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       });
 
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
-        action: 'MED_ORDER_SIGNED',
+        action: order.order_type === 'treatment' ? 'TREATMENT_ORDER_SIGNED' : 'MED_ORDER_SIGNED',
         staff_id: staff.id,
         patient_id: patientId,
-        details: `Physician signed draft order directly for ${order.generic_name}`,
+        details: `Physician signed draft order directly for ${order.title || order.generic_name}`,
         timestamp: new Date().toISOString()
       });
 
@@ -196,10 +223,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       const order = providerOrders.find(o => o.id === orderId);
 
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
-        action: 'MED_ORDER_CO_SIGNED',
+        action: order?.order_type === 'treatment' ? 'TREATMENT_ORDER_CO_SIGNED' : 'MED_ORDER_CO_SIGNED',
         staff_id: staff.id,
         patient_id: patientId,
-        details: `Physician co-signed telephone order for ${order?.generic_name || order?.order_text || 'Medication/Diet'}`,
+        details: `Physician co-signed telephone order for ${order?.title || order?.generic_name || order?.order_text || 'Medication/Treatment'}`,
         timestamp: new Date().toISOString()
       });
 
@@ -211,9 +238,6 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     }
   };
 
-  // New Order Form State
-  const [orderCategory, setOrderCategory] = useState<'medication' | 'diet'>('medication');
-  
   const [newDietOrder, setNewDietOrder] = useState({
     diet_type: 'Regular',
     consistency: 'Regular',
@@ -333,47 +357,71 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     setIsSaving(true);
 
     try {
-      if (orderCategory === 'diet') {
-        const isTelephone = newDietOrder.order_type === 'telephone';
-        const dietString = `${newDietOrder.diet_type}${newDietOrder.consistency !== 'Regular' ? ' with ' + newDietOrder.consistency : ''}`;
-
-        // Create provider order first for diet
-        await addDoc(
-          collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
-          {
-            org_id: organization.id,
-            patient_id: patientId,
-            facility_id: patient?.facility_id || '',
-            ordering_physician_id: isTelephone ? newDietOrder.physician_id : staff.id,
-            order_type: 'diet',
-            order_text: dietString + (newDietOrder.instructions ? `. Instructions: ${newDietOrder.instructions}` : ''),
-            priority: 'routine',
-            status: isTelephone ? 'acknowledged' : 'signed',
-            order_method: newDietOrder.order_type,
-            signed_at: isTelephone ? null : new Date().toISOString(),
-            acknowledged_at: isTelephone ? new Date().toISOString() : null,
-            acknowledging_nurse_id: isTelephone ? staff.id : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        );
-
-        await updateDoc(doc(db, 'organizations', organization.id, 'patients', patientId), {
-          diet: dietString,
+      if (orderType === 'treatment') {
+        const isTelephone = treatmentOrderMethod === 'telephone';
+        
+        const providerOrderData: any = {
+          org_id: organization.id,
+          patient_id: patientId,
+          facility_id: patient?.facility_id || '',
+          ordering_physician_id: isTelephone ? treatmentPhysicianId : staff.id,
+          order_type: 'treatment',
+          title: treatmentTitle,
+          order_text: treatmentInstructions,
+          priority: 'routine',
+          status: targetStatus === 'signed' ? (isTelephone ? 'acknowledged' : 'signed') : 'draft',
+          order_method: treatmentOrderMethod,
+          frequency: treatmentFrequency,
+          frequency_times: treatmentFrequency === 'PRN' ? [] : treatmentTimes,
           updated_at: new Date().toISOString()
-        });
+        };
+
+        if (targetStatus === 'signed') {
+          if (isTelephone) {
+            providerOrderData.signed_at = null;
+            providerOrderData.acknowledged_at = new Date().toISOString();
+            providerOrderData.acknowledging_nurse_id = staff.id;
+          } else {
+            providerOrderData.signed_at = new Date().toISOString();
+          }
+        }
+
+        if (editingDraftId) {
+          const docRef = doc(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders', editingDraftId);
+          await updateDoc(docRef, providerOrderData);
+        } else {
+          providerOrderData.created_at = new Date().toISOString();
+          await addDoc(
+            collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+            providerOrderData
+          );
+        }
+
+        // Also update diet field if it is a dietary request to support legacy facesheet panels
+        if (treatmentTitle.toLowerCase().includes("diet") || treatmentInstructions.toLowerCase().includes("diet")) {
+          await updateDoc(doc(db, 'organizations', organization.id, 'patients', patientId), {
+            diet: treatmentTitle,
+            updated_at: new Date().toISOString()
+          });
+        }
 
         await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
-          action: isTelephone ? 'TELEPHONE_DIET_ORDER' : 'DIET_ORDER_SIGNED',
+          action: targetStatus === 'signed' 
+            ? (isTelephone ? 'TELEPHONE_TREATMENT_ORDER' : 'TREATMENT_ORDER_SIGNED')
+            : 'TREATMENT_ORDER_DRAFT_SAVED',
           staff_id: staff.id,
           patient_id: patientId,
-          details: isTelephone 
-            ? `Nurse transcribed telephone diet order from ${newDietOrder.physician_name} for ${dietString}`
-            : `Physician signed new diet order for ${dietString}`,
+          details: targetStatus === 'signed'
+            ? (isTelephone 
+                ? `Nurse transcribed telephone treatment order from ${treatmentPhysicianName} for ${treatmentTitle}`
+                : `Physician signed new treatment order for ${treatmentTitle}`)
+            : `Saved draft treatment order for ${treatmentTitle}`,
           timestamp: new Date().toISOString()
         });
 
         setIsOrdering(false);
+        resetForm();
+        fetchOrders();
         return;
       }
 
@@ -436,8 +484,6 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           providerOrderData
         );
       }
-
-
 
       // Log to Audit Trail
       await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
@@ -516,7 +562,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
-                          order.order_type === 'diet' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'
+                          order.order_type === 'diet' || order.order_type === 'treatment' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'
                         }`}>
                           {order.order_type}
                         </span>
@@ -525,7 +571,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         </span>
                       </div>
                       <h4 className="text-base font-black text-quro-charcoal uppercase leading-snug">
-                        {order.generic_name || order.order_text?.split(' - ')[0] || 'Clinical Order'} {order.strength || ''}
+                        {order.order_type === 'treatment' ? order.title : (order.generic_name || order.order_text?.split(' - ')[0] || 'Clinical Order')} {order.strength || ''}
                       </h4>
                       <p className="text-xs font-semibold text-slate-600">
                         {order.order_text}
@@ -558,7 +604,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
               </div>
               <div>
                 <h3 className="text-lg font-black text-quro-charcoal uppercase">
-                  {newOrder.order_type === 'telephone' ? 'Telephone Order (T.O.)' : 'Direct Physician Order'}
+                  {(orderType === 'medication' ? newOrder.order_type : treatmentOrderMethod) === 'telephone' ? 'Telephone Order (T.O.)' : 'Direct Physician Order'}
                 </h3>
                 <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase">Clinical Decision Support Enabled</p>
               </div>
@@ -568,17 +614,17 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
               <div className="flex bg-slate-100 p-1 rounded-xl">
                 <button 
                   type="button"
-                  onClick={() => setOrderCategory('medication')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${orderCategory === 'medication' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  onClick={() => setOrderType('medication')}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${orderType === 'medication' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   Medication
                 </button>
                 <button 
                   type="button"
-                  onClick={() => setOrderCategory('diet')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${orderCategory === 'diet' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  onClick={() => setOrderType('treatment')}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${orderType === 'treatment' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
-                  Diet
+                  Treatment
                 </button>
               </div>
 
@@ -586,17 +632,17 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <button 
                   type="button"
                   onClick={() => {
-                    if (orderCategory === 'medication') setNewOrder({...newOrder, order_type: 'direct'});
-                    else setNewDietOrder({...newDietOrder, order_type: 'direct'});
+                    if (orderType === 'medication') setNewOrder({...newOrder, order_type: 'direct'});
+                    else setTreatmentOrderMethod('direct');
                   }}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderCategory === 'medication' ? newOrder.order_type : newDietOrder.order_type) === 'direct' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderType === 'medication' ? newOrder.order_type : treatmentOrderMethod) === 'direct' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   Direct
                 </button>
                 <button 
                   type="button"
                   onClick={() => {
-                    if (orderCategory === 'medication') {
+                    if (orderType === 'medication') {
                       setNewOrder({
                         ...newOrder, 
                         order_type: 'telephone',
@@ -604,15 +650,12 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         physician_name: patient?.attending_physician || ''
                       });
                     } else {
-                      setNewDietOrder({
-                        ...newDietOrder, 
-                        order_type: 'telephone',
-                        physician_id: patient?.attending_physician || '',
-                        physician_name: patient?.attending_physician || ''
-                      });
+                      setTreatmentOrderMethod('telephone');
+                      setTreatmentPhysicianId(patient?.attending_physician || '');
+                      setTreatmentPhysicianName(patient?.attending_physician || '');
                     }
                   }}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderCategory === 'medication' ? newOrder.order_type : newDietOrder.order_type) === 'telephone' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderType === 'medication' ? newOrder.order_type : treatmentOrderMethod) === 'telephone' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   Telephone (T.O.)
                 </button>
@@ -620,29 +663,26 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
             </div>
           </div>
 
-          {(orderCategory === 'medication' ? newOrder.order_type : newDietOrder.order_type) === 'telephone' && (
+          {(orderType === 'medication' ? newOrder.order_type : treatmentOrderMethod) === 'telephone' && (
             <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl animate-in slide-in-from-top-2">
               <label className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-2 block">Selecting Prescribing Physician</label>
               <select 
                 required
                 title="Prescribing Physician"
                 className="w-full bg-white border-none rounded-xl p-3 text-sm font-bold text-quro-charcoal"
-                value={orderCategory === 'medication' ? newOrder.physician_id : newDietOrder.physician_id}
+                value={orderType === 'medication' ? newOrder.physician_id : treatmentPhysicianId}
                 onChange={e => {
                   const p = physicians.find(ph => ph.id === e.target.value);
                   const selectedName = p ? `Dr. ${p.last_name}` : e.target.value;
-                  if (orderCategory === 'medication') {
+                  if (orderType === 'medication') {
                     setNewOrder({
                       ...newOrder,
                       physician_id: e.target.value,
                       physician_name: selectedName
                     });
                   } else {
-                    setNewDietOrder({
-                      ...newDietOrder,
-                      physician_id: e.target.value,
-                      physician_name: selectedName
-                    });
+                    setTreatmentPhysicianId(e.target.value);
+                    setTreatmentPhysicianName(selectedName);
                   }
                 }}
               >
@@ -657,7 +697,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
             </div>
           )}
 
-          {orderCategory === 'medication' && (
+          {orderType === 'medication' && (
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Primary Med Details */}
@@ -959,69 +999,172 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           </div>
           )}
 
-          {orderCategory === 'diet' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diet Type</label>
-                  <select 
-                    title="Diet Type"
-                    className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal"
-                    value={newDietOrder.diet_type}
-                    onChange={e => setNewDietOrder({...newDietOrder, diet_type: e.target.value})}
-                  >
-                    <option value="Regular">Regular</option>
-                    <option value="Mech Soft">Mech Soft</option>
-                    <option value="Pureed">Pureed</option>
-                    <option value="Clear Liquid">Clear Liquid</option>
-                    <option value="Full Liquid">Full Liquid</option>
-                    <option value="Diabetic">Diabetic / Consistent Carb</option>
-                    <option value="Cardiac">Cardiac / Low Sodium</option>
-                    <option value="Renal">Renal</option>
-                    <option value="NPO">NPO</option>
-                  </select>
+          {orderType === 'treatment' && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left Side: Title & Instructions */}
+                <div className="space-y-6">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Treatment Title (e.g., Weekly Weights, Meal % Tracking) <span className="text-rose-500">*</span>
+                    </label>
+                    <input 
+                      required 
+                      type="text" 
+                      placeholder="e.g. Weekly Weights"
+                      className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-bold text-quro-charcoal"
+                      value={treatmentTitle}
+                      onChange={e => setTreatmentTitle(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Suggestive Presets Grid */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Common Presets</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { title: "Weekly Weights", instructions: "Record patient's weight every Sunday morning during day shift. Log in lbs." },
+                        { title: "Log Meal Consumption %", instructions: "Monitor and record meal percentage after every meal." },
+                        { title: "Vitals Check: BP & Pulse", instructions: "Check blood pressure and heart rate twice daily (AM and PM shift)." },
+                        { title: "Turn & Position", instructions: "Turn and position patient every 2 hours to prevent pressure injuries." },
+                        { title: "Trach Care", instructions: "Perform tracheostomy care and suctioning every shift and PRN." },
+                        { title: "GT Flush", instructions: "Flush gastrostomy tube with 30mL water before and after feeding." }
+                      ].map((preset) => (
+                        <button
+                          key={preset.title}
+                          type="button"
+                          onClick={() => {
+                            setTreatmentTitle(preset.title);
+                            setTreatmentInstructions(preset.instructions);
+                          }}
+                          className="p-3 bg-slate-50 border border-slate-200 hover:border-quro-teal hover:bg-teal-50/50 rounded-xl text-[10px] font-bold text-slate-600 hover:text-quro-teal transition-all text-left truncate"
+                        >
+                          {preset.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consistency / Liquid Type</label>
-                  <select 
-                    title="Consistency / Liquid Type"
-                    className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal"
-                    value={newDietOrder.consistency}
-                    onChange={e => setNewDietOrder({...newDietOrder, consistency: e.target.value})}
-                  >
-                    <option value="Regular">Regular (Thin Fluids)</option>
-                    <option value="Nectar Thick">Nectar Thick</option>
-                    <option value="Honey Thick">Honey Thick</option>
-                    <option value="Pudding Thick">Pudding Thick</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Special Instructions (Optional)</label>
-                  <textarea 
-                    placeholder="e.g. No added salt, cut into small pieces"
-                    className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold h-32 resize-none text-quro-charcoal"
-                    value={newDietOrder.instructions}
-                    onChange={e => setNewDietOrder({...newDietOrder, instructions: e.target.value})}
-                  />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button 
-                    type="submit"
-                    disabled={isSaving || (newDietOrder.order_type === 'telephone' && !newDietOrder.physician_id)}
-                    className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-800 transition-all shadow-2xl flex items-center justify-center gap-3"
-                  >
-                    <ShieldCheck size={20} className="text-quro-teal" />
-                    {isSaving ? 'AUTHENTICATING...' : (newDietOrder.order_type === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT DIET')}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setIsOrdering(false)}
-                    className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
-                  >
-                    CANCEL
-                  </button>
+
+                {/* Right Side: Instructions & Scheduling */}
+                <div className="space-y-6">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Specific Clinical Instructions <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea 
+                      required
+                      placeholder="Provide exact parameters or administration directives..."
+                      className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold h-28 resize-none text-quro-charcoal"
+                      value={treatmentInstructions}
+                      onChange={e => setTreatmentInstructions(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Frequency</label>
+                    <select 
+                      title="Frequency"
+                      className="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-quro-charcoal"
+                      value={treatmentFrequency}
+                      onChange={e => {
+                        const freq = e.target.value;
+                        let newTimes = ['09:00'];
+                        if (freq === 'BID') newTimes = ['09:00', '17:00'];
+                        else if (freq === 'TID') newTimes = ['09:00', '13:00', '17:00'];
+                        else if (freq === 'QID') newTimes = ['09:00', '13:00', '17:00', '21:00'];
+                        else if (freq === 'QHS') newTimes = ['21:00'];
+                        else if (freq === 'PRN') newTimes = [];
+                        setTreatmentFrequency(freq);
+                        setTreatmentTimes(newTimes);
+                      }}
+                    >
+                      <option value="QD">QD (Daily)</option>
+                      <option value="BID">BID (Twice Daily)</option>
+                      <option value="TID">TID (Three Times Daily)</option>
+                      <option value="QID">QID (Four Times Daily)</option>
+                      <option value="QHS">QHS (Bedtime)</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="PRN">PRN (As Needed)</option>
+                    </select>
+                  </div>
+
+                  {treatmentFrequency !== 'PRN' && (
+                    <div className="space-y-2 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Administration Times</label>
+                      <div className="flex flex-wrap gap-2">
+                        {treatmentTimes.map((time, i) => (
+                          <div key={i} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl pl-3 pr-1.5 py-1.5 shadow-sm">
+                            <input 
+                              type="time" 
+                              title="Administration time"
+                              className="border-none p-0 text-xs font-black focus:ring-0 w-20 text-quro-charcoal"
+                              value={time} 
+                              onChange={e => {
+                                const newTimes = [...treatmentTimes];
+                                newTimes[i] = e.target.value;
+                                setTreatmentTimes(newTimes);
+                              }}
+                            />
+                            {treatmentTimes.length > 1 && (
+                              <button 
+                                type="button" 
+                                title="Remove administration time"
+                                onClick={() => {
+                                  setTreatmentTimes(treatmentTimes.filter((_, idx) => idx !== i));
+                                }} 
+                                className="p-1 text-slate-300 hover:text-rose-500 transition-colors rounded-lg hover:bg-slate-50"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          type="button" 
+                          onClick={() => setTreatmentTimes([...treatmentTimes, '09:00'])}
+                          className="px-3 py-1.5 border border-dashed border-slate-300 rounded-xl text-[10px] font-black uppercase text-slate-500 hover:bg-slate-100 hover:border-slate-400 transition-colors"
+                        >
+                          + Add Time
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    <button 
+                      type="submit"
+                      onClick={() => setTargetStatus('signed')}
+                      disabled={isSaving || (treatmentOrderMethod === 'telephone' && !treatmentPhysicianId)}
+                      className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
+                    >
+                      <ShieldCheck size={18} className="text-quro-teal" />
+                      {isSaving && targetStatus === 'signed' ? 'SIGNING...' : (treatmentOrderMethod === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT')}
+                    </button>
+
+                    <button 
+                      type="submit"
+                      onClick={() => setTargetStatus('draft')}
+                      disabled={isSaving}
+                      className="flex-1 bg-teal-50 text-quro-teal py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-teal-100 transition-all flex items-center justify-center gap-3 border border-teal-200"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                      </svg>
+                      {isSaving && targetStatus === 'draft' ? 'SAVING DRAFT...' : (editingDraftId ? 'UPDATE DRAFT' : 'SAVE AS DRAFT')}
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setIsOrdering(false);
+                        resetForm();
+                      }}
+                      className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
+                    >
+                      CANCEL
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1052,7 +1195,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <div>
                   <div className="flex items-center flex-wrap gap-2">
                     <h4 className="text-base font-black text-quro-charcoal uppercase tracking-tight">
-                      {order.generic_name || order.order_text?.split(' - ')[0] || 'Medication Order'} {order.strength}
+                      {order.order_type === 'treatment' ? order.title : (order.generic_name || order.order_text?.split(' - ')[0] || 'Medication Order')} {order.strength || ''}
                     </h4>
                     <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
                       order.status === 'draft' 
