@@ -361,7 +361,7 @@ function FeatureBentoGrid() {
             
             <div className="relative flex-1 w-full rounded-2xl overflow-hidden mt-6 border border-slate-800/80 min-h-[250px] shadow-2xl">
               <Image 
-                src="/premium-hero.png"
+                src="/nurse-robot-bento.png"
                 alt="Nurse and AI Robot using Quro's Active Clinical Partner screen showing shift intelligence and safety audits"
                 fill
                 className="object-cover scale-100 group-hover:scale-105 transition-transform duration-[3s]"
