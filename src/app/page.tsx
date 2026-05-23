@@ -265,7 +265,7 @@ function FeatureBentoGrid() {
         <div className="max-w-2xl mb-16">
           <p className="text-xs font-bold tracking-[0.3em] text-teal-400 uppercase mb-3">Next-Gen Capabilities</p>
           <h2 className="text-3xl md:text-5xl font-extralight tracking-tight text-white leading-tight">
-            An active clinical partner. <br />
+            An Aigentic clinical partner. <br />
             <span className="font-medium text-slate-400">Not just another static database.</span>
           </h2>
         </div>
