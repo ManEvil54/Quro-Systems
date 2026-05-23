@@ -113,6 +113,8 @@ export default function MarketingPage() {
         </div>
       </section>
 
+      <FeatureBentoGrid />
+
       {/* The Clinical Brain - AI Section */}
       <section className="py-32 bg-slate-900 text-white relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
@@ -249,6 +251,98 @@ export default function MarketingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function FeatureBentoGrid() {
+  return (
+    <section className="py-24 bg-slate-950 text-white px-6 relative overflow-hidden">
+      {/* Subtle Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/10 rounded-full blur-[150px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto">
+        {/* Section Header */}
+        <div className="max-w-2xl mb-16">
+          <p className="text-xs font-bold tracking-[0.3em] text-teal-400 uppercase mb-3">Next-Gen Capabilities</p>
+          <h2 className="text-3xl md:text-5xl font-extralight tracking-tight text-white leading-tight">
+            An active clinical partner. <br />
+            <span className="font-medium text-slate-400">Not just another static database.</span>
+          </h2>
+        </div>
+
+        {/* The Bento Grid Mesh */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Card 1: AI Handover Synthesizer (Large 2-Column Card) */}
+          <div className="md:col-span-2 bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex flex-col justify-between backdrop-blur-sm group hover:border-slate-700 transition-all">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="h-2 w-2 rounded-full bg-teal-400 animate-pulse" />
+                <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">Vertex AI Engine</span>
+              </div>
+              <h3 className="text-xl font-light mb-2 text-white">8/12-Hour Shift Handover Synthesizer</h3>
+              <p className="text-sm text-slate-400 font-light max-w-md leading-relaxed">
+                Automatically scans respiratory, enteral, and therapy logs at shift boundaries. Generates a strict, 3-bullet briefing for incoming teams to wipe out first-hour blindness.
+              </p>
+            </div>
+            
+            {/* Visual Micro-UI Code Mockup inside card */}
+            <div className="mt-8 bg-slate-950 rounded-2xl p-4 border border-slate-800/60 font-mono text-xs text-slate-300">
+              <div className="text-teal-400 text-[10px] uppercase font-bold tracking-wider mb-2">● Active Shift Intelligence</div>
+              <div className="text-slate-400 font-light">• Respiratory: Trach suctioning frequency increased 40% in Room 202</div>
+              <div className="text-slate-400 font-light">• Enteral: GT feed occlusion resolved on Day shift; 150mL deficit</div>
+              <div className="text-slate-400 font-light">• Operations: 3 clinical handshakes pending authentication</div>
+            </div>
+          </div>
+
+          {/* Card 2: Interdisciplinary Sync (1-Column Card) */}
+          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex flex-col justify-between hover:border-slate-700 transition-all">
+            <div>
+              <span className="text-[10px] font-mono tracking-widest text-teal-400 uppercase block mb-4">Unified Mesh</span>
+              <h3 className="text-xl font-light mb-2 text-white">Multi-Therapy Coordination</h3>
+              <p className="text-sm text-slate-400 font-light leading-relaxed">
+                Dedicated clinical charting blades for Physical, Speech, and Respiratory Therapists. Fully synchronized back into a single matrix.
+              </p>
+            </div>
+            <div className="mt-6 grid grid-cols-3 gap-2 text-center text-[10px] font-medium tracking-wider text-slate-400">
+              <div className="border border-slate-800 py-2 rounded-xl bg-slate-950/40">PT</div>
+              <div className="border border-slate-800 py-2 rounded-xl bg-slate-950/40">ST</div>
+              <div className="border border-slate-800 py-2 rounded-xl bg-teal-950/20 text-teal-400 border-teal-900/50">RT</div>
+            </div>
+          </div>
+
+          {/* Card 3: Clinical Interceptor (1-Column Card) */}
+          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex flex-col justify-between hover:border-slate-700 transition-all">
+            <div>
+              <span className="text-[10px] font-mono tracking-widest text-red-400 uppercase block mb-4">Semantic Guardian</span>
+              <h3 className="text-xl font-light mb-2 text-white">Dual-Layer Safety Interceptor</h3>
+              <p className="text-sm text-slate-400 font-light leading-relaxed">
+                Hooks straight into the NIH RxNav registry as you type, backed by LLM semantic evaluation to intercept drug interactions, cross-allergies, and diagnosis conflicts before signing.
+              </p>
+            </div>
+            <div className="mt-6 border border-red-900/30 bg-red-950/10 p-3 rounded-xl text-[11px] text-red-300 font-light">
+              ⚠️ Warning: Cross-reactivity risk with documented Penicillin allergy.
+            </div>
+          </div>
+
+          {/* Card 4: Psychotropic Monitoring (Large 2-Column Card) */}
+          <div className="md:col-span-2 bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex flex-col justify-between hover:border-slate-700 transition-all">
+            <div>
+              <span className="text-[10px] font-mono tracking-widest text-amber-400 uppercase block mb-4">Regulatory Defense</span>
+              <h3 className="text-xl font-light mb-2 text-white">Automated Psychotropic Tracking</h3>
+              <p className="text-sm text-slate-400 font-light leading-relaxed">
+                Fulfills strict state surveyor compliance. Ordering a psychotropic medication programmatically builds and links corresponding side-effect monitoring tasks onto the TAR grid based on precise dosages.
+              </p>
+            </div>
+            <div className="mt-6 flex gap-4 text-[11px] font-mono text-slate-500">
+              <div>[Parent Script: Signed]</div>
+              <div className="text-teal-400">➔ [Child TAR Check: Injected]</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
   );
 }
 
