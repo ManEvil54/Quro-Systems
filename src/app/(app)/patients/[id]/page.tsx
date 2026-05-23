@@ -105,11 +105,6 @@ export default function PatientChartPage() {
       if (m.status !== 'active') return false;
       const matchingOrder = orders.find(o => o.id === m.order_id);
       if (matchingOrder && matchingOrder.status === 'cancelled') return false;
-      const matchingDiscontinuedOrder = orders.find(o => 
-        o.status === 'cancelled' && 
-        o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
-      );
-      if (matchingDiscontinuedOrder) return false;
       return true;
     });
   }, [medications, orders]);
@@ -124,32 +119,7 @@ export default function PatientChartPage() {
 
 
 
-  // Auto-sync medication status with discontinued/cancelled orders in the Firestore database
-  useEffect(() => {
-    if (medsLoading || ordersLoading || !medications.length || !orders.length) return;
 
-    const syncMedsWithOrders = async () => {
-      for (const med of medications) {
-        if (med.status === 'active') {
-          const cancelledOrder = orders.find(o => 
-            o.status === 'cancelled' && 
-            (o.id === med.order_id || (med.generic_name && o.order_text.toLowerCase().includes(med.generic_name.toLowerCase())))
-          );
-
-          if (cancelledOrder) {
-            console.log(`Sync: Discontinuing medication ${med.generic_name} due to cancelled provider order.`);
-            try {
-              await updateMedication(med.id, { status: 'discontinued' });
-            } catch (err) {
-              console.error(`Failed to auto-discontinue medication ${med.id}:`, err);
-            }
-          }
-        }
-      }
-    };
-
-    syncMedsWithOrders();
-  }, [medications, orders, medsLoading, ordersLoading, updateMedication]);
 
   const { rooms, beds, loading: bedsLoading } = useBeds(patient?.facility_id || activeFacility?.id || '');
 

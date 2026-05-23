@@ -39,11 +39,6 @@ export default function MARGrid({ patientId }: Props) {
       if (orders) {
         const matchingOrder = orders.find(o => o.id === m.order_id);
         if (matchingOrder && matchingOrder.status === 'cancelled') return false;
-        const matchingDiscontinuedOrder = orders.find(o => 
-          o.status === 'cancelled' && 
-          o.order_text.toLowerCase().includes(m.generic_name.toLowerCase())
-        );
-        if (matchingDiscontinuedOrder) return false;
       }
       return true;
     });
@@ -95,12 +90,14 @@ export default function MARGrid({ patientId }: Props) {
           <h2 className="font-bold text-slate-900">{monthName} {currentYear}</h2>
           <div className="flex bg-white rounded-lg border border-slate-200 p-0.5">
             <button 
+              title="Previous Month"
               onClick={() => setCurrentMonth(m => m === 0 ? 11 : m - 1)}
               className="p-1 hover:bg-slate-50 rounded-md text-slate-400"
             >
               <ChevronLeft size={16} />
             </button>
             <button 
+              title="Next Month"
               onClick={() => setCurrentMonth(m => m === 11 ? 0 : m + 1)}
               className="p-1 hover:bg-slate-50 rounded-md text-slate-400"
             >

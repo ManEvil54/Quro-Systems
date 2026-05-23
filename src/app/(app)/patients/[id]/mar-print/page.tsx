@@ -280,10 +280,14 @@ export default function MarTarPrintPage() {
 
       {/* Footer Initials Legend Box */}
       <div className="mt-4 border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono">
-        <div className="border-r border-slate-300 pr-2">Nurse Initial: ______ Signature: __________________</div>
-        <div className="border-r border-slate-300 pr-2">Nurse Initial: ______ Signature: __________________</div>
-        <div className="border-r border-slate-300 pr-2">Nurse Initial: ______ Signature: __________________</div>
-        <div>Therapist Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
+        <div className="pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pt-1">Nurse Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pt-1">Nurse Initial: ______ Signature: __________________</div>
+        <div className="border-r border-slate-300 pr-2 pt-1">Nurse Initial: ______ Signature: __________________</div>
+        <div className="pt-1">Therapist Initial: ______ Signature: __________________</div>
       </div>
 
     </div>
