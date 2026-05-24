@@ -2445,7 +2445,8 @@ export default function PatientChartPage() {
       </div>
 
       {/* DEDICATED PRINT VIEW (FOR 2-SIDED SIFF/SNF) */}
-      <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0">
+      {activeTab === 'charting' && (
+        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0">
         {/* Page 1: Assessment (Front Side) */}
         <div className="p-12 min-h-screen border-b-8 border-slate-900 bg-white flex flex-col">
           <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
@@ -2769,7 +2770,251 @@ export default function PatientChartPage() {
             Official Clinical Record • Platinum Health Hub • Side B
           </div>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* DEDICATED PRINT VIEW (FOR RESIDENT FACESHEET) */}
+      {activeTab === 'facesheet' && (
+        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-12 m-0 text-black font-sans flex flex-col">
+          {/* Header Card */}
+          <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Resident Face Sheet</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Clinical Records Office</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+              <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 flex-grow">
+            {/* Left Column: Demographics & Clinical Profile */}
+            <div className="space-y-6">
+              <div className="border border-slate-300 p-6 rounded-2xl bg-slate-50/30">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-slate-300 pb-2 text-slate-900 tracking-wider">I. Resident Demographics</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                    <p className="font-bold text-slate-800">{patient?.first_name} {patient?.last_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Date of Birth</p>
+                    <p className="font-bold text-slate-800">{patient?.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'TBD'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Gender</p>
+                    <p className="font-bold text-slate-800 capitalize">{patient?.gender || 'Undisclosed'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">SSN (Last 4)</p>
+                    <p className="font-bold text-slate-800">{patient?.ssn_last_four || '****'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Admission Date</p>
+                    <p className="font-bold text-slate-800">{patient?.admission_date ? new Date(patient.admission_date).toLocaleDateString() : 'TBD'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Attending Physician</p>
+                    <p className="font-bold text-slate-800">{patient?.attending_physician || 'Unassigned'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-slate-300 p-6 rounded-2xl bg-slate-50/30">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-slate-300 pb-2 text-slate-900 tracking-wider">II. Code Status & Vitals Summary</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Code Status</p>
+                    <p className="font-black text-rose-600 uppercase tracking-wider text-sm">{patient?.code_status?.replace('_', ' ') || 'FULL CODE'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Dietary Order</p>
+                    <p className="font-bold text-slate-800">{patient?.diet || 'Regular Diet'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-slate-300 p-6 rounded-2xl bg-slate-50/30">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-slate-300 pb-2 text-slate-900 tracking-wider">III. Primary Clinical Diagnoses</h3>
+                <div className="flex flex-wrap gap-2">
+                  {patient?.diagnoses && patient.diagnoses.length > 0 ? (
+                    patient.diagnoses.map((diag, index) => (
+                      <span key={index} className="px-2.5 py-1 border border-slate-300 text-[10px] font-black uppercase rounded bg-slate-100">{diag}</span>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No diagnoses documented.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Allergies, Contacts, & Insurance */}
+            <div className="space-y-6">
+              <div className="border-2 border-rose-500 p-6 rounded-2xl bg-rose-50/20">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-rose-300 pb-2 text-rose-800 tracking-wider">⚠️ Allergies & Contraindications</h3>
+                <div className="flex flex-wrap gap-2">
+                  {patient?.allergies && patient.allergies.length > 0 ? (
+                    patient.allergies.map((allergy, index) => (
+                      <span key={index} className="px-2.5 py-1 border border-rose-400 text-rose-800 text-[10px] font-black uppercase rounded bg-rose-50">{allergy}</span>
+                    ))
+                  ) : (
+                    <span className="px-2.5 py-1 border border-slate-400 text-slate-800 text-[10px] font-black uppercase rounded bg-slate-50">NKDA (No Known Drug Allergies)</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border border-slate-300 p-6 rounded-2xl bg-slate-50/30">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-slate-300 pb-2 text-slate-900 tracking-wider">IV. Emergency Contacts & Family</h3>
+                <div className="space-y-3">
+                  {patient?.family_members && patient.family_members.length > 0 ? (
+                    patient.family_members.map((member, index) => (
+                      <div key={index} className="flex justify-between items-center text-xs border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <div>
+                          <p className="font-bold text-slate-800">{member.name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{member.relationship} {member.is_emergency_contact ? '• EMERGENCY' : ''}</p>
+                        </div>
+                        <p className="font-mono text-slate-700 font-bold">{member.phone}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No family contacts recorded.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="border border-slate-300 p-6 rounded-2xl bg-slate-50/30">
+                <h3 className="text-xs font-black uppercase mb-4 border-b border-slate-300 pb-2 text-slate-900 tracking-wider">V. Insurance & Financial Metadata</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Provider Name</p>
+                    <p className="font-bold text-slate-800">{patient?.insurance_info?.provider_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Policy Number</p>
+                    <p className="font-mono font-bold text-slate-800">{patient?.insurance_info?.policy_number || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer certification */}
+          <div className="mt-auto border-t-2 border-slate-900 pt-6 flex justify-between items-end text-[10px] uppercase font-mono tracking-tight text-slate-500">
+            <div>
+              <p className="font-black text-slate-800">Quro Clinical Verification System</p>
+              <p className="mt-0.5">Certified Face Sheet Record</p>
+            </div>
+            <div className="text-right">
+              <p>Witness Signature: _______________________</p>
+              <p className="mt-1">Date: ____________________</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED PRINT VIEW (FOR MEDICATION LIST) */}
+      {activeTab === 'medications' && (
+        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-12 m-0 text-black font-sans flex flex-col">
+          {/* Header Card */}
+          <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Active Medication Profile</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Pharmacy Registry</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+              <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+            </div>
+          </div>
+
+          {/* Patient Header Block */}
+          <div className="border border-black p-4 mb-6 grid grid-cols-4 gap-4 text-xs uppercase font-mono tracking-tight bg-slate-50">
+            <div>
+              <p className="text-[8px] font-black text-slate-400">Allergies</p>
+              <p className="font-bold text-rose-600 font-sans truncate">{patient?.allergies?.join(', ') || 'NKDA'}</p>
+            </div>
+            <div>
+              <p className="text-[8px] font-black text-slate-400">Attending Physician</p>
+              <p className="font-bold text-slate-800 font-sans truncate">{patient?.attending_physician || 'Unassigned'}</p>
+            </div>
+            <div>
+              <p className="text-[8px] font-black text-slate-400">Code Status</p>
+              <p className="font-black text-slate-800 font-sans">{patient?.code_status || 'FULL CODE'}</p>
+            </div>
+            <div>
+              <p className="text-[8px] font-black text-slate-400">Diet</p>
+              <p className="font-bold text-slate-800 font-sans truncate">{patient?.diet || 'Regular Diet'}</p>
+            </div>
+          </div>
+
+          {/* Medications Table */}
+          <table className="w-full border-collapse border border-slate-300 text-xs">
+            <thead>
+              <tr className="bg-slate-100 border-b border-slate-300 text-[10px] font-black uppercase tracking-widest text-slate-700">
+                <th className="border border-slate-300 p-3 text-left w-1/3">Medication / Strength</th>
+                <th className="border border-slate-300 p-3 text-center w-20">Route</th>
+                <th className="border border-slate-300 p-3 text-center w-28">Frequency</th>
+                <th className="border border-slate-300 p-3 text-center w-28">Schedule Times</th>
+                <th className="border border-slate-300 p-3 text-left">Indication & Prescriber</th>
+              </tr>
+            </thead>
+            <tbody>
+              {medications.filter(m => m.status === 'active').map((med) => (
+                <tr key={med.id} className="border-b border-slate-200 hover:bg-slate-50/50">
+                  <td className="border border-slate-300 p-3 align-top">
+                    <p className="font-black text-slate-900 text-sm">{med.generic_name}</p>
+                    {med.brand_name && <p className="text-[10px] text-slate-400 italic mt-0.5">Brand: {med.brand_name}</p>}
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">Dose: {med.dose || 'As ordered'} ({med.strength})</p>
+                  </td>
+                  <td className="border border-slate-300 p-3 text-center font-bold text-slate-800 align-top uppercase">{med.route}</td>
+                  <td className="border border-slate-300 p-3 text-center font-bold text-slate-800 align-top uppercase">
+                    {med.frequency}
+                    {med.prn_interval && <p className="text-[9px] font-bold text-teal-600 mt-0.5">{med.prn_interval}</p>}
+                  </td>
+                  <td className="border border-slate-300 p-3 text-center align-top font-mono">
+                    {med.frequency === 'PRN' ? (
+                      <span className="px-2 py-0.5 border border-teal-200 text-teal-700 text-[9px] font-black uppercase rounded bg-teal-50">PRN Dose</span>
+                    ) : (
+                      med.frequency_times?.join(', ') || 'N/A'
+                    )}
+                  </td>
+                  <td className="border border-slate-300 p-3 align-top">
+                    <p className="font-bold text-slate-700 italic">&quot;{med.indication || 'Routine Pass'}&quot;</p>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-2">Ordered by:</p>
+                    <p className="font-semibold text-slate-600 mt-0.5">{med.prescriber_name || 'Attending Physician'} {med.prescriber_npi ? `(NPI: ${med.prescriber_npi})` : ''}</p>
+                  </td>
+                </tr>
+              ))}
+              {medications.filter(m => m.status === 'active').length === 0 && (
+                <tr>
+                  <td colSpan={5} className="border border-slate-300 p-8 text-center text-slate-400 italic">No active medications registered.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Footer certification */}
+          <div className="mt-auto border-t-2 border-slate-900 pt-6 flex justify-between items-end text-[10px] uppercase font-mono tracking-tight text-slate-500">
+            <div>
+              <p className="font-black text-slate-800">Quro Clinical Verification System</p>
+              <p className="mt-0.5">Certified Active Medication List</p>
+            </div>
+            <div className="text-right">
+              <p>Pharmacist/Nurse Signature: _______________________</p>
+              <p className="mt-1">Date: ____________________</p>
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
