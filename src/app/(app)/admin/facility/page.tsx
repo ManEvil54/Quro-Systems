@@ -15,13 +15,16 @@ import {
   LayoutGrid,
   Bed as BedIcon,
   Home,
-  X
+  X,
+  Stethoscope
 } from 'lucide-react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBeds } from '@/hooks/useBeds';
 import ShiftConfigurator from '@/components/admin/ShiftConfigurator';
+import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
+import type { FacilityPhysician } from '@/lib/firebase/types';
 
 interface TemplateItem {
   id: string;
@@ -48,6 +51,65 @@ export default function FacilitySettingsPage() {
   const { rooms, beds, addRoom, addBed, deleteBed } = useBeds(targetFacilityId || '');
 
   const [newRoom, setNewRoom] = useState<{ name: string; type: 'private' | 'semi-private' | 'ward' }>({ name: '', type: 'private' });
+
+  // Real-time facility physicians hook
+  const { physicians, loading: physiciansLoading } = useFacilityPhysicians(targetFacilityId || undefined);
+
+  // States for managing physician creation
+  const [newDocName, setNewDocName] = useState('');
+  const [newDocSpecialty, setNewDocSpecialty] = useState('');
+  const [newDocNpi, setNewDocNpi] = useState('');
+  const [isAddingDoc, setIsAddingDoc] = useState(false);
+
+  const handleAddPhysician = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDocName || !newDocNpi || !targetFacilityId || !organization?.id) return;
+    
+    // NPI validation: must be a 10-digit number
+    if (!/^\d{10}$/.test(newDocNpi)) {
+      alert('NPI must be a 10-digit number.');
+      return;
+    }
+
+    setIsAddingDoc(true);
+    try {
+      const newPhysician: FacilityPhysician = {
+        id: `phys_${Date.now()}`,
+        name: newDocName.trim(),
+        specialty: newDocSpecialty.trim() || 'General Medicine',
+        npi: newDocNpi.trim()
+      };
+
+      const docRef = doc(db, 'organizations', organization.id, 'facilities', targetFacilityId);
+      await updateDoc(docRef, {
+        physicians: arrayUnion(newPhysician)
+      });
+
+      setNewDocName('');
+      setNewDocSpecialty('');
+      setNewDocNpi('');
+    } catch (err) {
+      console.error('Error adding physician:', err);
+      alert('Failed to add physician to registry.');
+    } finally {
+      setIsAddingDoc(false);
+    }
+  };
+
+  const handleRemovePhysician = async (physician: FacilityPhysician) => {
+    if (!targetFacilityId || !organization?.id) return;
+    if (!confirm(`Are you sure you want to remove ${physician.name}?`)) return;
+
+    try {
+      const docRef = doc(db, 'organizations', organization.id, 'facilities', targetFacilityId);
+      await updateDoc(docRef, {
+        physicians: arrayRemove(physician)
+      });
+    } catch (err) {
+      console.error('Error removing physician:', err);
+      alert('Failed to remove physician from registry.');
+    }
+  };
 
   const fetchFacilityConfig = useCallback(async () => {
     if (!targetFacilityId || !organization?.id) return;
@@ -181,6 +243,102 @@ export default function FacilitySettingsPage() {
                 facilityId={targetFacilityId || ''} 
                 initialType={shiftConfig.type} 
               />
+
+              {/* Credentialed Prescribers Registry */}
+              <div className="glass-card p-8 mt-8 space-y-6">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                  <div className="w-10 h-10 bg-quro-teal/10 rounded-2xl flex items-center justify-center text-quro-teal">
+                    <Stethoscope size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Prescribers Registry</h3>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black">Authorized Facility Physicians</p>
+                  </div>
+                </div>
+
+                {/* Add Physician Form */}
+                <form onSubmit={handleAddPhysician} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Physician Name</label>
+                    <input 
+                      required
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
+                      placeholder="e.g. Dr. John Doe, MD"
+                      value={newDocName}
+                      onChange={e => setNewDocName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Specialty</label>
+                      <input 
+                        className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
+                        placeholder="e.g. Cardiology"
+                        value={newDocSpecialty}
+                        onChange={e => setNewDocSpecialty(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">NPI (10 Digits)</label>
+                      <input 
+                        required
+                        maxLength={10}
+                        className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
+                        placeholder="10-digit NPI"
+                        value={newDocNpi}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setNewDocNpi(val);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isAddingDoc}
+                    className="w-full py-3 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Plus size={14} />
+                    {isAddingDoc ? 'REGISTERING...' : 'REGISTER PHYSICIAN'}
+                  </button>
+                </form>
+
+                {/* List of Registered Physicians */}
+                <div className="space-y-3 pt-4 border-t border-slate-100">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Registered Prescribers ({physicians.length})</div>
+                  {physiciansLoading ? (
+                    <div className="text-center py-4 text-xs text-slate-400 animate-pulse uppercase tracking-widest">Streaming Registry...</div>
+                  ) : physicians.length === 0 ? (
+                    <div className="text-center py-6 bg-slate-50 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-widest italic border border-dashed border-slate-200">
+                      No facility-specific physicians credentialed.
+                    </div>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                      {physicians.map((phys) => (
+                        <div key={phys.id} className="flex justify-between items-center bg-slate-50 hover:bg-slate-100/80 p-3 rounded-xl border border-slate-100 transition-all group/item">
+                          <div>
+                            <div className="text-xs font-black text-slate-900">{phys.name}</div>
+                            <div className="flex gap-2 items-center text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                              <span>{phys.specialty || 'General Medicine'}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-300" />
+                              <span>NPI: {phys.npi}</span>
+                            </div>
+                          </div>
+                          {!phys.id.startsWith('dr-') && (
+                            <button 
+                              onClick={() => handleRemovePhysician(phys)}
+                              title="Remove physician"
+                              className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg opacity-0 group-hover/item:opacity-100 transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="lg:col-span-2 glass-card p-10 space-y-8">
