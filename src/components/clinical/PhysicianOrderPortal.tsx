@@ -870,6 +870,9 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                     <option value="TID">TID (Three Times Daily)</option>
                     <option value="QID">QID (Four Times Daily)</option>
                     <option value="QHS">QHS (Bedtime)</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="BIWEEKLY">Biweekly</option>
+                    <option value="MONTHLY">Monthly</option>
                     <option value="PRN">PRN (As Needed)</option>
                   </select>
                 </div>
