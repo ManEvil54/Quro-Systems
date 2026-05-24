@@ -34,6 +34,27 @@ interface Props {
   patientName?: string;
 }
 
+const mapOrderToTreatment = (order: any): Treatment => {
+  return {
+    id: order.id,
+    org_id: order.org_id,
+    patient_id: order.patient_id,
+    treatment_name: order.title || order.generic_name || order.order_text?.split(': ')[1] || order.order_text?.split(' - ')[0] || order.order_text || 'Treatment Order',
+    site: 'General',
+    frequency: order.frequency || 'Daily',
+    frequency_times: order.frequency_times || ['09:00'],
+    duration: order.duration || 'Until discontinued',
+    indication: order.indication || 'Prophylaxis',
+    prescriber_id: order.ordering_physician_id || 'Attending Physician',
+    start_date: order.signed_at || order.created_at || new Date().toISOString(),
+    status: order.status === 'cancelled' ? 'discontinued' : 'active',
+    instructions: order.instructions || order.special_instructions || order.order_text || '',
+    order_id: order.id,
+    created_at: order.created_at || new Date().toISOString(),
+    updated_at: order.updated_at || new Date().toISOString()
+  };
+};
+
 export default function TreatmentPortal({ patientId, patientRoom, patientName }: Props) {
   const { staff, organization, activeFacility } = useAuth();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
@@ -54,13 +75,31 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
   const fetchTreatments = React.useCallback(async () => {
     if (!organization || !patientId) return;
     try {
-      const q = query(
+      // 1. Fetch from custom /treatments collection
+      const qTxs = query(
         collection(db, 'organizations', organization.id, 'patients', patientId, 'treatments'),
-        where('status', '==', 'active'),
-        orderBy('created_at', 'desc')
+        where('status', '==', 'active')
       );
-      const snap = await getDocs(q);
-      setTreatments(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Treatment)));
+      const snapTxs = await getDocs(qTxs);
+      const customTxs = snapTxs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Treatment));
+
+      // 2. Fetch from /provider_orders collection where order_type is 'treatment' and status is not cancelled
+      const qOrders = query(
+        collection(db, 'organizations', organization.id, 'patients', patientId, 'provider_orders'),
+        where('order_type', '==', 'treatment'),
+        where('status', 'in', ['signed', 'acknowledged', 'sent_to_pharmacy', 'filled'])
+      );
+      const snapOrders = await getDocs(qOrders);
+      const orderTxs = snapOrders.docs.map(doc => {
+        const data = doc.data();
+        return mapOrderToTreatment({ id: doc.id, ...data });
+      });
+
+      // Merge and sort
+      const merged = [...customTxs, ...orderTxs];
+      merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setTreatments(merged);
     } catch (err) {
       console.error('Error fetching treatments:', err);
     } finally {
