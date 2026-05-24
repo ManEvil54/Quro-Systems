@@ -15,6 +15,7 @@ import {
 import type { Medication, MedRoute, MedFrequency } from '@/lib/firebase/types';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
 import MedicationPicker from './MedicationPicker';
+import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 
 const calculateDosageFormQty = (dose: string, strength: string, currentDosage: string): string => {
   if (!dose || !strength) return currentDosage;
@@ -91,6 +92,8 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     prn_reason: initialData?.prn_reason || '',
     prn_interval: initialData?.prn_interval || '',
     prescriber_id: initialData?.prescriber_id || null,
+    prescriber_name: initialData?.prescriber_name || null,
+    prescriber_npi: initialData?.prescriber_npi || null,
     pharmacy_name: initialData?.pharmacy_name || null,
     rx_number: initialData?.rx_number || null,
     start_date: initialData?.start_date 
@@ -108,6 +111,8 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
     order_id: initialData?.order_id || null,
     order_type: initialData?.order_type || 'direct',
   });
+
+  const { physicians } = useFacilityPhysicians();
 
 
 
@@ -212,6 +217,29 @@ export default function MedicationForm({ onClose, onSubmit, initialData }: Props
                 type="text" required className="input" placeholder="E.G. Hypertension"
                 value={form.indication || ''} onChange={e => setForm({...form, indication: e.target.value})}
               />
+            </div>
+            <div className="md:col-span-2">
+              <label className="label">Prescribing Physician <span className="text-rose-500">*</span></label>
+              <select 
+                required
+                title="Prescribing Physician"
+                className="input"
+                value={form.prescriber_id || ''}
+                onChange={e => {
+                  const p = physicians.find(ph => ph.id === e.target.value);
+                  setForm({
+                    ...form,
+                    prescriber_id: e.target.value || null,
+                    prescriber_name: p ? p.name : null,
+                    prescriber_npi: p ? p.npi : null
+                  });
+                }}
+              >
+                <option value="">Select Physician...</option>
+                {physicians.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.specialty || 'General'})</option>
+                ))}
+              </select>
             </div>
           </div>
 

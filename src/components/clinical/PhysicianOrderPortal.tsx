@@ -26,6 +26,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 import type { MedRoute, MedFrequency, Staff, Patient, ProviderOrder } from '@/lib/firebase/types';
 import { safeFormat } from '@/lib/dateUtils';
 import { COMMON_DRUGS } from '@/lib/constants/drugs';
@@ -104,14 +105,13 @@ interface Props {
 }
 
 export default function PhysicianOrderPortal({ patientId }: Props) {
-  const { staff, organization } = useAuth();
+  const { staff, organization, activeFacility } = useAuth();
   const [providerOrders, setProviderOrders] = useState<ProviderOrder[]>([]);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<'signed' | 'draft'>('signed');
   const [loading, setLoading] = useState(true);
   const [isOrdering, setIsOrdering] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [physicians, setPhysicians] = useState<Staff[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
 
   const [orderType, setOrderType] = useState<'medication' | 'treatment'>('medication');
@@ -122,6 +122,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
   const [treatmentOrderMethod, setTreatmentOrderMethod] = useState<'direct' | 'telephone'>('direct');
   const [treatmentPhysicianId, setTreatmentPhysicianId] = useState('');
   const [treatmentPhysicianName, setTreatmentPhysicianName] = useState('');
+  const [treatmentPhysicianNpi, setTreatmentPhysicianNpi] = useState('');
+
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const { physicians, loading: physiciansLoading } = useFacilityPhysicians(patient?.facility_id || activeFacility?.id);
 
   const resetForm = () => {
     setNewOrder({
@@ -144,6 +148,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       order_type: 'direct',
       physician_id: '',
       physician_name: '',
+      physician_npi: '',
       rxcui: null
     });
     setNewDietOrder({
@@ -161,6 +166,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     setTreatmentOrderMethod('direct');
     setTreatmentPhysicianId('');
     setTreatmentPhysicianName('');
+    setTreatmentPhysicianNpi('');
     setEditingDraftId(null);
   };
 
@@ -172,7 +178,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       setTreatmentTimes(order.frequency_times || ['09:00']);
       setTreatmentOrderMethod((order.order_method as 'direct' | 'telephone') || 'direct');
       setTreatmentPhysicianId(order.ordering_physician_id || '');
-      setTreatmentPhysicianName(order.ordering_physician_id || '');
+      setTreatmentPhysicianName(order.ordering_physician_name || order.ordering_physician_id || '');
+      setTreatmentPhysicianNpi(order.ordering_physician_npi || '');
       setOrderType('treatment');
     } else {
       setNewOrder({
@@ -194,7 +201,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         vital_threshold_high: order.vital_threshold_high ? String(order.vital_threshold_high) : '',
         order_type: (order.order_method as 'direct' | 'telephone') || 'direct',
         physician_id: order.ordering_physician_id || '',
-        physician_name: order.ordering_physician_id || '',
+        physician_name: order.ordering_physician_name || order.ordering_physician_id || '',
+        physician_npi: order.ordering_physician_npi || '',
         rxcui: order.rxcui || null
       });
       setOrderType('medication');
@@ -288,10 +296,10 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     order_type: 'direct' as 'direct' | 'telephone',
     physician_id: '',
     physician_name: '',
+    physician_npi: '',
     rxcui: null as string | null
   });
 
-  const [patient, setPatient] = useState<Patient | null>(null);
 
   const fetchPatient = useCallback(async () => {
     if (!organization || !patientId) return;
@@ -305,17 +313,6 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       console.error('Error fetching patient in order portal:', err);
     }
   }, [organization, patientId]);
-
-  const fetchPhysicians = useCallback(async () => {
-    if (!organization) return;
-    try {
-      const q = query(collection(db, 'organizations', organization.id, 'staff'), where('role', '==', 'physician'));
-      const snap = await getDocs(q);
-      setPhysicians(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff)));
-    } catch (err) {
-      console.error('Error fetching physicians:', err);
-    }
-  }, [organization]);
 
   const fetchOrders = useCallback(async () => {
     if (!organization || !patientId) return;
@@ -335,9 +332,8 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
   useEffect(() => {
     fetchOrders();
-    fetchPhysicians();
     fetchPatient();
-  }, [fetchOrders, fetchPhysicians, fetchPatient]);
+  }, [fetchOrders, fetchPatient]);
 
   useEffect(() => {
     if (!newOrder.generic_name || newOrder.generic_name.length < 3) {
@@ -380,12 +376,18 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
     try {
       if (orderType === 'treatment') {
         const isTelephone = treatmentOrderMethod === 'telephone';
+        const selectedPhys = physicians.find(p => p.id === (isTelephone ? treatmentPhysicianId : staff.id));
+        const ordering_physician_id = isTelephone ? treatmentPhysicianId : staff.id;
+        const ordering_physician_name = selectedPhys ? selectedPhys.name : (isTelephone ? treatmentPhysicianName : `Dr. ${staff.last_name}`);
+        const ordering_physician_npi = selectedPhys ? selectedPhys.npi : '';
         
         const providerOrderData: any = {
           org_id: organization.id,
           patient_id: patientId,
           facility_id: patient?.facility_id || '',
-          ordering_physician_id: isTelephone ? treatmentPhysicianId : staff.id,
+          ordering_physician_id,
+          ordering_physician_name,
+          ordering_physician_npi,
           order_type: 'treatment',
           title: treatmentTitle,
           order_text: treatmentInstructions,
@@ -434,7 +436,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           patient_id: patientId,
           details: targetStatus === 'signed'
             ? (isTelephone 
-                ? `Nurse transcribed telephone treatment order from ${treatmentPhysicianName} for ${treatmentTitle}`
+                ? `Nurse transcribed telephone treatment order from ${ordering_physician_name} for ${treatmentTitle}`
                 : `Physician signed new treatment order for ${treatmentTitle}`)
             : `Saved draft treatment order for ${treatmentTitle}`,
           timestamp: new Date().toISOString()
@@ -447,6 +449,11 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       }
 
       const isTelephone = newOrder.order_type === 'telephone';
+      const selectedPhys = physicians.find(p => p.id === (isTelephone ? newOrder.physician_id : staff.id));
+      const ordering_physician_id = isTelephone ? newOrder.physician_id : staff.id;
+      const ordering_physician_name = selectedPhys ? selectedPhys.name : (isTelephone ? newOrder.physician_name : `Dr. ${staff.last_name}`);
+      const ordering_physician_npi = selectedPhys ? selectedPhys.npi : '';
+
       const isPRN = newOrder.frequency === 'PRN';
       const frequencyText = isPRN 
         ? `PRN (every ${newOrder.prn_interval || '8 hours'} as needed for ${newOrder.prn_reason || newOrder.indication || 'pain'})` 
@@ -457,7 +464,9 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         org_id: organization.id,
         patient_id: patientId,
         facility_id: patient?.facility_id || '',
-        ordering_physician_id: isTelephone ? newOrder.physician_id : staff.id,
+        ordering_physician_id,
+        ordering_physician_name,
+        ordering_physician_npi,
         order_type: 'medication',
         order_text: orderText,
         rxcui: newOrder.rxcui,
@@ -524,7 +533,9 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
             org_id: organization.id,
             patient_id: patientId,
             facility_id: patient?.facility_id || '',
-            ordering_physician_id: isTelephone ? newOrder.physician_id : staff.id,
+            ordering_physician_id,
+            ordering_physician_name,
+            ordering_physician_npi,
             order_type: 'treatment',
             order_text: `Psychotropic Monitoring: Check patient for side effects related to ${newOrder.generic_name} ${newOrder.strength || ''}. Document findings.`,
             title: `Psychotropic Monitoring: ${newOrder.generic_name}`,
@@ -554,7 +565,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
         patient_id: patientId,
         details: targetStatus === 'signed'
           ? (isTelephone 
-              ? `Nurse signed telephone order from ${newOrder.physician_name} for ${newOrder.generic_name}`
+              ? `Nurse signed telephone order from ${ordering_physician_name} for ${newOrder.generic_name}`
               : `Physician signed new order for ${newOrder.generic_name}`)
           : `Saved draft order for ${newOrder.generic_name}`,
         timestamp: new Date().toISOString()
@@ -702,17 +713,20 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <button 
                   type="button"
                   onClick={() => {
+                    const initialPhys = physicians.find(p => p.name === patient?.attending_physician || p.id === patient?.physician_id);
                     if (orderType === 'medication') {
                       setNewOrder({
                         ...newOrder, 
                         order_type: 'telephone',
-                        physician_id: patient?.attending_physician || '',
-                        physician_name: patient?.attending_physician || ''
+                        physician_id: initialPhys?.id || '',
+                        physician_name: initialPhys?.name || patient?.attending_physician || '',
+                        physician_npi: initialPhys?.npi || ''
                       });
                     } else {
                       setTreatmentOrderMethod('telephone');
-                      setTreatmentPhysicianId(patient?.attending_physician || '');
-                      setTreatmentPhysicianName(patient?.attending_physician || '');
+                      setTreatmentPhysicianId(initialPhys?.id || '');
+                      setTreatmentPhysicianName(initialPhys?.name || patient?.attending_physician || '');
+                      setTreatmentPhysicianNpi(initialPhys?.npi || '');
                     }
                   }}
                   className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${(orderType === 'medication' ? newOrder.order_type : treatmentOrderMethod) === 'telephone' ? 'bg-white text-quro-charcoal shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -733,25 +747,25 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 value={orderType === 'medication' ? newOrder.physician_id : treatmentPhysicianId}
                 onChange={e => {
                   const p = physicians.find(ph => ph.id === e.target.value);
-                  const selectedName = p ? `Dr. ${p.last_name}` : e.target.value;
+                  const selectedName = p ? p.name : e.target.value;
+                  const selectedNpi = p ? p.npi : '';
                   if (orderType === 'medication') {
                     setNewOrder({
                       ...newOrder,
                       physician_id: e.target.value,
-                      physician_name: selectedName
+                      physician_name: selectedName,
+                      physician_npi: selectedNpi
                     });
                   } else {
                     setTreatmentPhysicianId(e.target.value);
                     setTreatmentPhysicianName(selectedName);
+                    setTreatmentPhysicianNpi(selectedNpi);
                   }
                 }}
               >
                 <option value="">Select Physician giving the order...</option>
-                {patient?.attending_physician && (
-                  <option value={patient.attending_physician}>{patient.attending_physician} (Attending)</option>
-                )}
                 {physicians.map(p => (
-                  <option key={p.id} value={p.id}>Dr. {p.first_name} {p.last_name}</option>
+                  <option key={p.id} value={p.id}>{p.name} ({p.specialty || 'General'})</option>
                 ))}
               </select>
             </div>

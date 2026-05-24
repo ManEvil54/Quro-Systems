@@ -57,6 +57,7 @@ import CarePlanManager from '@/components/clinical/CarePlanManager';
 import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
 import OrderAcknowledgment from '@/components/clinical/OrderAcknowledgment';
+import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
 // Helper to safely format raw Firestore timestamps or ISO strings
@@ -94,6 +95,7 @@ export default function PatientChartPage() {
   const id = params.id as string;
   const { activeFacility, staff, organization } = useAuth();
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
+  const { physicians: facilityPhysicians } = useFacilityPhysicians(patient?.facility_id || activeFacility?.id);
   const { medications, loading: medsLoading, updateMedication } = useMedications(id);
   const { entries: marEntries, logAdministration } = useMAR(id);
   const { notes, saveNote, updateNote } = useNotes(id);
@@ -3025,13 +3027,17 @@ export default function PatientChartPage() {
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Physician Name</label>
-              <input title="Physician Name" 
-                type="text"
-                placeholder="Dr. Jane Doe, MD"
+              <select 
+                title="Physician Name" 
                 value={tempPhysician}
                 onChange={(e) => setTempPhysician(e.target.value)}
                 className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-bold text-sm focus:border-quro-teal focus:ring-0 transition-all outline-none"
-              />
+              >
+                <option value="">Select Physician...</option>
+                {facilityPhysicians.map(p => (
+                  <option key={p.id} value={p.name}>{p.name} ({p.specialty || 'General'})</option>
+                ))}
+              </select>
             </div>
 
             <div className="flex gap-4">

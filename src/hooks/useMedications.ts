@@ -188,6 +188,8 @@ export function useMedications(patientId: string) {
       patient_id: patientId,
       facility_id: staff.facility_id || '',
       ordering_physician_id: data.prescriber_id || staff.id,
+      ordering_physician_name: data.prescriber_name || (staff ? `${staff.first_name} ${staff.last_name}` : 'Attending Physician'),
+      ordering_physician_npi: data.prescriber_npi || '',
       order_type: 'medication',
       order_text: orderText,
       priority: 'routine',
@@ -261,6 +263,9 @@ export function useMedications(patientId: string) {
     }
     if (data.special_instructions !== undefined) orderUpdates.special_instructions = data.special_instructions;
     if (data.rxcui !== undefined) orderUpdates.rxcui = data.rxcui;
+    if (data.prescriber_id !== undefined) orderUpdates.ordering_physician_id = data.prescriber_id;
+    if (data.prescriber_name !== undefined) orderUpdates.ordering_physician_name = data.prescriber_name;
+    if (data.prescriber_npi !== undefined) orderUpdates.ordering_physician_npi = data.prescriber_npi;
 
     // Get the current document first to merge and enrich properly
     const docSnap = await getDoc(orderRef);

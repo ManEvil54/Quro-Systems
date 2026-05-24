@@ -57,6 +57,13 @@ export interface Organization {
   updated_at: string;
 }
 
+export interface FacilityPhysician {
+  id: string;
+  name: string;
+  specialty?: string;
+  npi: string;
+}
+
 export interface Facility {
   id: string;
   org_id: string;
@@ -67,6 +74,7 @@ export interface Facility {
   fax?: string;
   administrator_id?: string;
   is_active: boolean;
+  physicians?: FacilityPhysician[];
   created_at: string;
   updated_at: string;
 }
@@ -226,6 +234,7 @@ export interface Medication {
   prn_interval?: string | null;
   prescriber_id?: string | null;
   prescriber_name?: string | null;
+  prescriber_npi?: string | null;
   pharmacy_name?: string | null;
   rx_number?: string | null;
   transcribed_by_id?: string | null;
@@ -293,6 +302,8 @@ export interface ProviderOrder {
   patient_id: string;
   facility_id: string;
   ordering_physician_id: string;
+  ordering_physician_name?: string;
+  ordering_physician_npi?: string;
   acknowledging_nurse_id?: string;
   order_type: 'medication' | 'lab' | 'imaging' | 'therapy' | 'diet' | 'treatment' | 'other';
   title?: string;
