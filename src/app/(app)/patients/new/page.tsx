@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { Patient, Facility } from '@/lib/firebase/types';
+import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 
 export default function NewPatientPage() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function NewPatientPage() {
     code_status: 'full',
     diet: '',
     physician_id: undefined,
+    attending_physician: '',
     photo_url: undefined,
     room_number: '',
     is_active: true,
@@ -55,6 +57,9 @@ export default function NewPatientPage() {
     monitoring_start: null,
     monitoring_reason: null,
   });
+
+  // Fetch credentialed physicians for the selected facility dynamically
+  const { physicians } = useFacilityPhysicians(form.facility_id || undefined);
 
   const [newAllergy, setNewAllergy] = useState('');
   const [newDiagnosis, setNewDiagnosis] = useState('');
@@ -251,6 +256,29 @@ export default function NewPatientPage() {
                 placeholder="E.G. 101-A"
                 value={form.room_number || ''} onChange={e => setForm({...form, room_number: e.target.value})} 
               />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Attending Physician</label>
+              <div className="relative">
+                <select 
+                  className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-4 pr-10 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
+                  value={form.physician_id || ''} 
+                  onChange={e => {
+                    const selectedPhysObj = physicians.find(p => p.id === e.target.value);
+                    setForm({
+                      ...form, 
+                      physician_id: e.target.value || undefined,
+                      attending_physician: selectedPhysObj ? selectedPhysObj.name : ''
+                    });
+                  }}
+                >
+                  <option value="">Select attending physician...</option>
+                  {physicians.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.specialty || 'General Medicine'})</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+              </div>
             </div>
           </div>
         </section>
