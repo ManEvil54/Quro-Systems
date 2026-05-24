@@ -12,12 +12,14 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
+  getDoc,
   where
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Medication, ProviderOrder, MedRoute, MedFrequency, MedStatus } from '@/lib/firebase/types';
 import { DEMO_ORDERS } from '@/lib/demoData';
+import { enrichProviderOrderClinicalData } from '@/lib/clinicalUtils';
 
 // Helper to parse unstructured order text into structured medication fields
 const parseOrderText = (text: string) => {
@@ -76,7 +78,6 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     status = 'active';
   }
 
-  
   return {
     id: order.id, // Primary Binding: Medication ID mirrors the Physician Order ID exactly
     org_id: order.org_id || staffOrgId,
@@ -102,6 +103,7 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     vital_threshold_low: order.vital_threshold_low || null,
     vital_threshold_high: order.vital_threshold_high || null,
     is_psychotropic: order.is_psychotropic || false,
+    psychotropic_monitoring: order.psychotropic_monitoring || [],
     special_instructions: order.special_instructions || order.order_text || '',
     order_id: order.id,
     order_type: order.order_method || 'direct',
@@ -168,8 +170,8 @@ export function useMedications(patientId: string) {
     return () => unsubscribe();
   }, [staff?.org_id, patientId]);
 
-  const addMedication = async (data: Omit<Medication, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => {
-    if (!staff?.org_id || !patientId) throw new Error('Context missing');
+  const addMedication = async (data: any) => {
+    if (!staff?.org_id || !patientId) throw new Error('Context parameter missing');
     
     const ordersRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders');
     
@@ -181,7 +183,7 @@ export function useMedications(patientId: string) {
 
     const isTelephone = data.order_type === 'telephone' || !data.order_type;
 
-    return await addDoc(ordersRef, {
+    const payload = {
       org_id: staff.org_id,
       patient_id: patientId,
       facility_id: staff.facility_id || '',
@@ -213,11 +215,16 @@ export function useMedications(patientId: string) {
       signed_at: isTelephone ? null : new Date().toISOString(),
       acknowledged_at: isTelephone ? new Date().toISOString() : null,
       acknowledging_nurse_id: isTelephone ? staff.id : null,
-    });
+    };
+
+    // Enrich order payload!
+    const enrichedPayload = enrichProviderOrderClinicalData(payload);
+
+    return await addDoc(ordersRef, enrichedPayload);
   };
 
-  const updateMedication = async (medicationId: string, data: Partial<Medication>) => {
-    if (!staff?.org_id || !patientId) throw new Error('Context missing');
+  const updateMedication = async (medicationId: string, data: any) => {
+    if (!staff?.org_id || !patientId) throw new Error('Context parameter missing');
     
     const orderRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders', medicationId);
     
@@ -255,7 +262,28 @@ export function useMedications(patientId: string) {
     if (data.special_instructions !== undefined) orderUpdates.special_instructions = data.special_instructions;
     if (data.rxcui !== undefined) orderUpdates.rxcui = data.rxcui;
 
-    return await updateDoc(orderRef, orderUpdates);
+    // Get the current document first to merge and enrich properly
+    const docSnap = await getDoc(orderRef);
+    const currentData = docSnap.exists() ? docSnap.data() : {};
+    
+    const mergedData = {
+      ...currentData,
+      ...orderUpdates,
+      order_type: 'medication' // ensure order_type is medication for enrichment check
+    };
+    
+    const enrichedMerged = enrichProviderOrderClinicalData(mergedData);
+    
+    // We only write back the fields that are in orderUpdates or have been changed/enriched
+    return await updateDoc(orderRef, {
+      ...orderUpdates,
+      is_psychotropic: enrichedMerged.is_psychotropic ?? false,
+      psychotropic_monitoring: enrichedMerged.psychotropic_monitoring ?? null,
+      requires_vitals: enrichedMerged.requires_vitals ?? false,
+      vital_type: enrichedMerged.vital_type ?? null,
+      vital_threshold_low: enrichedMerged.vital_threshold_low !== undefined ? enrichedMerged.vital_threshold_low : null,
+      vital_threshold_high: enrichedMerged.vital_threshold_high !== undefined ? enrichedMerged.vital_threshold_high : null,
+    });
   };
 
   return { medications, loading, error, addMedication, updateMedication };
