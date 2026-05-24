@@ -67,9 +67,17 @@ export function usePatients(facilityId?: string | null) {
   const admitPatient = async (data: Omit<Patient, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
     if (!staff?.org_id) throw new Error('Not authenticated');
     
+    // Sanitize payload to strip undefined fields (which Firestore rejects)
+    const cleanedData = Object.entries(data).reduce((acc, [key, val]) => {
+      if (val !== undefined) {
+        acc[key] = val;
+      }
+      return acc;
+    }, {} as any);
+
     const patientsRef = collection(db, 'organizations', staff.org_id, 'patients');
     return await addDoc(patientsRef, {
-      ...data,
+      ...cleanedData,
       org_id: staff.org_id,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
@@ -79,9 +87,17 @@ export function usePatients(facilityId?: string | null) {
   const updatePatient = async (patientId: string, data: Partial<Patient>) => {
     if (!staff?.org_id) throw new Error('Not authenticated');
     
+    // Sanitize payload to strip undefined fields (which Firestore rejects)
+    const cleanedData = Object.entries(data).reduce((acc, [key, val]) => {
+      if (val !== undefined) {
+        acc[key] = val;
+      }
+      return acc;
+    }, {} as any);
+
     const patientRef = doc(db, 'organizations', staff.org_id, 'patients', patientId);
     return await updateDoc(patientRef, {
-      ...data,
+      ...cleanedData,
       updated_at: serverTimestamp(),
     });
   };
