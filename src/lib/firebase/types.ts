@@ -327,6 +327,7 @@ export interface ProviderOrder {
   prn_reason?: string | null;
   prn_interval?: string | null;
   is_psychotropic?: boolean;
+  psychotropic_monitoring?: string[];
   special_instructions?: string;
   requires_vitals?: boolean;
   vital_type?: 'bp' | 'hr' | 'glucose' | 'spO2' | null;
