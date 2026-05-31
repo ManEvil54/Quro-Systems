@@ -327,8 +327,8 @@ export default function MarTarPrintPage() {
 
       <style jsx global>{`
         @media print {
-          body { -webkit-print-color-adjust: exact; }
-          @page { size: landscape; margin: 0.5cm; }
+          body { -webkit-print-color-adjust: exact !important; }
+          @page { size: letter landscape !important; margin: 0.4in !important; }
           .no-print { display: none !important; }
         }
       `}</style>

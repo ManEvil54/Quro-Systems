@@ -320,6 +320,14 @@ export default function MarTarPrintPage() {
         <div className="pt-1">Therapist Initial: ______ Signature: __________________</div>
       </div>
 
+      <style jsx global>{`
+        @media print {
+          body { -webkit-print-color-adjust: exact !important; }
+          @page { size: letter landscape !important; margin: 0.4in !important; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+
     </div>
   );
 }
