@@ -59,6 +59,7 @@ export default function MarTarPrintPage() {
   
   const [medications, setMedications] = useState<ProjectedOrder[]>([]);
   const [treatments, setTreatments] = useState<ProjectedOrder[]>([]);
+  const [marEntries, setMarEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Patient Details State for dynamic surveyor header
@@ -150,6 +151,16 @@ export default function MarTarPrintPage() {
         });
         
         console.log("[MAR Print Engine] Compiled print data successfully:", { medsCount: meds.length, txsCount: txs.length, orgId: organization.id });
+        
+        // 3. Query All MAR entries for the current month (to populate logs in the printed ledger)
+        const marRef = collection(db, "organizations", organization.id, "patients", params.id, "mar_entries");
+        const marSnapshot = await getDocs(marRef);
+        const marDocs: any[] = [];
+        marSnapshot.forEach(doc => {
+          marDocs.push({ id: doc.id, ...doc.data() });
+        });
+        
+        setMarEntries(marDocs);
         setMedications(meds);
         setTreatments(txs);
       } catch (err) {
@@ -164,6 +175,10 @@ export default function MarTarPrintPage() {
   if (authLoading) return <div className="p-8 text-xs font-mono">Authenticating Session...</div>;
   if (!organization) return <div className="p-8 text-xs font-mono text-red-500">Error: Unauthorized or Organization Not Found.</div>;
   if (loading) return <div className="p-8 text-xs font-mono">Compiling Document Layout...</div>;
+
+  const hasPsychotropic = medications.some(m => m.is_psychotropic);
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
 
   return (
     <div className="p-4 bg-white text-black min-h-screen">
@@ -342,8 +357,113 @@ export default function MarTarPrintPage() {
         </tbody>
       </table>
 
+      {/* Behavioral Frequency Log (Q12H) - Surveyor Grade Landscape Grid */}
+      {hasPsychotropic && (
+        <div className="mb-6 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700 border-l-4 border-red-500 pl-2">
+            Behavioral Frequency Log (Q12H - Every Shift)
+          </h2>
+          <table className="w-full border-collapse border border-black text-[9px] mb-2">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="border border-black p-1 text-left w-1/4 font-bold">Behavior Type</th>
+                <th className="border border-black p-1 text-center w-12 font-bold">Shift</th>
+                {daysArray.map((day) => (
+                  <th key={day} className="border border-black w-6 text-center font-mono text-[8px]">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {['Agitation / Aggression', 'Anxiety / Pacing', 'Wandering / Exit Seeking', 'Sleep Disturbance'].map((behavior) => {
+                const virtualId = `psych_behavior_${behavior.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                return (
+                  <React.Fragment key={behavior}>
+                    <tr>
+                      <td rowSpan={2} className="border border-black p-2 font-bold uppercase align-top bg-white">
+                        {behavior}
+                      </td>
+                      <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">DAY</td>
+                      {daysArray.map((day) => {
+                        const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'DAY');
+                        const score = entry?.notes || '';
+                        return (
+                          <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
+                            {score}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">NIGHT</td>
+                      {daysArray.map((day) => {
+                        const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'NIGHT');
+                        const score = entry?.notes || '';
+                        return (
+                          <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
+                            {score}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="text-[7px] italic text-slate-500 mt-1 uppercase font-semibold">
+            * Record frequency of behavior per shift: 0 = None, 1 = Mild, 2 = Moderate, 3 = Severe.
+          </p>
+        </div>
+      )}
+
+      {/* AIMS Monitoring Grid - Surveyor Grade Landscape Grid */}
+      {hasPsychotropic && (
+        <div className="mb-6 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700 border-l-4 border-red-500 pl-2">
+            Abnormal Involuntary Movement Scale (AIMS) Monitoring
+          </h2>
+          <table className="w-full border-collapse border border-black text-[9px] mb-2">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="border border-black p-1 text-left w-1/4 font-bold">Body Area / Movement</th>
+                <th className="border border-black p-1 text-center w-12 font-bold">Freq</th>
+                {daysArray.map((day) => (
+                  <th key={day} className="border border-black w-6 text-center font-mono text-[8px]">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {['Facial & Oral (Lips, Jaw, Tongue)', 'Extremities (Arms, Hands, Legs)', 'Trunk (Shoulders, Hips, Torso)'].map((area) => {
+                const virtualId = `psych_aims_${area.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                return (
+                  <tr key={area} className="h-8">
+                    <td className="border border-black p-2 font-bold uppercase bg-white">{area}</td>
+                    <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">Q12H</td>
+                    {daysArray.map((day) => {
+                      const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                      const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'Q12H');
+                      const score = entry?.notes || '';
+                      return (
+                        <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
+                          {score}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="text-[7px] italic text-slate-500 mt-1 uppercase font-semibold">
+            * Monitor shifts for abnormal movements (scale 0-4). Notify MD/NP if cumulative score increases.
+          </p>
+        </div>
+      )}
+
       {/* Footer Initials Legend Box */}
-      <div className="mt-4 border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono">
+      <div className="mt-4 border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
@@ -354,11 +474,17 @@ export default function MarTarPrintPage() {
         <div className="pt-1">Therapist Initial: ______ Signature: __________________</div>
       </div>
 
+      <div className="mt-2 flex justify-between items-center text-[8px] font-black uppercase tracking-widest opacity-30">
+        <span>Quro Systems — Clinical Excellence</span>
+        <span>Generated: {new Date().toLocaleDateString()}</span>
+      </div>
+
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact !important; }
           @page { size: letter landscape !important; margin: 0.4in !important; }
           .no-print { display: none !important; }
+          .break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
         }
       `}} />
 
