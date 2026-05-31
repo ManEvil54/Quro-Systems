@@ -23,7 +23,9 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  doc
+  doc,
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,6 +70,31 @@ export default function ShiftHandoff({ patientId }: Props) {
   const [loading, setLoading] = useState(!!(organization && patientId));
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+
+  // Subscribe to active patient-specific alerts
+  useEffect(() => {
+    if (!organization?.id || !patientId) return;
+    
+    const alertsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'patient_alerts');
+    const q = query(alertsRef, where('status', '==', 'active'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })).sort((a: any, b: any) => {
+        const tA = a.created_at?.seconds || 0;
+        const tB = b.created_at?.seconds || 0;
+        return tB - tA;
+      });
+      setActiveAlerts(docs);
+    }, (err) => {
+      console.error('Failed to subscribe to active patient alerts in ShiftHandoff:', err);
+    });
+    
+    return () => unsubscribe();
+  }, [organization?.id, patientId]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -215,6 +242,34 @@ export default function ShiftHandoff({ patientId }: Props) {
           </button>
         )}
       </div>
+
+      {/* High-Visibility Chart Inlay (Active Heads-Up Alerts) */}
+      {activeAlerts.length > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 flex items-start gap-4 shadow-lg shadow-amber-500/5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="p-2 bg-amber-100/80 border border-amber-200 text-amber-800 rounded-lg mt-0.5 animate-pulse">
+            ⚠️
+          </div>
+          <div className="flex-grow">
+            <div className="flex items-center justify-between mb-1.5">
+              <h4 className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-900">Active Heads-Up / Patient Alert</h4>
+              <span className="text-[8px] font-black text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                {activeAlerts.length} Active {activeAlerts.length === 1 ? 'Dispatch' : 'Dispatches'}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {activeAlerts.map((alert) => (
+                <div key={alert.id} className="text-xs text-amber-800 font-bold leading-relaxed border-b border-amber-200/35 pb-1.5 last:border-0 last:pb-0">
+                  <span className="font-black uppercase tracking-wider text-[7px] bg-amber-200/60 px-1 rounded mr-2 text-amber-950 capitalize">{alert.alert_type}</span>
+                  &quot;{alert.text}&quot;
+                  <span className="text-[9px] font-bold text-amber-700/60 ml-2 block sm:inline">
+                    — Authored by {alert.created_by?.name || 'Staff'} {alert.created_at ? `at ${new Date(alert.created_at.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Handoff Form */}
       {isAdding && (

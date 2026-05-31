@@ -36,7 +36,8 @@ import {
   Send,
   Edit2,
   Trash2,
-  Bed as BedIcon
+  Bed as BedIcon,
+  MessageSquare
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatient';
 import { useMedications } from '@/hooks/useMedications';
@@ -58,6 +59,7 @@ import CarePlanManager from '@/components/clinical/CarePlanManager';
 import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
 import OrderAcknowledgment from '@/components/clinical/OrderAcknowledgment';
+import ShiftHandoff from '@/components/clinical/ShiftHandoff';
 import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
@@ -132,7 +134,7 @@ export default function PatientChartPage() {
   const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
   const [savingRoom, setSavingRoom] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'careplan' | 'trends' | 'compliance'>('facesheet');
+  const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'careplan' | 'trends' | 'compliance' | 'handoff'>('facesheet');
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
@@ -604,7 +606,7 @@ export default function PatientChartPage() {
             className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
           >
             <Printer size={16} />
-            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : 'Medication List'}
+            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : activeTab === 'handoff' ? 'Handoff Log' : 'Medication List'}
           </button>
         </div>
       </div>
@@ -673,6 +675,7 @@ export default function PatientChartPage() {
                 { id: 'orders', icon: Stethoscope, label: 'Orders', badge: 'New' },
                 { id: 'careplan', icon: FileText, label: 'Preliminary Care Plan', badge: 'AI' },
                 { id: 'charting', icon: FileText, label: 'Shift Charting' },
+                { id: 'handoff', icon: MessageSquare, label: 'Shift Handoff', badge: 'Active' },
                 { id: 'compliance', icon: ShieldCheck, label: 'Surveyor Review' },
               ].map((tab) => (
                 <button
@@ -1532,6 +1535,14 @@ export default function PatientChartPage() {
           {activeTab === 'orders' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
               <PhysicianOrderPortal patientId={id} />
+            </div>
+          )}
+
+          {activeTab === 'handoff' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
+              <div className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                <ShiftHandoff patientId={id} />
+              </div>
             </div>
           )}
 

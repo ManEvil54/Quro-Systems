@@ -22,6 +22,8 @@ import {
 import { useHandover } from '@/hooks/useHandover';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useDashboard';
+import { collectionGroup, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 
 export default function HandoverPage() {
   const { activeFacility, staff, organization } = useAuth();
@@ -32,6 +34,32 @@ export default function HandoverPage() {
   
   const [showNewNote, setShowNewNote] = useState(false);
   const [isHandshaking, setIsHandshaking] = useState(false);
+  const [activePatientAlerts, setActivePatientAlerts] = useState<any[]>([]);
+
+  // Subscribe to all active patient alerts across the facility
+  useEffect(() => {
+    if (!organization?.id) return;
+    
+    // Subscribe to all active patient alerts using collectionGroup
+    const q = query(collectionGroup(db, 'patient_alerts'), where('status', '==', 'active'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const patientId = doc.ref.parent.parent?.id || '';
+        return {
+          id: doc.id,
+          patientId,
+          ...data
+        };
+      });
+      setActivePatientAlerts(docs);
+    }, (err) => {
+      console.error('Failed to load active patient alerts:', err);
+    });
+    
+    return () => unsubscribe();
+  }, [organization?.id]);
 
   const [form, setForm] = useState({
     subjective: '',
@@ -295,6 +323,38 @@ export default function HandoverPage() {
                       {latestNote?.is_urgent ? 'Urgent Update' : latestNote ? 'Shift Note' : 'Stable'}
                     </div>
                   </div>
+
+                  {/* Patient-specific Heads-Up Alerts inside Handoff Hub */}
+                  {(() => {
+                    const patientAlerts = activePatientAlerts.filter(a => a.patientId === patient.id);
+                    if (patientAlerts.length === 0) return null;
+                    return (
+                      <div className="mb-6 p-4 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex items-start gap-3 text-amber-300 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="p-1 bg-amber-500/20 rounded-lg text-amber-300 mt-0.5 animate-pulse">
+                          ⚠️
+                        </div>
+                        <div className="flex-grow">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-400">Active Patient alert / heads-up</span>
+                            <span className="text-[8px] font-bold text-amber-200 bg-amber-500/30 px-1.5 py-0.5 rounded-full uppercase">
+                              {patientAlerts.length} Active
+                            </span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {patientAlerts.map((alert) => (
+                              <div key={alert.id} className="text-xs leading-normal font-bold">
+                                <span className="font-black uppercase text-[8px] bg-amber-500/30 text-amber-200 px-1.5 py-0.5 rounded mr-1.5 capitalize">{alert.alert_type}</span>
+                                &quot;{alert.text}&quot;
+                                <span className="text-[9px] text-amber-400/60 font-bold ml-1.5 block sm:inline">
+                                  — {alert.created_by?.name || 'Staff'} {alert.created_at ? `@ ${new Date(alert.created_at.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ''}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
