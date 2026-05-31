@@ -19,6 +19,8 @@ interface ProjectedOrder {
   frequency: string;
   frequency_times: string[];
   order_type: string;
+  is_psychotropic?: boolean;
+  psychotropic_monitoring?: string[];
 }
 
 // Derive a clean medication or treatment title, parsing order_text if structured fields are missing
@@ -134,7 +136,9 @@ export default function MarTarPrintPage() {
             details: data.instructions || data.special_instructions || data.order_text || `Route: ${data.route || "N/A"} | Freq: ${data.frequency || "QD"}`,
             frequency: data.frequency || "QD",
             frequency_times: times,
-            order_type: orderType
+            order_type: orderType,
+            is_psychotropic: data.is_psychotropic || false,
+            psychotropic_monitoring: data.psychotropic_monitoring || []
           };
 
           if (orderType === "medication") {
@@ -249,8 +253,21 @@ export default function MarTarPrintPage() {
                   <tr key={`${med.id}-${timeIdx}`} className="h-10">
                     {timeIdx === 0 && (
                       <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
-                        <div className="font-bold uppercase text-[10px] text-black">{med.title}</div>
+                        <div className="font-bold uppercase text-[10px] text-black">
+                          {med.title}
+                          {med.is_psychotropic && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded font-black text-[7px] uppercase tracking-widest">
+                              High Alert / Psych
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
+                        {med.is_psychotropic && med.psychotropic_monitoring && med.psychotropic_monitoring.length > 0 && (
+                          <div className="mt-2 p-1.5 bg-rose-50 border border-rose-100 rounded text-[7px] text-rose-950 font-semibold uppercase tracking-tight">
+                            <span className="font-black text-rose-700 block mb-0.5">Psychotropic Monitoring Parameters:</span>
+                            {med.psychotropic_monitoring.join(" · ")}
+                          </div>
+                        )}
                       </td>
                     )}
                     <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
