@@ -60,6 +60,7 @@ import PhysicianOrderPortal from '@/components/clinical/PhysicianOrderPortal';
 import MedicationList from '@/components/clinical/MedicationList';
 import OrderAcknowledgment from '@/components/clinical/OrderAcknowledgment';
 import ShiftHandoff from '@/components/clinical/ShiftHandoff';
+import MARGrid from '@/components/clinical/MARGrid';
 import { useFacilityPhysicians } from '@/hooks/useFacilityPhysicians';
 import { Medication, ProgressNote, RespiratoryState, EnteralState } from '@/lib/firebase/types';
 
@@ -1120,6 +1121,9 @@ export default function PatientChartPage() {
 
               {/* Smart eMAR View */}
               <div className="space-y-6">
+                {/* Interactive 31-Day eMAR Grid Matrix */}
+                <MARGrid patientId={id} />
+
                 {/* Pending Compliance Tasks (PRN Follow-ups, Vitals validation) */}
                 {marEntries.filter(e => e.is_prn && !e.effectiveness_score).length > 0 && (
                   <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2rem] mb-8">

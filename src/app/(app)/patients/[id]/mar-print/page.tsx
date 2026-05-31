@@ -4,6 +4,8 @@
 // ============================================================
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
@@ -51,7 +53,7 @@ function deriveTitle(data: any): string {
 
 export default function MarTarPrintPage() {
   const params = useParams() as { id: string };
-  const { organization } = useAuth();
+  const { organization, loading: authLoading } = useAuth();
   
   const [medications, setMedications] = useState<ProjectedOrder[]>([]);
   const [treatments, setTreatments] = useState<ProjectedOrder[]>([]);
@@ -74,7 +76,13 @@ export default function MarTarPrintPage() {
 
   useEffect(() => {
     async function loadPrintData() {
-      if (!organization || !params.id) return;
+      if (authLoading) return;
+      if (!organization || !params.id) {
+        setLoading(false);
+        return;
+      }
+      
+      console.log("[MAR Print Engine] Loading print data for:", { orgId: organization.id, patientId: params.id });
       
       try {
         // 1. Fetch Patient Record dynamically for header card
@@ -137,6 +145,7 @@ export default function MarTarPrintPage() {
           }
         });
         
+        console.log("[MAR Print Engine] Compiled print data successfully:", { medsCount: meds.length, txsCount: txs.length, orgId: organization.id });
         setMedications(meds);
         setTreatments(txs);
       } catch (err) {
@@ -146,8 +155,10 @@ export default function MarTarPrintPage() {
       }
     }
     loadPrintData();
-  }, [organization, params.id]);
+  }, [organization, params.id, authLoading]);
 
+  if (authLoading) return <div className="p-8 text-xs font-mono">Authenticating Session...</div>;
+  if (!organization) return <div className="p-8 text-xs font-mono text-red-500">Error: Unauthorized or Organization Not Found.</div>;
   if (loading) return <div className="p-8 text-xs font-mono">Compiling Document Layout...</div>;
 
   return (
@@ -230,24 +241,27 @@ export default function MarTarPrintPage() {
           </tr>
         </thead>
         <tbody>
-          {medications.map((med) => (
-            <React.Fragment key={med.id}>
-              {med.frequency_times.map((time, timeIdx) => (
-                <tr key={`${med.id}-${timeIdx}`} className="h-10">
-                  {timeIdx === 0 && (
-                    <td rowSpan={med.frequency_times.length} className="border border-black p-2 align-top bg-white print-border">
-                      <div className="font-bold uppercase text-[10px] text-black">{med.title}</div>
-                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
-                    </td>
-                  )}
-                  <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
-                  {daysArray.map((day) => (
-                    <td key={day} className="border border-black bg-white print-border" />
-                  ))}
-                </tr>
-              ))}
-            </React.Fragment>
-          ))}
+          {medications.map((med) => {
+            const displayTimes = med.frequency_times.length > 0 ? med.frequency_times : ["PRN"];
+            return (
+              <React.Fragment key={med.id}>
+                {displayTimes.map((time, timeIdx) => (
+                  <tr key={`${med.id}-${timeIdx}`} className="h-10">
+                    {timeIdx === 0 && (
+                      <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
+                        <div className="font-bold uppercase text-[10px] text-black">{med.title}</div>
+                        <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
+                      </td>
+                    )}
+                    <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
+                    {daysArray.map((day) => (
+                      <td key={day} className="border border-black bg-white print-border" />
+                    ))}
+                  </tr>
+                ))}
+              </React.Fragment>
+            );
+          })}
           
           {medications.length === 0 && (
             <tr>
@@ -270,27 +284,30 @@ export default function MarTarPrintPage() {
           </tr>
         </thead>
         <tbody>
-          {treatments.map((tx) => (
-            <React.Fragment key={tx.id}>
-              {tx.frequency_times.map((time, timeIdx) => (
-                <tr key={`${tx.id}-${timeIdx}`} className="h-12">
-                  {timeIdx === 0 && (
-                    <td rowSpan={tx.frequency_times.length} className="border border-black p-2 align-top bg-white print-border">
-                      <div className="font-bold uppercase text-teal-950 text-[10px]">{tx.title}</div>
-                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{tx.details}</div>
-                    </td>
-                  )}
-                  <td className="border border-black text-center font-mono text-[9px] bg-white print-border">{time}</td>
-                  {daysArray.map((day) => (
-                    <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[8px] text-slate-400">
-                      {tx.title.toLowerCase().includes("meal") ? "%" : ""}
-                      {tx.title.toLowerCase().includes("weight") ? "lbs" : ""}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </React.Fragment>
-          ))}
+          {treatments.map((tx) => {
+            const displayTimes = tx.frequency_times.length > 0 ? tx.frequency_times : ["PRN"];
+            return (
+              <React.Fragment key={tx.id}>
+                {displayTimes.map((time, timeIdx) => (
+                  <tr key={`${tx.id}-${timeIdx}`} className="h-12">
+                    {timeIdx === 0 && (
+                      <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
+                        <div className="font-bold uppercase text-teal-950 text-[10px]">{tx.title}</div>
+                        <div className="text-[9px] mt-1 text-slate-600 font-mono">{tx.details}</div>
+                      </td>
+                    )}
+                    <td className="border border-black text-center font-mono text-[9px] bg-white print-border">{time}</td>
+                    {daysArray.map((day) => (
+                      <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[8px] text-slate-400">
+                        {tx.title.toLowerCase().includes("meal") ? "%" : ""}
+                        {tx.title.toLowerCase().includes("weight") ? "lbs" : ""}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </React.Fragment>
+            );
+          })}
 
           {/* Section B: Automated Blank Space Injection for Manual Overrides */}
           {Array.from({ length: blankRowsCount }).map((_, rowIndex) => (
@@ -320,13 +337,13 @@ export default function MarTarPrintPage() {
         <div className="pt-1">Therapist Initial: ______ Signature: __________________</div>
       </div>
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact !important; }
           @page { size: letter landscape !important; margin: 0.4in !important; }
           .no-print { display: none !important; }
         }
-      `}</style>
+      `}} />
 
     </div>
   );
