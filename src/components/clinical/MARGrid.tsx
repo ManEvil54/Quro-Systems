@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check, 
-  Pill
+  Pill,
+  Printer
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
@@ -110,10 +111,19 @@ export default function MARGrid({ patientId }: Props) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-4 text-xs font-medium">
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Given</div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /> Refused</div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> Held</div>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Given</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /> Refused</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> Held</div>
+          </div>
+          <button 
+            type="button"
+            onClick={() => window.open(`/patients/${patientId}/mar/print`, '_blank')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all shadow-md shadow-slate-950/20 cursor-pointer"
+          >
+            <Printer size={12} /> Print Surveyor MAR/TAR
+          </button>
         </div>
       </div>
 

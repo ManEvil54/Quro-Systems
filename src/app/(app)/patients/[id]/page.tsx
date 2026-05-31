@@ -585,7 +585,11 @@ export default function PatientChartPage() {
   }
 
   const handlePrint = () => {
-    window.print();
+    if (activeTab === 'mar') {
+      window.open(`/patients/${id}/mar/print`, '_blank');
+    } else {
+      window.print();
+    }
   };
 
   return (
