@@ -693,14 +693,22 @@ body {
     font-size: 11px !important;
   }
   @page {
-    size: letter landscape !important;
-    margin: 0.4in !important;
+    size: letter portrait;
+    margin: 0.4in;
   }
   .no-print {
     display: none !important;
   }
   .print-border {
     border: 1px solid #000000 !important;
+  }
+  .page-break-before-always {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
 

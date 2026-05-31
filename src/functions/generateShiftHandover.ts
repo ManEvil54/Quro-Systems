@@ -1,3 +1,4 @@
+// @ts-expect-error Next.js bundler resolution differs from firebase-functions runtime dependencies
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
@@ -16,7 +17,7 @@ const ai = new GoogleGenAI({
   location: LOCATION,
 });
 
-export const generateShiftHandover = onSchedule('0 * * * *', async (event) => {
+export const generateShiftHandover = onSchedule('0 * * * *', async (event: any) => {
   console.log('Starting scheduled Shift Handover AI Synthesis...');
   const now = new Date();
   const currentHour = now.getHours();
@@ -62,6 +63,32 @@ export const generateShiftHandover = onSchedule('0 * * * *', async (event) => {
         const lookbackMs = lookbackHours * 60 * 60 * 1000;
         const startTime = new Date(now.getTime() - lookbackMs);
 
+        // Fetch active clinical alerts across patients in this facility
+        const activeAlerts: string[] = [];
+        try {
+          const patientsSnap = await db.collection('organizations')
+            .doc(orgId)
+            .collection('patients')
+            .where('facility_id', '==', facilityId)
+            .get();
+            
+          for (const patientDoc of patientsSnap.docs) {
+            const patientData = patientDoc.data();
+            const patientName = `${patientData.first_name || ''} ${patientData.last_name || ''}`.trim();
+            
+            const alertsSnap = await patientDoc.ref.collection('patient_alerts')
+              .where('status', '==', 'active')
+              .get();
+              
+            alertsSnap.forEach(alertDoc => {
+              const alertData = alertDoc.data();
+              activeAlerts.push(`- [ACTIVE ALERT] Patient: ${patientName} (MRN: ${patientData.mrn || 'N/A'}) - Category: ${alertData.alert_type || 'General'} - Observation: ${alertData.text || ''} (Reported by: ${alertData.created_by?.name || 'Staff'} at ${alertData.created_at ? alertData.created_at.toDate().toLocaleTimeString() : ''})`);
+            });
+          }
+        } catch (alertErr) {
+          console.error(`Failed to query patient active alerts for facility ${facilityId}:`, alertErr);
+        }
+
         // Fetch clinical logs recorded during this window
         const logsRef = facilityDoc.ref.collection('clinical_logs');
         const logsSnap = await logsRef
@@ -74,19 +101,23 @@ export const generateShiftHandover = onSchedule('0 * * * *', async (event) => {
           return `- [${d.category || 'General'}] Patient: ${d.patient_name || 'N/A'} (MRN: ${d.patient_mrn || 'N/A'}) - ${d.note || d.description || ''} (Recorded by: ${d.recorded_by_name || 'Staff'} at ${d.created_at ? d.created_at.toDate().toLocaleTimeString() : ''})`;
         });
 
-        console.log(`Found ${logs.length} clinical logs for the preceding ${lookbackHours} hours.`);
+        console.log(`Found ${logs.length} clinical logs for the preceding ${lookbackHours} hours. Found ${activeAlerts.length} active patient alerts.`);
 
         // Even if there are no logs, we should generate a summary stating no acute events occurred, ensuring continuity.
         const logsContent = logs.length > 0 
           ? logs.join('\n') 
           : 'No clinical logs or acute events were recorded during this shift lookback window.';
 
+        const alertsContent = activeAlerts.length > 0
+          ? activeAlerts.join('\n')
+          : 'No active clinical heads-up/alerts are currently registered for any resident.';
+
         const systemPrompt = `
 You are the lead Quro Systems Clinical Intelligence AI. 
 Your task is to compile and synthesize shift handover reports for facility clinical teams.
 
 Summarize the preceding shift's events into exactly 3 highly specific, clinical bullet points:
-1. Critical Alerts & Safety: Highlight any critical vitals, clinical alerts, behavioral issues, or immediate medical emergencies. If none, summarize general safety and stability.
+1. Critical Alerts & Safety: Prioritize and compile all active clinical alerts (heads-up dispatches) for patients first (e.g. respiratory secretions, hemodynamic changes, fall risks, etc.). If none, summarize general safety and stability.
 2. Vital Activity & Monitoring: Highlight the key vital trends, active treatments (RT/GT/MAR), or notable changes in patient statuses.
 3. Task & Routine Compliance: Address completed shifts/routines, outstanding tasks, or handoff directives for the incoming team.
 
@@ -100,6 +131,9 @@ Follow these strict constraints:
 Facility: ${facilityData.name || 'Unnamed Facility'}
 Shift Period: Previous ${lookbackHours} hours (Lookback from ${startTime.toLocaleTimeString()} to ${now.toLocaleTimeString()})
 Shift Configuration: ${type} rotation
+
+Active Clinical Alerts & Heads-Ups:
+${alertsContent}
 
 Clinical Logs Collected:
 ${logsContent}
