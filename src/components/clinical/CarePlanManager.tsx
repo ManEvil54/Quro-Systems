@@ -54,13 +54,20 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
   const { staff } = useAuth();
   const { 
     carePlan, 
+    history,
     loading: carePlanLoading, 
     error: carePlanError,
     generateCarePlanAI, 
     saveDraft, 
     approveAndSign, 
-    archivePlan 
+    archivePlan,
+    revisePlan
   } = useCarePlan(patient.id);
+
+  // Revision & Archive states
+  const [selectedArchivePlan, setSelectedArchivePlan] = useState<CarePlan | null>(null);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [revisingState, setRevisingState] = useState(false);
 
   // AI Intake configuration states
   const [confirmedDiagnosis, setConfirmedDiagnosis] = useState('');
@@ -256,7 +263,7 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
     setSigningState(true);
     try {
       const fullSignature = `${nurseSignature}, ${nurseCredential}`;
-      await approveAndSign(carePlan.id, editedCards, fullSignature);
+      await approveAndSign(carePlan.id, editedCards, fullSignature, carePlan.parent_plan_id);
       setShowSignModal(false);
       setHasUnsavedChanges(false);
       alert('Care Plan approved and committed to official clinical chart.');
@@ -265,6 +272,22 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
       alert('Failed to sign Care Plan.');
     } finally {
       setSigningState(false);
+    }
+  };
+
+  const handleTriggerRevision = async () => {
+    if (!carePlan) return;
+    if (!confirm('Are you sure you want to revise this active signed care plan? This will spawn a new draft version for your edits, while the current active version remains live until the new revision is signed.')) return;
+    
+    setRevisingState(true);
+    try {
+      await revisePlan(carePlan);
+      alert('New Care Plan revision draft spawned. You can now edit goals, interventions, or schedule, and attest to sign it.');
+    } catch (err) {
+      console.error('Failed to revise care plan:', err);
+      alert('Failed to spawn new care plan revision.');
+    } finally {
+      setRevisingState(false);
     }
   };
 
@@ -507,13 +530,27 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                 </>
               )}
               {carePlan.status === 'active' && (
-                <button
-                  onClick={handleArchivePlan}
-                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-rose-500/10"
-                >
-                  <Archive size={14} />
-                  Discontinue & Archive
-                </button>
+                <>
+                  <button
+                    onClick={handleTriggerRevision}
+                    disabled={revisingState}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white border border-slate-700 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-slate-800/15"
+                  >
+                    {revisingState ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={14} className="text-teal-400" />
+                    )}
+                    <span>{revisingState ? 'Spawning Revision...' : 'Revise Care Plan'}</span>
+                  </button>
+                  <button
+                    onClick={handleArchivePlan}
+                    className="flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-rose-500/10"
+                  >
+                    <Archive size={14} />
+                    Discontinue & Archive
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -714,6 +751,57 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
               </p>
             </div>
           )}
+
+          {/* Collapsible Revision History Ledger */}
+          {history.length > 0 && (
+            <div className="max-w-3xl mx-auto mt-12 bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                className="w-full flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors cursor-pointer outline-none"
+              >
+                <div className="flex items-center gap-2">
+                  <Archive size={14} className="text-slate-400" />
+                  <span>Clinical Care Plan Revision History</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-bold text-slate-600">
+                    {history.length} {history.length === 1 ? 'Revision' : 'Revisions'}
+                  </span>
+                  <span>{showHistoryPanel ? '▲' : '▼'}</span>
+                </div>
+              </button>
+
+              {showHistoryPanel && (
+                <div className="mt-6 border-t border-slate-100 pt-6 space-y-4 animate-in fade-in duration-200">
+                  {history.map((hPlan, idx) => (
+                    <div key={hPlan.id || idx} className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-2xl transition-all border border-slate-100/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-xl bg-slate-200/60 text-slate-600 flex items-center justify-center font-bold text-xs">
+                          R{hPlan.revision || 1}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">
+                            Revision #{hPlan.revision || 1} — {hPlan.status === 'superseded' ? 'Superseded' : 'Discontinued/Archived'}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-medium">
+                            Signed by {hPlan.signed_by_name || 'Staff'} on {hPlan.signed_at ? new Date(hPlan.signed_at).toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedArchivePlan(hPlan)}
+                        className="px-4 py-2 bg-white hover:bg-slate-200 border border-slate-200 text-slate-700 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        View Archive Card
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -802,11 +890,107 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
           </div>
           <button
             onClick={stopDictatingAndApply}
-            className="p-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all shadow-lg shadow-rose-500/20"
+            className="p-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all shadow-lg shadow-rose-500/20 cursor-pointer"
             title="Stop & apply voice input"
           >
             <Square size={12} fill="currentColor" />
           </button>
+        </div>
+      )}
+
+      {/* 6. HISTORICAL ARCHIVE VIEWER MODAL */}
+      {selectedArchivePlan && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white border border-slate-200 w-full max-w-4xl max-h-[85vh] rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-[1.25rem] bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm">
+                  R{selectedArchivePlan.revision || 1}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                    Care Plan Archive (Revision #{selectedArchivePlan.revision || 1})
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Signed by {selectedArchivePlan.signed_by_name} on {selectedArchivePlan.signed_at ? new Date(selectedArchivePlan.signed_at).toLocaleString() : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setSelectedArchivePlan(null)}
+                className="text-slate-400 hover:text-slate-600 text-xs font-black uppercase tracking-widest cursor-pointer border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-50 transition-colors"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Read-Only Cards Content */}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-8 py-2">
+              <div className="px-4 py-2 bg-amber-50 border border-amber-100 text-amber-800 text-[10px] font-black rounded-full uppercase tracking-widest flex items-center gap-2 max-w-max">
+                ⚠️ Locked Historical surveyor Archive (Read-Only)
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {selectedArchivePlan.cards.map((card) => {
+                  const Icon = card.id === 'respiratory' ? Wind : card.id === 'skin' ? Activity : Heart;
+                  return (
+                    <div key={card.id} className="border border-slate-100 bg-slate-50/50 p-6 rounded-2xl flex flex-col">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-500">
+                          <Icon size={16} />
+                        </div>
+                        <h4 className="text-xs font-black uppercase text-slate-900">{card.title}</h4>
+                      </div>
+                      
+                      <div className="space-y-4 flex-grow text-xs leading-relaxed">
+                        <div>
+                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">Problem Statement</span>
+                          <p className="text-slate-700 font-medium">{card.problem_statement}</p>
+                        </div>
+                        <div>
+                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">SMART Goals</span>
+                          <ul className="list-disc list-inside space-y-1 text-slate-800 font-semibold">
+                            {card.goals.map((goal, i) => (
+                              <li key={i}>{goal}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">Interventions</span>
+                          <ul className="list-decimal list-inside space-y-1 text-slate-850 font-medium">
+                            {card.interventions.map((int, i) => (
+                              <li key={i}>{int}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="pt-2 border-t border-slate-100 mt-2">
+                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">Schedule</span>
+                          <span className="inline-block px-2.5 py-1 bg-slate-200 text-slate-700 font-black text-[9px] uppercase rounded">
+                            {card.schedule}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-slate-100 pt-6 mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedArchivePlan(null)}
+                className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-[10px] tracking-widest uppercase transition-all cursor-pointer shadow-lg shadow-slate-900/10"
+              >
+                Close Archive
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
     </div>

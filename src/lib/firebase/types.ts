@@ -544,7 +544,7 @@ export interface CarePlan {
   id?: string;
   org_id: string;
   patient_id: string;
-  status: 'draft' | 'active' | 'archived';
+  status: 'draft' | 'active' | 'archived' | 'superseded';
   cards: CarePlanCard[];
   disclaimer: string;
   created_at: string;
@@ -552,5 +552,10 @@ export interface CarePlan {
   signed_by?: string | null;
   signed_by_name?: string | null;
   signed_at?: string | null;
+  revision?: number;
+  parent_plan_id?: string;
+  superseded_at?: string | null;
+  superseded_by?: string | null;
+  superseded_by_name?: string | null;
 }
 
