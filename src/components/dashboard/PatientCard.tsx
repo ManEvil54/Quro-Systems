@@ -102,7 +102,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
           {/* Summary Row: Pulse & BP */}
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
-              <Heart size={12} className={`${patient.hr && (patient.hr > 110 || patient.hr < 60) ? 'text-orange-500' : 'text-quro-teal'} animate-vital-pulse`} />
+              <Heart size={12} className="text-red-500 animate-vital-pulse" />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Pulse</span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -126,7 +126,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
           {/* Summary Row 2: Temp & Resp (Always Visible) */}
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10">
             <div className="flex items-center gap-1.5 mb-2">
-              <Thermometer size={12} className={isSerious ? 'text-orange-400' : 'text-quro-teal'} />
+              <Thermometer size={12} className="text-yellow-500" />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Temp</span>
             </div>
             <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${isSerious ? 'text-slate-900' : 'text-slate-200'}`}>
@@ -136,7 +136,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
 
           <div className="flex flex-col mt-2 pt-4 border-t border-white/10 border-l pl-4">
             <div className="flex items-center gap-1.5 mb-2">
-              <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : 'text-quro-teal'} />
+              <Wind size={12} className={patient.resp && patient.resp > 22 ? 'text-blue-500 animate-pulse' : 'text-blue-500'} />
               <span className={`text-[8px] font-black uppercase tracking-widest ${isSerious ? 'text-orange-400' : 'text-slate-500'}`}>Resp</span>
             </div>
             <span className={`font-bold ${isBoutique ? 'text-lg' : 'text-sm'} ${patient.resp && patient.resp > 22 ? 'text-orange-500 animate-pulse' : (isSerious ? 'text-slate-900' : 'text-slate-200')}`}>

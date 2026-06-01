@@ -126,7 +126,7 @@ export default function VitalEntryModal({ onClose, onSubmit, lastReading }: Prop
               </div>
             </div>
             <div>
-              <label className="label flex items-center gap-2"><Activity size={12} className="text-emerald-500" /> Pulse (BPM)</label>
+              <label className="label flex items-center gap-2"><Heart size={12} className="text-red-500" /> Pulse (BPM)</label>
               <input type="number" placeholder="72" className="input" value={form.pulse} onChange={e => setForm({...form, pulse: e.target.value})} />
             </div>
             <div>
@@ -134,11 +134,11 @@ export default function VitalEntryModal({ onClose, onSubmit, lastReading }: Prop
               <input type="number" placeholder="98" className="input" value={form.spO2} onChange={e => setForm({...form, spO2: e.target.value})} />
             </div>
             <div>
-              <label className="label flex items-center gap-2"><Wind size={12} className="text-purple-500" /> Resp Rate</label>
+              <label className="label flex items-center gap-2"><Wind size={12} className="text-blue-500" /> Resp Rate</label>
               <input type="number" placeholder="16" className="input" value={form.resp} onChange={e => setForm({...form, resp: e.target.value})} />
             </div>
             <div>
-              <label className="label flex items-center gap-2"><Thermometer size={12} className="text-amber-500" /> Temp (°F)</label>
+              <label className="label flex items-center gap-2"><Thermometer size={12} className="text-yellow-500" /> Temp (°F)</label>
               <input type="number" step="0.1" placeholder="98.6" className="input" value={form.temperature} onChange={e => setForm({...form, temperature: e.target.value})} />
             </div>
             <div>

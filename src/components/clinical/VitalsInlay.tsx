@@ -266,10 +266,25 @@ const InputField = ({
   step = "1", 
   inputRef 
 }: InputFieldProps) => {
+  const getIconColor = () => {
+    if (isOutlier) return 'text-red-500 animate-pulse';
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('systolic') || lowerLabel.includes('diastolic') || lowerLabel.includes('pulse') || lowerLabel.includes('heart')) {
+      return 'text-red-500';
+    }
+    if (lowerLabel.includes('temp')) {
+      return 'text-yellow-500';
+    }
+    if (lowerLabel.includes('resp') || lowerLabel.includes('saturation') || lowerLabel.includes('o2') || lowerLabel.includes('wind')) {
+      return 'text-blue-500';
+    }
+    return 'text-quro-teal';
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-        <Icon size={12} className={isOutlier ? 'text-red-500' : 'text-quro-teal'} />
+        <Icon size={12} className={getIconColor()} />
         {label}
       </label>
       <div className="relative">
