@@ -628,7 +628,7 @@ export default function PatientChartPage() {
                 <span className="px-3 py-1 bg-teal-500/20 text-teal-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-teal-500/30">Active Resident</span>
                 <span className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">MRN: {patient.mrn}</span>
               </div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter mb-1">{patient.first_name} {patient.last_name}</h1>
+              <h1 className="text-4xl font-black uppercase tracking-tighter mb-1">Patient {patient.first_name[0]}{patient.last_name[0]}</h1>
               <p className="text-slate-400 font-medium italic opacity-80">
                 {activeFacility?.name} — Room {patient.room_number || 'TBD'}
               </p>
