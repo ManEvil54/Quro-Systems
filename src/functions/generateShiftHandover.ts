@@ -1,4 +1,3 @@
-// @ts-expect-error Next.js bundler resolution differs from firebase-functions runtime dependencies
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';

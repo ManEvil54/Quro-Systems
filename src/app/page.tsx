@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Activity, ClipboardList, Clock, ShieldCheck, TrendingUp, Mic } from 'lucide-react';
 import QuroLogo from '@/components/brand/QuroLogo';
+import ContactForm from '@/components/marketing/ContactForm';
 
 export default function MarketingPage() {
   return (
@@ -20,6 +21,7 @@ export default function MarketingPage() {
           <div className="hidden md:flex items-center gap-10">
             <Link href="#features" className="text-xs font-bold tracking-widest uppercase text-slate-500 hover:text-teal-600 transition-all">Features</Link>
             <Link href="#clinical" className="text-xs font-bold tracking-widest uppercase text-slate-500 hover:text-teal-600 transition-all">Clinical Edge</Link>
+            <Link href="#contact" className="text-xs font-bold tracking-widest uppercase text-slate-500 hover:text-teal-600 transition-all">Request Demo</Link>
             <Link 
               href="/login" 
               className="px-8 py-3 text-xs font-black tracking-widest uppercase text-white bg-slate-900 hover:bg-teal-600 rounded-full transition-all shadow-xl shadow-slate-200"
@@ -71,7 +73,7 @@ export default function MarketingPage() {
                 View Live Demo
               </Link>
               <Link 
-                href="/login"
+                href="#contact"
                 className="w-full sm:w-auto px-10 py-5 bg-white text-slate-600 border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all backdrop-blur-md text-center"
               >
                 Request Demo
@@ -116,7 +118,7 @@ export default function MarketingPage() {
       <FeatureBentoGrid />
 
       {/* The Clinical Brain - AI Section */}
-      <section className="py-32 bg-slate-900 text-white relative overflow-hidden">
+      <section id="clinical" className="py-32 bg-slate-900 text-white relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-teal-500 rounded-full blur-[200px] -translate-y-1/2 translate-x-1/2"></div>
         </div>
@@ -231,6 +233,16 @@ export default function MarketingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-32 bg-[#fcfdfe] border-t border-slate-100 relative">
+        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+          <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-teal-500 rounded-full blur-[150px] -translate-y-1/2 -translate-x-1/2"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+          <ContactForm />
         </div>
       </section>
 
