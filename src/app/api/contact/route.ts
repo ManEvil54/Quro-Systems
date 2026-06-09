@@ -82,7 +82,7 @@ export async function POST(req: Request) {
             'Authorization': `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: 'Quro Systems <onboarding@resend.dev>',
+            from: 'Quro Systems <contact@qurosystems.com>',
             to: 'info@qurosystems.com',
             subject: `New Quro Demo Request: ${name}`,
             html: `
