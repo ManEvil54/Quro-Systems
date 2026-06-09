@@ -62,7 +62,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ bed, isSerious, viewType, sho
                   {bed.room_name} • {bed.bed_name}
                 </p>
                 <p className={`font-black truncate tracking-tight ${isBoutique ? 'text-2xl' : 'text-base'} ${isSerious ? 'text-slate-900' : 'text-slate-100'}`}>
-                  {patient.full_name || `Patient ${patient.initials}`}
+                  Patient {patient.initials}
                 </p>
               </div>
             </div>
