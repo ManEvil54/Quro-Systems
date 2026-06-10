@@ -68,7 +68,11 @@ function LoginContent() {
     clearError();
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      let loginEmail = email.trim();
+      if (!loginEmail.includes('@')) {
+        loginEmail = `${loginEmail.toLowerCase()}@quro-member.com`;
+      }
+      await signIn(loginEmail, password);
       // Redirection is handled by the useEffect above
     } catch {
     } finally {
@@ -152,16 +156,16 @@ function LoginContent() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Institutional Email</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Sign-on Name or Email</label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
                   <input
                     ref={emailRef}
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:bg-white focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all outline-none"
-                    placeholder="name@facility.com"
+                    placeholder="Username or email"
                     required
                   />
                 </div>

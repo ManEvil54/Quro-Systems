@@ -33,7 +33,7 @@ import {
   setDoc,
   deleteDoc
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db, auth } from '@/lib/firebase/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Organization, Staff, StaffRole } from '@/lib/firebase/types';
@@ -70,6 +70,7 @@ export default function MasterConsolePage() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     role: 'APP_TECH' as StaffRole
   });
 
@@ -132,26 +133,39 @@ export default function MasterConsolePage() {
   async function handleCreateTech(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const staffRef = doc(collection(db, 'organizations', 'SYSTEM', 'staff'));
-      await setDoc(staffRef, {
-        org_id: 'SYSTEM',
-        facility_id: null,
-        first_name: newTech.firstName,
-        last_name: newTech.lastName,
-        initials: (newTech.firstName[0] + newTech.lastName[0]).toUpperCase(),
-        email: newTech.email,
-        role: newTech.role,
-        is_active: true,
-        is_onboarded: false,
-        must_change_password: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Caller is not authenticated");
+
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch('/api/admin/provision-staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: newTech.email,
+          password: newTech.password,
+          firstName: newTech.firstName,
+          lastName: newTech.lastName,
+          role: newTech.role,
+          orgId: 'SYSTEM',
+          assignedFacilityIds: []
+        })
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to provision tech specialist');
+      }
+
       setIsAddingTech(false);
-      setNewTech({ firstName: '', lastName: '', email: '', role: 'APP_TECH' });
+      setNewTech({ firstName: '', lastName: '', email: '', password: '', role: 'APP_TECH' });
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error provisioning tech:', err);
+      alert(err.message || 'Failed to provision tech specialist');
     }
   }
 
@@ -455,7 +469,7 @@ export default function MasterConsolePage() {
                     <h3 className="text-3xl font-black uppercase tracking-tighter italic">Provision Node</h3>
                     <p className="text-[10px] text-teal-400 font-black uppercase tracking-[0.3em] mt-2">Initialize Client Organization</p>
                   </div>
-                  <button onClick={() => setIsAddingOrg(false)} className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-all">
+                  <button onClick={() => setIsAddingOrg(false)} className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-all" title="Close dialog">
                     <X size={24} />
                   </button>
                 </div>
@@ -489,8 +503,9 @@ export default function MasterConsolePage() {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Facility Allocation</label>
+                    <label htmlFor="master-facility-allocation" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Facility Allocation</label>
                     <select 
+                      id="master-facility-allocation"
                       className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-sm font-bold text-slate-900 focus:bg-white focus:border-teal-500 outline-none transition-all appearance-none"
                       value={newOrg.max_facilities}
                       onChange={e => setNewOrg({...newOrg, max_facilities: parseInt(e.target.value)})}
@@ -535,7 +550,7 @@ export default function MasterConsolePage() {
                     <h3 className="text-3xl font-black uppercase tracking-tighter italic">Authorize Specialist</h3>
                     <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.3em] mt-2">Provision Internal Infrastructure Access</p>
                   </div>
-                  <button onClick={() => setIsAddingTech(false)} className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-all">
+                  <button onClick={() => setIsAddingTech(false)} className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-all" title="Close dialog">
                     <X size={24} />
                   </button>
                 </div>
@@ -544,8 +559,9 @@ export default function MasterConsolePage() {
               <form onSubmit={handleCreateTech} className="p-12 space-y-8">
                 <div className="grid grid-cols-2 gap-6">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">First Name</label>
+                      <label htmlFor="tech-first-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">First Name</label>
                       <input 
+                        id="tech-first-name"
                         required
                         className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-base font-bold text-slate-900 focus:bg-white focus:border-teal-600 outline-none transition-all"
                         value={newTech.firstName}
@@ -553,8 +569,9 @@ export default function MasterConsolePage() {
                       />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Last Name</label>
+                      <label htmlFor="tech-last-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Last Name</label>
                       <input 
+                        id="tech-last-name"
                         required
                         className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-base font-bold text-slate-900 focus:bg-white focus:border-teal-600 outline-none transition-all"
                         value={newTech.lastName}
@@ -563,16 +580,29 @@ export default function MasterConsolePage() {
                    </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Authorized Email</label>
-                  <input 
-                    required
-                    type="email"
-                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-base font-bold text-slate-900 focus:bg-white focus:border-teal-600 outline-none transition-all"
-                    placeholder="specialist@qurosystems.com"
-                    value={newTech.email}
-                    onChange={e => setNewTech({...newTech, email: e.target.value})}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Authorized Email / Sign-on Name</label>
+                    <input 
+                      required
+                      type="text"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-base font-bold text-slate-900 focus:bg-white focus:border-teal-600 outline-none transition-all"
+                      placeholder="e.g. specialist@qurosystems.com or tech.johan"
+                      value={newTech.email}
+                      onChange={e => setNewTech({...newTech, email: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Temporary Password</label>
+                    <input 
+                      required
+                      type="text"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 text-base font-bold text-slate-900 focus:bg-white focus:border-teal-600 outline-none transition-all"
+                      placeholder="Min. 6 characters"
+                      value={newTech.password}
+                      onChange={e => setNewTech({...newTech, password: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-teal-50 border border-teal-100 p-6 rounded-[2rem] flex gap-5">

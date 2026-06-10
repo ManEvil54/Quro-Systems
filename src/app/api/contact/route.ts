@@ -82,8 +82,9 @@ export async function POST(req: Request) {
             'Authorization': `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: 'Quro Systems <contact@qurosystems.com>',
+            from: 'Quro Systems <contact@send.qurosystems.com>',
             to: 'info@qurosystems.com',
+            reply_to: email,
             subject: `New Quro Demo Request: ${name}`,
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">

@@ -26,7 +26,7 @@ import {
   where,
   setDoc
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db, auth } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Staff, StaffRole, Facility } from '@/lib/firebase/types';
 
@@ -43,6 +43,7 @@ export default function StaffManagementPage() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     role: 'nurse' as StaffRole,
     credential: '',
     duration: 'permanent' as '8' | '12' | 'permanent',
@@ -87,43 +88,49 @@ export default function StaffManagementPage() {
     if (!organization) return;
 
     try {
-      const expiresAt = newStaff.duration === 'permanent' 
-        ? null 
-        : new Date(Date.now() + parseInt(newStaff.duration) * 60 * 60 * 1000).toISOString();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Caller is not authenticated");
 
-      const staffRef = doc(collection(db, 'organizations', organization.id, 'staff'));
-      await setDoc(staffRef, {
-        org_id: organization.id,
-        facility_id: newStaff.assignedFacilityIds[0] || null, // Primary facility
-        assigned_facility_ids: newStaff.assignedFacilityIds,
-        first_name: newStaff.firstName,
-        last_name: newStaff.lastName,
-        initials: (newStaff.firstName[0] + newStaff.lastName[0]).toUpperCase(),
-        email: newStaff.email,
-        role: newStaff.role,
-        credential: newStaff.credential,
-        is_active: true,
-        is_onboarded: false,
-        must_change_password: true,
-        access_expires_at: expiresAt,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch('/api/admin/provision-staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: newStaff.email,
+          password: newStaff.password,
+          firstName: newStaff.firstName,
+          lastName: newStaff.lastName,
+          role: newStaff.role,
+          credential: newStaff.credential,
+          duration: newStaff.duration,
+          assignedFacilityIds: newStaff.assignedFacilityIds
+        })
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to provision staff access');
+      }
 
       setIsAdding(false);
       setNewStaff({ 
         firstName: '', 
         lastName: '', 
         email: '', 
+        password: '',
         role: 'nurse', 
         credential: '', 
         duration: 'permanent',
         assignedFacilityIds: []
       });
       fetchStaff();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding staff:', err);
-      alert('Failed to provision staff access');
+      alert(err.message || 'Failed to provision staff access');
     }
   }
 
@@ -296,7 +303,7 @@ export default function StaffManagementPage() {
                 </h3>
                 <p className="text-[10px] text-white/50 font-black uppercase tracking-widest">Authorized Clinical Onboarding</p>
               </div>
-              <button onClick={() => setIsAdding(false)} className="text-white/40 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full">
+              <button onClick={() => setIsAdding(false)} className="text-white/40 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" title="Close dialog">
                 <XCircle size={32} />
               </button>
             </div>
@@ -304,8 +311,9 @@ export default function StaffManagementPage() {
             <form onSubmit={handleAddStaff} className="p-10 space-y-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+                  <label htmlFor="staff-first-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
                   <input 
+                    id="staff-first-name"
                     required
                     className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] p-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
                     value={newStaff.firstName}
@@ -313,8 +321,9 @@ export default function StaffManagementPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                  <label htmlFor="staff-last-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                   <input 
+                    id="staff-last-name"
                     required
                     className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] p-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
                     value={newStaff.lastName}
@@ -323,24 +332,43 @@ export default function StaffManagementPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Identity</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
-                    required
-                    type="email"
-                    className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-12 pr-4 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
-                    value={newStaff.email}
-                    onChange={e => setNewStaff({...newStaff, email: e.target.value})}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sign-on Name / Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      required
+                      type="text"
+                      placeholder="e.g. nurse.lisa or lisa@company.com"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-12 pr-4 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
+                      value={newStaff.email}
+                      onChange={e => setNewStaff({...newStaff, email: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Temporary Password</label>
+                  <div className="relative">
+                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      required
+                      type="text"
+                      placeholder="Minimum 6 characters"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] pl-12 pr-4 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all"
+                      value={newStaff.password}
+                      onChange={e => setNewStaff({...newStaff, password: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
+                  <label htmlFor="staff-assigned-role" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
                   <select 
+                    id="staff-assigned-role"
                     className="w-full bg-slate-50 border-2 border-transparent rounded-[20px] p-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-quro-teal outline-none transition-all appearance-none cursor-pointer"
                     value={newStaff.role}
                     onChange={e => setNewStaff({...newStaff, role: e.target.value as StaffRole})}

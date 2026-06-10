@@ -359,7 +359,7 @@ export default function MarTarPrintPage() {
 
       {/* Behavioral Frequency Log (Q12H) - Surveyor Grade Landscape Grid */}
       {hasPsychotropic && (
-        <div className="mb-6 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <div className="mb-6 break-inside-avoid">
           <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700 border-l-4 border-red-500 pl-2">
             Behavioral Frequency Log (Q12H - Every Shift)
           </h2>
@@ -420,7 +420,7 @@ export default function MarTarPrintPage() {
 
       {/* AIMS Monitoring Grid - Surveyor Grade Landscape Grid */}
       {hasPsychotropic && (
-        <div className="mb-6 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <div className="mb-6 break-inside-avoid">
           <h2 className="text-[11px] font-bold tracking-wider uppercase mb-2 text-slate-700 border-l-4 border-red-500 pl-2">
             Abnormal Involuntary Movement Scale (AIMS) Monitoring
           </h2>
@@ -463,7 +463,7 @@ export default function MarTarPrintPage() {
       )}
 
       {/* Footer Initials Legend Box */}
-      <div className="mt-4 border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+      <div className="mt-4 border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono break-inside-avoid">
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
         <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>

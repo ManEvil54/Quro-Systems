@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function OnboardingModal() {
   const { staff, user, organization } = useAuth();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(staff?.must_change_password && staff?.is_onboarded ? 2 : 1);
   const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,7 +34,14 @@ export default function OnboardingModal() {
     confirmPassword: ''
   });
 
-  if (!staff || staff.is_onboarded) return null;
+  // Sync step state if staff changes after initial render
+  React.useEffect(() => {
+    if (staff) {
+      setStep(staff.must_change_password && staff.is_onboarded ? 2 : 1);
+    }
+  }, [staff]);
+
+  if (!staff || (staff.is_onboarded && !staff.must_change_password)) return null;
 
   async function handleComplete(e: React.FormEvent) {
     e.preventDefault();
@@ -53,15 +60,33 @@ export default function OnboardingModal() {
       }
 
       // 2. Update Profile in Firestore
-      await updateDoc(doc(db, 'organizations', organization.id, 'staff', staff.id), {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        credential: formData.credential,
-        initials: (formData.firstName[0] + formData.lastName[0]).toUpperCase(),
-        is_onboarded: true,
+      const isForcedReset = staff.is_onboarded && staff.must_change_password;
+
+      const staffUpdateData: any = {
         must_change_password: false,
         updated_at: new Date().toISOString()
-      });
+      };
+
+      const userUpdateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (!isForcedReset) {
+        staffUpdateData.first_name = formData.firstName;
+        staffUpdateData.last_name = formData.lastName;
+        staffUpdateData.credential = formData.credential;
+        staffUpdateData.initials = (formData.firstName[0] + formData.lastName[0]).toUpperCase();
+        staffUpdateData.is_onboarded = true;
+
+        userUpdateData.first_name = formData.firstName;
+        userUpdateData.last_name = formData.lastName;
+        userUpdateData.credential = formData.credential;
+        userUpdateData.initials = (formData.firstName[0] + formData.lastName[0]).toUpperCase();
+        userUpdateData.is_onboarded = true;
+      }
+
+      await updateDoc(doc(db, 'organizations', organization.id, 'staff', staff.id), staffUpdateData);
+      await updateDoc(doc(db, 'users', user.uid), userUpdateData);
 
       // Reload page to refresh state
       window.location.reload();
@@ -97,8 +122,9 @@ export default function OnboardingModal() {
             <div className="space-y-6 animate-in slide-in-from-right-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verify First Name</label>
+                  <label htmlFor="ob-first-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verify First Name</label>
                   <input 
+                    id="ob-first-name"
                     required
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-4 text-sm focus:border-quro-teal outline-none transition-all"
                     value={formData.firstName}
@@ -106,8 +132,9 @@ export default function OnboardingModal() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verify Last Name</label>
+                  <label htmlFor="ob-last-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verify Last Name</label>
                   <input 
+                    id="ob-last-name"
                     required
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-4 text-sm focus:border-quro-teal outline-none transition-all"
                     value={formData.lastName}
@@ -117,10 +144,11 @@ export default function OnboardingModal() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Professional Credential (Title)</label>
+                <label htmlFor="ob-credential" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Professional Credential (Title)</label>
                 <div className="relative">
                   <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
+                    id="ob-credential"
                     required
                     placeholder="e.g. Registered Nurse, LVN, CNA"
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl pl-12 pr-4 py-4 text-sm focus:border-quro-teal outline-none transition-all font-bold"
@@ -144,10 +172,11 @@ export default function OnboardingModal() {
           {step === 2 && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Set Private Clinical Password</label>
+                <label htmlFor="ob-new-password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Set Private Clinical Password</label>
                 <div className="relative">
                   <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
+                    id="ob-new-password"
                     required
                     type={showPassword ? 'text' : 'password'}
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl pl-12 pr-12 py-4 text-sm focus:border-quro-teal outline-none transition-all font-bold"
@@ -165,8 +194,9 @@ export default function OnboardingModal() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Confirm Password</label>
+                <label htmlFor="ob-confirm-password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Confirm Password</label>
                 <input 
+                  id="ob-confirm-password"
                   required
                   type="password"
                   className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-4 text-sm focus:border-quro-teal outline-none transition-all font-bold"
@@ -183,13 +213,15 @@ export default function OnboardingModal() {
               </div>
 
               <div className="flex gap-4">
-                <button 
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="px-8 py-5 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
-                >
-                  Back
-                </button>
+                {!staff?.is_onboarded && (
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="px-8 py-5 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
+                  >
+                    Back
+                  </button>
+                )}
                 <button 
                   type="submit"
                   disabled={isSaving}

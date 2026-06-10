@@ -264,8 +264,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Authentication failed';
+    } catch (err: any) {
+      let message = 'Authentication failed';
+      if (err && typeof err === 'object' && 'code' in err) {
+        const code = err.code;
+        if (
+          code === 'auth/user-not-found' ||
+          code === 'auth/wrong-password' ||
+          code === 'auth/invalid-email' ||
+          code === 'auth/invalid-credential'
+        ) {
+          message = 'Invalid email/username or password. Please try again.';
+        } else if (code === 'auth/user-disabled') {
+          message = 'This account has been disabled. Please contact your DON or administrator.';
+        } else if (code === 'auth/too-many-requests') {
+          message = 'Access temporarily blocked due to multiple failed login attempts. Please try again later.';
+        } else {
+          message = err.message || 'Authentication failed';
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
