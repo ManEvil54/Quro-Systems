@@ -279,7 +279,10 @@ export default function MarTarPrintPage() {
                 </thead>
                 <tbody>
                   {pageRecords.map((record) => {
-                    const displayTimes = record.frequency_times.length > 0 ? record.frequency_times : ["09:00"];
+                    const isPRN = record.frequency.toUpperCase() === "PRN";
+                    const displayTimes = isPRN 
+                      ? ["PRN"] 
+                      : (record.frequency_times.length > 0 ? record.frequency_times : ["09:00"]);
                     const subRowsCount = 4;
                     
                     return (
@@ -383,7 +386,7 @@ export default function MarTarPrintPage() {
                     <span className="text-[6px] text-slate-400">Resident</span>
                     <span className="font-black text-slate-800">{patientName}</span>
                   </div>
-                  <div className="col-span-1.5 p-1 flex flex-col justify-between">
+                  <div className="col-span-1 p-1 flex flex-col justify-between">
                     <span className="text-[6px] text-slate-400">Rm/Bed</span>
                     <span className="font-bold truncate text-slate-850">{patientRoom}</span>
                   </div>
@@ -395,11 +398,11 @@ export default function MarTarPrintPage() {
                     <span className="text-[6px] text-slate-400">Sex</span>
                     <span className="font-black text-slate-800">{patientGender}</span>
                   </div>
-                  <div className="col-span-1.5 p-1 flex flex-col justify-between">
+                  <div className="col-span-1 p-1 flex flex-col justify-between">
                     <span className="text-[6px] text-slate-400">DOB</span>
                     <span className="font-black text-slate-800">{patientDobFormatted}</span>
                   </div>
-                  <div className="col-span-2 p-1 flex flex-col justify-between">
+                  <div className="col-span-3 p-1 flex flex-col justify-between">
                     <span className="text-[6px] text-slate-400">Allergies/Notes</span>
                     <span className="font-black text-slate-800 truncate">{patientAllergiesFormatted}</span>
                   </div>
@@ -490,7 +493,7 @@ export default function MarTarPrintPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.from({ length: 12 }).map((_, idx) => (
+                    {Array.from({ length: 14 }).map((_, idx) => (
                       <tr key={`note-row-${idx}`} className="h-[26px] break-inside-avoid">
                         <td className="border border-black bg-white print-border" />
                         <td className="border border-black bg-white print-border" />
