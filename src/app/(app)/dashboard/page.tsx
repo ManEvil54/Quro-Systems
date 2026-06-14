@@ -533,6 +533,10 @@ export default function DashboardPage() {
                     <button
                       onClick={async () => {
                         try {
+                          if (!organization?.id) {
+                            alert('No active organization found.');
+                            return;
+                          }
                           const docRef = doc(db, 'organizations', organization.id, 'patients', alert.patientId, 'provider_orders', alert.id);
                           await updateDoc(docRef, {
                             signed_at: new Date().toISOString(),
