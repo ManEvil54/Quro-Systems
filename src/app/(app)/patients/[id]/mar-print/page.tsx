@@ -304,17 +304,19 @@ export default function MarTarPrintPage() {
 
         {/* Section B: Automated Blank Medication Template for Handwriting */}
         <tbody className="break-inside-avoid print:break-inside-avoid">
-          <tr className="h-14">
-            <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-400">
-              Route: ________ Freq: ________ Dose: ________
-              <div className="font-bold uppercase text-[9px] text-slate-500 mt-1">Additional Medication (Scribe Manually)</div>
-              <div className="h-[1px] bg-slate-200 mt-1 w-full" />
-            </td>
-            <td className="border border-black text-center bg-white print-border font-mono text-[8px] text-slate-400 align-bottom pb-1">Hour</td>
-            {daysArray.map((day) => (
-              <td key={day} className="border border-black bg-white print-border" />
-            ))}
-          </tr>
+          {Array.from({ length: blankRowsCount }).map((_, rowIndex) => (
+            <tr key={`blank-med-${rowIndex}`} className="h-14">
+              <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-400">
+                Route: ________ Freq: ________ Dose: ________
+                <div className="font-bold uppercase text-[9px] text-slate-500 mt-1">Additional Medication (Scribe Manually)</div>
+                <div className="h-[1px] bg-slate-200 mt-1 w-full" />
+              </td>
+              <td className="border border-black text-center bg-white print-border font-mono text-[8px] text-slate-400 align-bottom pb-1">Hour</td>
+              {daysArray.map((day) => (
+                <td key={day} className="border border-black bg-white print-border" />
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
 

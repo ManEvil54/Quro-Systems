@@ -66,23 +66,25 @@ export default function OrdersPage() {
       return;
     }
 
-    console.log("[Orders Hub] Listening to provider_orders for facility:", activeFacility.id);
+    console.log("[Orders Hub] Listening to provider_orders for organization:", organization.id, "facility:", activeFacility.id);
     const q = query(
       collectionGroup(db, 'provider_orders'),
-      where('facility_id', '==', activeFacility.id)
+      where('org_id', '==', organization.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ords = snapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        const pathSegments = docSnap.ref.path.split('/');
-        const patientIdFromPath = pathSegments[3] || data.patient_id;
-        return {
-          id: docSnap.id,
-          patient_id: patientIdFromPath,
-          ...data
-        };
-      }) as ProviderOrder[];
+      const ords = snapshot.docs
+        .filter(docSnap => docSnap.data().facility_id === activeFacility.id)
+        .map(docSnap => {
+          const data = docSnap.data();
+          const pathSegments = docSnap.ref.path.split('/');
+          const patientIdFromPath = pathSegments[3] || data.patient_id;
+          return {
+            id: docSnap.id,
+            patient_id: patientIdFromPath,
+            ...data
+          };
+        }) as ProviderOrder[];
 
       // Sort reverse-chronologically on client side to avoid Firestore index requirement
       ords.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

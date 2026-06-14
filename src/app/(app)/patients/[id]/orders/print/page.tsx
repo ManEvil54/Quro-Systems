@@ -202,6 +202,28 @@ export default function PhysicianOrderPrintPage() {
             </tr>
           ))}
 
+          {/* Section B: Automated Blank Order Template for Handwriting */}
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <tr key={`blank-order-${idx}`} className="h-16 break-inside-avoid text-slate-400">
+              <td className="border border-black p-2 font-mono text-[9px] align-bottom text-slate-400">
+                ____/____/________
+              </td>
+              <td className="border border-black p-2 font-black uppercase text-[8px] text-slate-400 align-bottom">
+                MED / TX / LAB
+              </td>
+              <td className="border border-black p-2 font-medium text-[9px] align-bottom text-slate-400">
+                Additional Physician Order (Scribe Manually)
+                <div className="h-[1px] bg-slate-200 mt-2 w-full" />
+              </td>
+              <td className="border border-black p-2 font-mono text-[9px] align-bottom text-slate-400">
+                Physician: __________________
+              </td>
+              <td className="border border-black p-2 text-center font-bold text-[8px] uppercase align-bottom text-slate-400">
+                T.O. / V.O. / DIRECT
+              </td>
+            </tr>
+          ))}
+
           {orders.length === 0 && (
             <tr>
               <td colSpan={5} className="border border-black p-8 text-center text-slate-400 italic text-[10px]">
