@@ -259,47 +259,62 @@ export default function MarTarPrintPage() {
             ))}
           </tr>
         </thead>
-        <tbody>
-          {medications.map((med) => {
-            const displayTimes = med.frequency_times.length > 0 ? med.frequency_times : ["PRN"];
-            return (
-              <React.Fragment key={med.id}>
-                {displayTimes.map((time, timeIdx) => (
-                  <tr key={`${med.id}-${timeIdx}`} className="h-10">
-                    {timeIdx === 0 && (
-                      <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
-                        <div className="font-bold uppercase text-[10px] text-black">
-                          {med.title}
-                          {med.is_psychotropic && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded font-black text-[7px] uppercase tracking-widest">
-                              High Alert / Psych
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
-                        {med.is_psychotropic && med.psychotropic_monitoring && med.psychotropic_monitoring.length > 0 && (
-                          <div className="mt-2 p-1.5 bg-rose-50 border border-rose-100 rounded text-[7px] text-rose-950 font-semibold uppercase tracking-tight">
-                            <span className="font-black text-rose-700 block mb-0.5">Psychotropic Monitoring Parameters:</span>
-                            {med.psychotropic_monitoring.join(" · ")}
-                          </div>
+        {medications.map((med) => {
+          const displayTimes = med.frequency_times.length > 0 ? med.frequency_times : ["PRN"];
+          return (
+            <tbody key={med.id} className="break-inside-avoid print:break-inside-avoid">
+              {displayTimes.map((time, timeIdx) => (
+                <tr key={`${med.id}-${timeIdx}`} className="h-10">
+                  {timeIdx === 0 && (
+                    <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
+                      <div className="font-bold uppercase text-[10px] text-black">
+                        {med.title}
+                        {med.is_psychotropic && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded font-black text-[7px] uppercase tracking-widest">
+                            High Alert / Psych
+                          </span>
                         )}
-                      </td>
-                    )}
-                    <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
-                    {daysArray.map((day) => (
-                      <td key={day} className="border border-black bg-white print-border" />
-                    ))}
-                  </tr>
-                ))}
-              </React.Fragment>
-            );
-          })}
-          
-          {medications.length === 0 && (
+                      </div>
+                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{med.details}</div>
+                      {med.is_psychotropic && med.psychotropic_monitoring && med.psychotropic_monitoring.length > 0 && (
+                        <div className="mt-2 p-1.5 bg-rose-50 border border-rose-100 rounded text-[7px] text-rose-950 font-semibold uppercase tracking-tight">
+                          <span className="font-black text-rose-700 block mb-0.5">Psychotropic Monitoring Parameters:</span>
+                          {med.psychotropic_monitoring.join(" · ")}
+                        </div>
+                      )}
+                    </td>
+                  )}
+                  <td className="border border-black text-center font-mono font-medium p-1 bg-white print-border">{time}</td>
+                  {daysArray.map((day) => (
+                    <td key={day} className="border border-black bg-white print-border" />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          );
+        })}
+        
+        {medications.length === 0 && (
+          <tbody>
             <tr>
               <td colSpan={33} className="border border-black p-4 text-center text-slate-400 italic text-[10px]">No active scheduled medication records.</td>
             </tr>
-          )}
+          </tbody>
+        )}
+
+        {/* Section B: Automated Blank Medication Template for Handwriting */}
+        <tbody className="break-inside-avoid print:break-inside-avoid">
+          <tr className="h-14">
+            <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-400">
+              Route: ________ Freq: ________ Dose: ________
+              <div className="font-bold uppercase text-[9px] text-slate-500 mt-1">Additional Medication (Scribe Manually)</div>
+              <div className="h-[1px] bg-slate-200 mt-1 w-full" />
+            </td>
+            <td className="border border-black text-center bg-white print-border font-mono text-[8px] text-slate-400 align-bottom pb-1">Hour</td>
+            {daysArray.map((day) => (
+              <td key={day} className="border border-black bg-white print-border" />
+            ))}
+          </tr>
         </tbody>
       </table>
 
@@ -315,33 +330,33 @@ export default function MarTarPrintPage() {
             ))}
           </tr>
         </thead>
-        <tbody>
-          {treatments.map((tx) => {
-            const displayTimes = tx.frequency_times.length > 0 ? tx.frequency_times : ["PRN"];
-            return (
-              <React.Fragment key={tx.id}>
-                {displayTimes.map((time, timeIdx) => (
-                  <tr key={`${tx.id}-${timeIdx}`} className="h-12">
-                    {timeIdx === 0 && (
-                      <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
-                        <div className="font-bold uppercase text-teal-950 text-[10px]">{tx.title}</div>
-                        <div className="text-[9px] mt-1 text-slate-600 font-mono">{tx.details}</div>
-                      </td>
-                    )}
-                    <td className="border border-black text-center font-mono text-[9px] bg-white print-border">{time}</td>
-                    {daysArray.map((day) => (
-                      <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[8px] text-slate-400">
-                        {tx.title.toLowerCase().includes("meal") ? "%" : ""}
-                        {tx.title.toLowerCase().includes("weight") ? "lbs" : ""}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </React.Fragment>
-            );
-          })}
+        {treatments.map((tx) => {
+          const displayTimes = tx.frequency_times.length > 0 ? tx.frequency_times : ["PRN"];
+          return (
+            <tbody key={tx.id} className="break-inside-avoid print:break-inside-avoid">
+              {displayTimes.map((time, timeIdx) => (
+                <tr key={`${tx.id}-${timeIdx}`} className="h-12">
+                  {timeIdx === 0 && (
+                    <td rowSpan={displayTimes.length} className="border border-black p-2 align-top bg-white print-border">
+                      <div className="font-bold uppercase text-teal-950 text-[10px]">{tx.title}</div>
+                      <div className="text-[9px] mt-1 text-slate-600 font-mono">{tx.details}</div>
+                    </td>
+                  )}
+                  <td className="border border-black text-center font-mono text-[9px] bg-white print-border">{time}</td>
+                  {daysArray.map((day) => (
+                    <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[8px] text-slate-400">
+                      {tx.title.toLowerCase().includes("meal") ? "%" : ""}
+                      {tx.title.toLowerCase().includes("weight") ? "lbs" : ""}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          );
+        })}
 
-          {/* Section B: Automated Blank Space Injection for Manual Overrides */}
+        {/* Section B: Automated Blank Space Injection for Manual Overrides */}
+        <tbody className="break-inside-avoid print:break-inside-avoid">
           {Array.from({ length: blankRowsCount }).map((_, rowIndex) => (
             <tr key={`blank-${rowIndex}`} className="h-14">
               <td className="border border-black p-2 align-bottom font-mono text-[8px] text-slate-400">
@@ -373,44 +388,42 @@ export default function MarTarPrintPage() {
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {['Agitation / Aggression', 'Anxiety / Pacing', 'Wandering / Exit Seeking', 'Sleep Disturbance'].map((behavior) => {
-                const virtualId = `psych_behavior_${behavior.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-                return (
-                  <React.Fragment key={behavior}>
-                    <tr>
-                      <td rowSpan={2} className="border border-black p-2 font-bold uppercase align-top bg-white">
-                        {behavior}
-                      </td>
-                      <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">DAY</td>
-                      {daysArray.map((day) => {
-                        const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'DAY');
-                        const score = entry?.notes || '';
-                        return (
-                          <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
-                            {score}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                    <tr>
-                      <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">NIGHT</td>
-                      {daysArray.map((day) => {
-                        const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'NIGHT');
-                        const score = entry?.notes || '';
-                        return (
-                          <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
-                            {score}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
+            {['Agitation / Aggression', 'Anxiety / Pacing', 'Wandering / Exit Seeking', 'Sleep Disturbance'].map((behavior) => {
+              const virtualId = `psych_behavior_${behavior.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+              return (
+                <tbody key={behavior} className="break-inside-avoid print:break-inside-avoid">
+                  <tr>
+                    <td rowSpan={2} className="border border-black p-2 font-bold uppercase align-top bg-white">
+                      {behavior}
+                    </td>
+                    <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">DAY</td>
+                    {daysArray.map((day) => {
+                      const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                      const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'DAY');
+                      const score = entry?.notes || '';
+                      return (
+                        <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
+                          {score}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">NIGHT</td>
+                    {daysArray.map((day) => {
+                      const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                      const entry = marEntries.find(e => e.medication_id === virtualId && e.scheduled_date === dateStr && e.scheduled_time === 'NIGHT');
+                      const score = entry?.notes || '';
+                      return (
+                        <td key={day} className="border border-black bg-white print-border text-center font-bold text-[9px] align-middle">
+                          {score}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              );
+            })}
           </table>
           <p className="text-[7px] italic text-slate-500 mt-1 uppercase font-semibold">
             * Record frequency of behavior per shift: 0 = None, 1 = Mild, 2 = Moderate, 3 = Severe.
@@ -438,7 +451,7 @@ export default function MarTarPrintPage() {
               {['Facial & Oral (Lips, Jaw, Tongue)', 'Extremities (Arms, Hands, Legs)', 'Trunk (Shoulders, Hips, Torso)'].map((area) => {
                 const virtualId = `psych_aims_${area.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
                 return (
-                  <tr key={area} className="h-8">
+                  <tr key={area} className="h-8 break-inside-avoid">
                     <td className="border border-black p-2 font-bold uppercase bg-white">{area}</td>
                     <td className="border border-black p-1 text-center font-bold bg-slate-50 text-[8px]">Q12H</td>
                     {daysArray.map((day) => {
@@ -494,6 +507,10 @@ export default function MarTarPrintPage() {
           @page { size: letter landscape !important; margin: 0.4in 0.4in 1.4in 0.4in !important; }
           .no-print { display: none !important; }
           .break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
+          tbody, tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
           .print-footer-container {
             position: fixed;
             bottom: 0.4in !important;
