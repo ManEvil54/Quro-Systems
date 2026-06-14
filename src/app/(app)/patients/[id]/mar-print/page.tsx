@@ -463,7 +463,7 @@ export default function MarTarPrintPage() {
       )}
 
       {/* Footer Initials Legend Box */}
-      <div className="print-footer-container mt-4">
+      <div className="print-footer-container mt-4 break-inside-avoid">
         <div className="border border-black p-3 grid grid-cols-4 gap-4 text-[9px] uppercase font-mono break-inside-avoid">
           <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
           <div className="border-r border-slate-300 pr-2 pb-2 border-b border-slate-100">Nurse Initial: ______ Signature: __________________</div>
@@ -483,17 +483,26 @@ export default function MarTarPrintPage() {
 
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+          html, body, body > div, main.main-content {
+            display: block !important;
+            overflow: visible !important;
+            position: relative !important;
+            height: auto !important;
+            min-height: auto !important;
+          }
           body { -webkit-print-color-adjust: exact !important; }
-          @page { size: letter landscape !important; margin: 0.4in 0.4in 1.2in 0.4in !important; }
+          @page { size: letter landscape !important; margin: 0.4in 0.4in 1.4in 0.4in !important; }
           .no-print { display: none !important; }
           .break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
           .print-footer-container {
             position: fixed;
-            bottom: -0.8in;
+            bottom: 0.4in !important;
             left: 0;
             right: 0;
             background-color: #ffffff !important;
             z-index: 9999 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}} />
