@@ -12,6 +12,7 @@ import {
   AlertCircle,
   FileText,
   ShieldCheck,
+  Printer,
   X
 } from 'lucide-react';
 import { 
@@ -246,6 +247,7 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
       await updateDoc(docRef, {
         signed_at: new Date().toISOString(),
         ordering_physician_id: staff.id, // Formalizing physician responsibility
+        status: 'signed',
         updated_at: new Date().toISOString()
       });
 
@@ -589,15 +591,26 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           <h2 className="text-xl font-black text-quro-charcoal uppercase tracking-tight">Physician Order Portal</h2>
           <p className="text-xs text-slate-500 font-medium">Verified CPOE interface for licensed prescribers.</p>
         </div>
-        {!isOrdering && (
-          <button 
-            onClick={() => setIsOrdering(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-quro-teal text-white rounded-2xl text-xs font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-900/20"
+        <div className="flex gap-3">
+          <a
+            href={`/patients/${patientId}/orders/print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-950/20"
           >
-            <FilePlus size={18} />
-            WRITE NEW ORDER
-          </button>
-        )}
+            <Printer size={18} />
+            PRINT ORDERS
+          </a>
+          {!isOrdering && (
+            <button 
+              onClick={() => setIsOrdering(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-quro-teal text-white rounded-2xl text-xs font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-900/20"
+            >
+              <FilePlus size={18} />
+              WRITE NEW ORDER
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Co-Sign Portal Section */}
@@ -1336,15 +1349,27 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                       </button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => handleEditDraft(order)}
-                      className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
-                    >
-                      <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      Edit Order
-                    </button>
+                    <>
+                      {order.order_method === 'telephone' && !order.signed_at && staff?.role === 'physician' && (
+                        <button
+                          onClick={() => handleCoSignOrder(order.id)}
+                          disabled={isSaving}
+                          className="px-3 py-1 bg-teal-600 text-white rounded-lg text-[10px] font-bold hover:bg-teal-700 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-teal-900/10"
+                        >
+                          <ShieldCheck size={10} className="text-white" />
+                          Co-Sign
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEditDraft(order)}
+                        className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
+                      >
+                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Edit Order
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

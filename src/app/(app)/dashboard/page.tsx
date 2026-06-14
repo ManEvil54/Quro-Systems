@@ -27,7 +27,7 @@ const RT_Assessment_Inlay = dynamic(() => import('@/components/clinical/RTAssess
 const GT_Feeding_Inlay = dynamic(() => import('@/components/clinical/GTFeedingInlay'), { ssr: false });
 
 import { RespiratoryState, EnteralState } from '@/lib/firebase/types';
-import { addDoc, collection, serverTimestamp, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, setDoc, onSnapshot, collectionGroup, query, where, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
@@ -68,6 +68,64 @@ export default function DashboardPage() {
   const isDemoUser = user?.email === 'demo@qurosystems.com';
   
   const { beds: facilityBeds, alerts } = useDashboard(activeFacility?.id || '');
+
+  const [telemetryAlerts, setTelemetryAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!organization?.id) return;
+
+    console.log("[Dashboard Telemetry] Mounting collectionGroup('provider_orders') listener for org:", organization.id);
+    const q = query(
+      collectionGroup(db, 'provider_orders'),
+      where('org_id', '==', organization.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newAlerts: any[] = [];
+      snapshot.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const orderId = docSnap.id;
+        
+        // 1. Telephone orders pending doctor co-signature (amber warning)
+        if (data.order_method === 'telephone' && !data.signed_at && data.status !== 'cancelled') {
+          newAlerts.push({
+            id: orderId,
+            type: 'telephone_pending',
+            patientId: data.patient_id,
+            orderText: data.order_text || 'Clinical Order',
+            severity: 'warning',
+            message: `Telephone Order pending Co-Signature: ${data.order_text}`,
+            timestamp: data.created_at
+          });
+        }
+        // 2. Newly signed orders (emerald success) that are not yet acknowledged
+        else if (data.status === 'signed' && !data.acknowledged_at) {
+          newAlerts.push({
+            id: orderId,
+            type: 'new_signed',
+            patientId: data.patient_id,
+            orderText: data.order_text || 'Clinical Order',
+            severity: 'success',
+            message: `New Signed Order: ${data.order_text}`,
+            timestamp: data.created_at
+          });
+        }
+      });
+
+      // Sort by timestamp desc (newest first)
+      newAlerts.sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      setTelemetryAlerts(newAlerts.slice(0, 3));
+    }, (err) => {
+      console.error("Telemetry query failed:", err);
+    });
+
+    return () => unsubscribe();
+  }, [organization?.id]);
   
   // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
   const mockPatients: DashboardBed[] = [
@@ -287,6 +345,11 @@ export default function DashboardPage() {
     return `${bed.room_name || 'Room'} - ${bed.bed_name || 'Bed'}`;
   };
 
+  const getPatientName = (patientId: string) => {
+    const bed = beds.find(b => b.patient?.id === patientId);
+    return bed?.patient?.full_name || 'Unknown Patient';
+  };
+
   const handleRTSubmit = async () => {
     if (!organization?.id || !activeFacility?.id || !selectedPatientForRT) return;
 
@@ -435,6 +498,71 @@ export default function DashboardPage() {
         {/* Live AI Shift Handoff Briefing */}
         {activeFacility?.id && (
           <ActiveShiftIntelligenceBanner facilityId={activeFacility.id} />
+        )}
+
+        {/* Telemetry Alerts Banner */}
+        {telemetryAlerts.length > 0 && (
+          <div className="mt-8 mb-4 space-y-3">
+            {telemetryAlerts.map(alert => (
+              <div 
+                key={alert.id} 
+                className={`p-6 rounded-[2.5rem] border-2 flex items-center justify-between gap-6 animate-in slide-in-from-top-4 duration-300 shadow-lg ${
+                  alert.severity === 'warning' 
+                    ? 'bg-amber-50/80 border-amber-200 text-amber-900 shadow-amber-900/5' 
+                    : 'bg-emerald-50/80 border-emerald-200 text-emerald-950 shadow-emerald-950/5'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                    alert.severity === 'warning' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                  }`}>
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-tight">
+                      {alert.severity === 'warning' ? 'Telephone Order Pending Co-Signature' : 'New Clinically Signed Order'}
+                    </h4>
+                    <p className="text-xs font-semibold mt-0.5 opacity-90">{alert.message}</p>
+                    <p className="text-[10px] font-bold opacity-60 uppercase mt-1">
+                      Patient: {getPatientName(alert.patientId)} • Location: {getPatientRoom(alert.patientId)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {alert.severity === 'warning' && staff?.role === 'physician' && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const docRef = doc(db, 'organizations', organization.id, 'patients', alert.patientId, 'provider_orders', alert.id);
+                          await updateDoc(docRef, {
+                            signed_at: new Date().toISOString(),
+                            ordering_physician_id: staff.id,
+                            status: 'signed',
+                            updated_at: new Date().toISOString()
+                          });
+                          alert('Order co-signed successfully.');
+                        } catch (err) {
+                          console.error('Error signing from alert:', err);
+                        }
+                      }}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-700 transition-colors shadow-md shadow-amber-900/20"
+                    >
+                      Co-Sign Now
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      setTelemetryAlerts(prev => prev.filter(a => a.id !== alert.id));
+                    }}
+                    title="Dismiss alert"
+                    className="p-2 hover:bg-black/5 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Bed Grid */}
