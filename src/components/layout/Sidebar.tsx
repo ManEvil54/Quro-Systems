@@ -45,7 +45,7 @@ export default function Sidebar() {
         const allFacilities = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Facility));
         
         const isSystemAdmin = staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH';
-        const isOrgAdmin = staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin';
+        const isOrgAdmin = staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin' || staff?.role === 'nurse' || staff?.role === 'physician';
 
         const accessible = isSystemAdmin || isOrgAdmin
           ? allFacilities
@@ -204,7 +204,7 @@ export default function Sidebar() {
         })}
 
         {/* Client Admin Links (Manager / DON) */}
-        {(staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin') && (
+        {(staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin' || staff?.role === 'nurse' || staff?.role === 'physician') && (
           <div className="pt-6 mt-6 border-t border-white/5">
             <p className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Management</p>
             <Link

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // Verify the caller has administrative rights
     const isSystemAdmin = ['APP_OWNER', 'APP_TECH', 'SUPER_ADMIN'].includes(callerRole);
-    const isClientAdmin = ['CLIENT_ADMIN', 'FACILITY_ADMIN'].includes(callerRole);
+    const isClientAdmin = ['CLIENT_ADMIN', 'FACILITY_ADMIN', 'admin', 'nurse', 'physician'].includes(callerRole);
 
     if (!isSystemAdmin && !isClientAdmin) {
       return NextResponse.json({ error: 'Forbidden: Insufficient privileges' }, { status: 403 });
