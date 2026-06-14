@@ -136,6 +136,7 @@ export default function PatientChartPage() {
   const [savingRoom, setSavingRoom] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'careplan' | 'trends' | 'compliance' | 'handoff'>('facesheet');
+  const [printBlank, setPrintBlank] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
@@ -592,6 +593,14 @@ export default function PatientChartPage() {
     }
   };
 
+  const handlePrintBlank = () => {
+    setPrintBlank(true);
+    setTimeout(() => {
+      window.print();
+      setPrintBlank(false);
+    }, 100);
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="no-print">
@@ -611,7 +620,7 @@ export default function PatientChartPage() {
             className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
           >
             <Printer size={16} />
-            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : activeTab === 'handoff' ? 'Handoff Log' : 'Medication List'}
+            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : activeTab === 'handoff' ? 'Handoff Log' : activeTab === 'charting' ? 'SIFF' : 'Medication List'}
           </button>
         </div>
       </div>
@@ -1227,12 +1236,20 @@ export default function PatientChartPage() {
                   </button>
                 </div>
                 
-                <button 
-                  onClick={handlePrint}
-                  className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20"
-                >
-                  <Printer size={16} /> Print Gold-Standard SIFF
-                </button>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={handlePrint}
+                    className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20"
+                  >
+                    <Printer size={16} /> Print Gold-Standard SIFF
+                  </button>
+                  <button 
+                    onClick={handlePrintBlank}
+                    className="px-6 py-4 bg-white border border-slate-300 text-slate-755 hover:bg-slate-50 rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-3 shadow-sm cursor-pointer"
+                  >
+                    <Printer size={16} /> Print Blank Form (Backup)
+                  </button>
+                </div>
               </div>
 
               {chartingSide === 'front' ? (
@@ -2167,327 +2184,623 @@ export default function PatientChartPage() {
 
       {/* DEDICATED PRINT VIEW (FOR 2-SIDED SIFF/SNF) */}
       {activeTab === 'charting' && (
-        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0">
+        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0 text-black">
         {/* Page 1: Assessment (Front Side) */}
-        <div className="p-12 min-h-screen border-b-8 border-slate-900 bg-white flex flex-col">
-          <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
+        <div 
+          className="p-5 bg-white flex flex-col justify-between text-black text-[9px] leading-tight border-b-4 border-slate-900 print-border"
+          style={{ 
+            boxSizing: 'border-box', 
+            height: '9.8in', 
+            minHeight: '9.8in',
+            maxHeight: '10in', 
+            pageBreakInside: 'avoid', 
+            breakInside: 'avoid', 
+            overflow: 'hidden' 
+          }}
+        >
+          <div className="flex justify-between items-start mb-2.5 border-b-2 border-slate-900 pb-1.5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md">Q</div>
               <div>
-                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Assessment Record</h1>
-                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Platinum Health Hub • Shift Certification (Side A)</p>
+                <h1 className="text-xl font-black uppercase tracking-tighter leading-none mb-0.5">Clinical Assessment Record</h1>
+                <p className="text-[8px] font-black text-emerald-900 uppercase tracking-[0.2em]">Platinum Health Hub • Shift Certification (Side A)</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
-              <p className="text-xs font-black text-emerald-900 uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+            <div className="text-right flex flex-col items-end gap-1.5 w-72">
+              {printBlank ? (
+                <>
+                  <div className="flex items-end w-full gap-1.5 justify-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Resident:</span>
+                    <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                  </div>
+                  <div className="flex items-end w-full gap-1.5 justify-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">MRN:</span>
+                    <div className="w-20 border-b border-dotted border-slate-900 h-3" />
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none ml-2">Room:</span>
+                    <div className="w-16 border-b border-dotted border-slate-900 h-3" />
+                  </div>
+                  <div className="flex items-end w-full gap-1.5 justify-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Date:</span>
+                    <div className="w-24 border-b border-dotted border-slate-900 h-3" />
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none ml-2">Time:</span>
+                    <div className="w-16 border-b border-dotted border-slate-900 h-3" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+                  <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest mt-0.5">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
+                  <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mt-0.5">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-12 gap-y-6 flex-grow">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 flex-grow">
             {/* 1. Neurological */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 I. Neurological Status
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">A&O Level</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">A&O X {assessments.neuro.orientation.length}</p>
+                  <div className="text-[9.5px] font-black uppercase text-emerald-900 mt-0.5">
+                    {printBlank ? (
+                      <span className="inline-flex items-end w-20 gap-0.5">
+                        <span className="leading-none">A&O X</span>
+                        <span className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </span>
+                    ) : `A&O X ${assessments.neuro.orientation.length}`}
+                  </div>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">LOC</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.neuro.loc}</p>
+                  <div className="text-[9.5px] font-black uppercase text-emerald-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="w-20 border-b border-dotted border-slate-900 h-2.5" />
+                    ) : assessments.neuro.loc}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Orientation To</p>
-                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
-                    {assessments.neuro.orientation.join(', ') || 'No orientation markers noted'}
+                  <p className="text-[8.5px] font-black uppercase text-emerald-900 italic mt-0.5">
+                    {printBlank ? '[  ] Person   [  ] Place   [  ] Time   [  ] Situation' : (assessments.neuro.orientation.join(', ') || 'No orientation markers noted')}
                   </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pupils</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.neuro.pupils}</p>
+                  <div className="text-[9.5px] font-black uppercase text-emerald-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="w-20 border-b border-dotted border-slate-900 h-2.5" />
+                    ) : assessments.neuro.pupils}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* 2. Cognitive */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 II. Cognitive Status
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Short-Term Memory</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.short_term_memory}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? '[  ] Intact  [  ] Impaired' : assessments.cognitive.short_term_memory}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Long-Term Memory</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.long_term_memory}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? '[  ] Intact  [  ] Impaired' : assessments.cognitive.long_term_memory}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Daily Decision Making</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.cognitive.decision_making}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? 'Independent / Mod Impaired / Sev Impaired' : assessments.cognitive.decision_making}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* 3. Sensory & Speech */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 III. Sensory & Communication
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Hearing</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.hearing}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? 'Adequate / Impaired' : assessments.sensory.hearing}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Vision</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.vision}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? 'Adequate / Impaired' : assessments.sensory.vision}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Speech Pattern</p>
-                  <p className="text-[11px] font-black uppercase text-emerald-900">{assessments.sensory.speech}</p>
+                  <p className="text-[9.5px] font-black uppercase text-emerald-900">
+                    {printBlank ? 'Clear / Slurred / Aphasic' : assessments.sensory.speech}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* 4 & 5. Mood & Behavior */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 IV & V. Psycho-Social Status
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 border-b border-slate-100 pb-2">
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-1">Mood Indicators (PHQ)</p>
-                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
-                    {assessments.mood.indicators.join(', ') || 'No mood distress noted'}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2 border-b border-slate-100 pb-1">
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-0.5">Mood Indicators (PHQ)</p>
+                  <p className="text-[8.5px] font-black uppercase text-emerald-900 italic">
+                    {printBlank ? '[  ] Depressed   [  ] Anxious   [  ] Irritable   [  ] None' : (assessments.mood.indicators.join(', ') || 'No mood distress noted')}
                   </p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-1">Behavioral Expressions</p>
-                  <p className="text-[9px] font-black uppercase text-emerald-900 italic">
-                    {assessments.behavior.types.join(', ') || 'No behavioral issues noted'}
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest mb-0.5">Behavioral Expressions</p>
+                  <p className="text-[8.5px] font-black uppercase text-emerald-900 italic">
+                    {printBlank ? '[  ] Wandering   [  ] Verbally Disruptive   [  ] Physically Aggressive   [  ] None' : (assessments.behavior.types.join(', ') || 'No behavioral issues noted')}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* 6. Functional Status */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 VI. Functional Status (MDS)
               </h3>
-              <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase">
-                <div className="text-emerald-900">Eating:</div>
-                <div className="text-emerald-900">{assessments.functional.self_perf.eating} / {assessments.functional.support.eating}</div>
-                <div className="text-emerald-900">Hygiene:</div>
-                <div className="text-emerald-900">{assessments.functional.self_perf.hygiene} / {assessments.functional.support.hygiene}</div>
-                <div className="text-emerald-900">Toileting:</div>
-                <div className="text-emerald-900">{assessments.functional.self_perf.toileting} / {assessments.functional.support.toileting}</div>
-                <div className="text-emerald-900">Mobility:</div>
-                <div className="text-emerald-900">{assessments.functional.self_perf.mobility} / {assessments.functional.support.mobility}</div>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[8.5px] font-black uppercase">
+                <div className="text-emerald-900 text-[8px] flex items-center">Eating:</div>
+                <div className="text-emerald-900 text-[9.5px]">
+                  {printBlank ? (
+                    <div className="flex items-end gap-0.5">
+                      <span>Self:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                      <span className="ml-1">Supp:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                    </div>
+                  ) : `${assessments.functional.self_perf.eating} / ${assessments.functional.support.eating}`}
+                </div>
+                <div className="text-emerald-900 text-[8px] flex items-center">Hygiene:</div>
+                <div className="text-emerald-900 text-[9.5px]">
+                  {printBlank ? (
+                    <div className="flex items-end gap-0.5">
+                      <span>Self:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                      <span className="ml-1">Supp:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                    </div>
+                  ) : `${assessments.functional.self_perf.hygiene} / ${assessments.functional.support.hygiene}`}
+                </div>
+                <div className="text-emerald-900 text-[8px] flex items-center">Toileting:</div>
+                <div className="text-emerald-900 text-[9.5px]">
+                  {printBlank ? (
+                    <div className="flex items-end gap-0.5">
+                      <span>Self:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                      <span className="ml-1">Supp:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                    </div>
+                  ) : `${assessments.functional.self_perf.toileting} / ${assessments.functional.support.toileting}`}
+                </div>
+                <div className="text-emerald-900 text-[8px] flex items-center">Mobility:</div>
+                <div className="text-emerald-900 text-[9.5px]">
+                  {printBlank ? (
+                    <div className="flex items-end gap-0.5">
+                      <span>Self:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                      <span className="ml-1">Supp:</span>
+                      <div className="w-6 border-b border-dotted border-slate-900 h-2.5" />
+                    </div>
+                  ) : `${assessments.functional.self_perf.mobility} / ${assessments.functional.support.mobility}`}
+                </div>
               </div>
             </div>
 
             {/* 7. Respiratory */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
                 VII. Respiratory System
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Breathing Pattern</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.pattern}</p>
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Normal / SOBOE / Dyspnea' : assessments.resp.pattern}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Breath Sounds</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.sounds}</p>
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Clear / Crackles / Wheezes' : assessments.resp.sounds}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">O2 Delivery</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.oxygen}</p>
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Room Air / Nasal Cannula' : assessments.resp.oxygen}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Cough</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.resp.cough}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 8. Cardiovascular */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
-                VIII. Cardiovascular
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Rhythm</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.rhythm}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Edema</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.cardio.edema} ({assessments.cardio.edema_location})</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 9 & 10. GI & GU */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
-                IX & X. Elimination & Nutrition
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BM Status</p>
-                  <p className="text-[10px] font-black uppercase text-slate-900">Bristol Type {assessments.gi.stool_bristol}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Voiding Status</p>
-                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gu.voiding}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Shift Intake</p>
-                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.gi.fluids_in_ml} mL / Appetite: {assessments.gi.appetite}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 11 & 12. Skin & Pressure Ulcers */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
-                XI & XII. Skin & Wound Status
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Skin Condition</p>
-                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.skin.condition}</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pressure Ulcer</p>
-                  <p className="text-[10px] font-black uppercase text-rose-600">
-                    {assessments.pressure_ulcers.present ? `YES: STAGE ${assessments.pressure_ulcers.stage} @ ${assessments.pressure_ulcers.site}` : 'NONE NOTED'}
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Productive / Non-productive' : assessments.resp.cough}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* 13. Pain */}
-            <div className="border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/50">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-emerald-900 pb-2 text-emerald-900">
-                XIII. Pain Assessment
+            {/* 8. Cardiovascular */}
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
+                VIII. Cardiovascular
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Level</p>
-                  <p className="text-[11px] font-black uppercase text-slate-900">{assessments.pain.level} / 10</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Rhythm</p>
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Regular / Irregular' : assessments.cardio.rhythm}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Type/Site</p>
-                  <p className="text-[10px] font-black uppercase text-slate-900">{assessments.pain.type} ({assessments.pain.location || 'N/A'})</p>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Edema</p>
+                  <p className="text-[9.5px] font-black uppercase text-slate-900">
+                    {printBlank ? 'None / +1 / +2 / +3' : `${assessments.cardio.edema} (${assessments.cardio.edema_location || 'N/A'})`}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* 14. Safety */}
-            <div className="border-2 border-slate-900 p-4 rounded-2xl bg-slate-900 text-white">
-              <h3 className="text-[11px] font-black uppercase mb-4 border-b-2 border-white/20 pb-2 text-teal-400">
+            {/* 9 & 10. GI & GU */}
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
+                IX & X. Elimination & Nutrition
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BM Status</p>
+                  <div className="text-[9px] font-black uppercase text-slate-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="flex items-end gap-0.5 w-full">
+                        <span className="leading-none">Bristol Type:</span>
+                        <div className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </div>
+                    ) : `Bristol Type ${assessments.gi.stool_bristol}`}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Voiding Status</p>
+                  <p className="text-[9px] font-black uppercase text-slate-900 mt-0.5">
+                    {printBlank ? 'Continent / Incontinent / Cath' : assessments.gu.voiding}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Shift Intake</p>
+                  <div className="text-[9px] font-black uppercase text-slate-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="flex items-end gap-1 w-full">
+                        <span className="leading-none">Fluid:</span>
+                        <div className="w-16 border-b border-dotted border-slate-900 h-2.5" />
+                        <span className="leading-none">mL / Appetite:</span>
+                        <div className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </div>
+                    ) : `${assessments.gi.fluids_in_ml} mL / Appetite: ${assessments.gi.appetite}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 11 & 12. Skin & Pressure Ulcers */}
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
+                XI & XII. Skin & Wound Status
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Skin Condition</p>
+                  <p className="text-[9px] font-black uppercase text-slate-900">
+                    {printBlank ? 'Intact / Warm / Dry' : assessments.skin.condition}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pressure Ulcer</p>
+                  <div className="text-[9px] font-black uppercase text-rose-600 mt-0.5">
+                    {printBlank ? (
+                      <div className="flex items-end gap-0.5 w-full">
+                        <span className="leading-none">None / Yes: Stage</span>
+                        <div className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </div>
+                    ) : (assessments.pressure_ulcers.present ? `YES: STAGE ${assessments.pressure_ulcers.stage} @ ${assessments.pressure_ulcers.site}` : 'NONE NOTED')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 13. Pain */}
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-emerald-900 pb-0.5 text-emerald-900">
+                XIII. Pain Assessment
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Level</p>
+                  <div className="text-[9.5px] font-black uppercase text-slate-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="flex items-end gap-0.5 w-full">
+                        <span className="leading-none">Level (0-10):</span>
+                        <div className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </div>
+                    ) : `${assessments.pain.level} / 10`}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Type/Site</p>
+                  <div className="text-[9px] font-black uppercase text-slate-900 mt-0.5">
+                    {printBlank ? (
+                      <div className="flex items-end gap-0.5 w-full">
+                        <span className="leading-none">Type/Site:</span>
+                        <div className="flex-grow border-b border-dotted border-slate-900 h-2.5" />
+                      </div>
+                    ) : `${assessments.pain.type} (${assessments.pain.location || 'N/A'})`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* XV. Vital Signs */}
+            <div className="border border-slate-300 p-2 rounded-xl bg-slate-50/50">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b-2 border-emerald-900 pb-0.5 text-emerald-900">
+                XV. Vital Signs
+              </h3>
+              <div className="grid grid-cols-3 gap-y-1 gap-x-2 text-[8.5px] leading-tight">
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Temp</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-16 gap-0.5">
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                      <span className="text-[8.5px] font-black text-slate-400 leading-none">°F</span>
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] font-black uppercase text-slate-900">{assessments.vitals.temp || '—'} °F</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">B/P</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-20 gap-0.5">
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                      <span className="text-[8.5px] font-black text-slate-400 leading-none">/</span>
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] font-black uppercase text-slate-900">
+                      {assessments.vitals.bp_systolic || assessments.vitals.bp_diastolic 
+                        ? `${assessments.vitals.bp_systolic || '—'}/${assessments.vitals.bp_diastolic || '—'}` 
+                        : '—'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Pulse</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-16 gap-0.5">
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                      <span className="text-[7.5px] font-black text-slate-400 leading-none">bpm</span>
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] font-black uppercase text-slate-900">{assessments.vitals.pulse || '—'} bpm</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">Resp</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-16 gap-0.5">
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                      <span className="text-[7.5px] font-black text-slate-400 leading-none">/min</span>
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] font-black uppercase text-slate-900">{assessments.vitals.resp || '—'} /min</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">SpO2</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-16 gap-0.5">
+                      <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                      <span className="text-[8.5px] font-black text-slate-400 leading-none">%</span>
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] font-black uppercase text-slate-900">{assessments.vitals.spo2 || '—'} %</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-emerald-900 uppercase tracking-widest">BP Detail</p>
+                  {printBlank ? (
+                    <div className="flex items-end w-20 gap-0.5 text-[7px] text-slate-400 font-bold uppercase leading-none">
+                      <span>S:</span>
+                      <div className="w-8 border-b border-dotted border-slate-900 h-2.5" />
+                      <span className="ml-1">P:</span>
+                      <div className="w-8 border-b border-dotted border-slate-900 h-2.5" />
+                    </div>
+                  ) : (
+                    <p className="text-[7.5px] font-bold uppercase text-slate-900 leading-none truncate">
+                      {assessments.vitals.bp_site || '—'} / {assessments.vitals.bp_position || '—'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* XIV. Safety Rounds */}
+            <div className="border border-slate-900 p-2 rounded-xl bg-slate-900 text-white">
+              <h3 className="text-[10px] font-black uppercase mb-1.5 border-b border-white/20 pb-0.5 text-teal-400">
                 XIV. Safety Rounds
               </h3>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {assessments.adl.safety_checks.map(check => (
-                  <span key={check} className="text-[9px] font-black uppercase flex items-center gap-1">
-                    <span className="text-teal-400">✓</span> {check}
-                  </span>
-                ))}
+              <div className="flex flex-wrap gap-x-2.5 gap-y-1">
+                {printBlank ? (
+                  ['Bed Lowest', 'Call Light', 'Side Rails', 'Floor Mats'].map(check => (
+                    <span key={check} className="text-[8px] font-black uppercase flex items-center gap-0.5">
+                      <span className="text-white/30 border border-white/45 w-2 h-2 inline-block rounded-sm mr-0.5" /> {check}
+                    </span>
+                  ))
+                ) : (
+                  assessments.adl.safety_checks.map(check => (
+                    <span key={check} className="text-[8px] font-black uppercase flex items-center gap-0.5">
+                      <span className="text-teal-400">✓</span> {check}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
-          <div className="mt-8 pt-8 flex justify-between items-end border-t-4 border-slate-900">
-            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">
+          <div className="mt-2.5 pt-1.5 flex justify-between items-end border-t-2 border-slate-900">
+            <div className="text-[8px] font-black uppercase tracking-widest text-emerald-900 leading-tight">
               Quro Clinical Intelligence Platform • v4.5 Platinum<br />
               Generated Official Record • Page 1 of 2 (Side A)
             </div>
-            <div className="text-right">
-              <div className="w-64 h-0.5 bg-slate-900 mb-2" />
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-900 mb-1">Licensed Clinical Professional Signature</p>
-              <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest">{staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})</p>
+            <div className="text-right flex flex-col items-end gap-1 w-64">
+              <div className="w-48 h-0.5 bg-slate-900 mb-1" />
+              <p className="text-[8px] font-black uppercase tracking-widest text-slate-900 mb-0.5">Licensed Clinical Professional Signature</p>
+              {printBlank ? (
+                <div className="flex items-end w-full gap-1 justify-end mt-1">
+                  <div className="flex-grow border-b border-dotted border-slate-900 h-3.5" />
+                  <span className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest ml-1 leading-none">, RN / LPN</span>
+                </div>
+              ) : (
+                <p className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest">
+                  {staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Page 2: Narrative (Back Side) */}
-        <div className="p-12 min-h-screen page-break-before-always bg-white flex flex-col">
-          <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
+        {/* Explicit boundary split to lock Side B directly to the back page */}
+        <div 
+          className="page-break-before-always print:block p-5 bg-white flex flex-col justify-between"
+          style={{ 
+            boxSizing: 'border-box', 
+            height: '9.8in', 
+            minHeight: '9.8in',
+            maxHeight: '10in', 
+            pageBreakInside: 'avoid', 
+            breakInside: 'avoid', 
+            pageBreakBefore: 'always',
+            overflow: 'hidden'
+          }}
+        >
+          <div className="flex justify-between items-start mb-3 border-b-2 border-slate-900 pb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md">Q</div>
               <div>
-                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Clinical Narrative Log</h1>
-                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Platinum Health Hub • Narrative Progress Notes (Side B)</p>
+                <h1 className="text-xl font-black uppercase tracking-tighter leading-none mb-0.5">Clinical Narrative Log</h1>
+                <p className="text-[8px] font-black text-emerald-900 uppercase tracking-[0.2em]">Platinum Health Hub • Narrative Progress Notes (Side B)</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
+            <div className="text-right flex flex-col items-end gap-1.5 w-72">
+              {printBlank ? (
+                <>
+                  <div className="flex items-end w-full gap-1.5 justify-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Resident:</span>
+                    <div className="flex-grow border-b border-dotted border-slate-900 h-3" />
+                  </div>
+                  <div className="flex items-end w-full gap-1.5 justify-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">MRN:</span>
+                    <div className="w-20 border-b border-dotted border-slate-900 h-3" />
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none ml-2">Room:</span>
+                    <div className="w-16 border-b border-dotted border-slate-900 h-3" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+                  <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest mt-0.5">MRN: {patient?.mrn} • RM: {patient?.room_id}</p>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="border-4 border-slate-900 p-10 rounded-[2.5rem] flex-grow relative bg-slate-50/30">
-            <div className="absolute top-6 left-6 flex items-center gap-2">
-              <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Official Clinical Narrative (DAR/SOAP)</p>
+          <div className="border-2 border-slate-900 p-5 rounded-[1.5rem] flex-grow relative bg-slate-50/30 flex flex-col justify-between animate-none" style={{ minHeight: '5.5in' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-rose-500 rounded-full" />
+              <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900 font-mono">
+                Official Clinical Narrative (DAR/SOAP)
+              </p>
             </div>
             
-            <div className="mt-12 text-sm font-medium leading-[2.2] text-slate-900 whitespace-pre-wrap">
-              <span className="font-black uppercase text-[10px] bg-slate-900 text-white px-3 py-1.5 rounded-lg mr-3 shadow-md tracking-widest">{noteFocus}</span>
-              {narrativeNote || 'No narrative documentation provided for this shift. Resident was monitored per care plan with no acute changes noted.'}
+            <div className="text-xs font-medium leading-relaxed text-slate-900 whitespace-pre-wrap flex-grow">
+              <span className="font-black uppercase text-[8px] bg-slate-900 text-white px-2 py-1 rounded mr-2 tracking-widest">{noteFocus}</span>
+              {printBlank ? '' : (narrativeNote || 'No narrative documentation provided for this shift. Resident was monitored per care plan with no acute changes noted.')}
             </div>
 
-            {/* Lined paper effect for handwritten notes/backup - Only shows if note is short */}
-            {(!narrativeNote || narrativeNote.length < 500) && (
-              <div className="mt-12 space-y-10 opacity-[0.05]">
-                {[...Array(12)].map((_, i) => (
-                  <div key={i} className="h-[2px] bg-slate-900 w-full" />
+            {/* Lined paper effect for handwritten notes/backup - Shows if printBlank is true OR if note is short */}
+            {(printBlank || !narrativeNote || narrativeNote.length < 500) && (
+              <div className="space-y-6 opacity-[0.05] mt-4">
+                {[...Array(printBlank ? 12 : 6)].map((_, i) => (
+                  <div key={i} className="h-[1px] bg-slate-900 w-full" />
                 ))}
               </div>
             )}
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-10">
-            <div className="col-span-2 border-2 border-slate-200 p-6 rounded-[2rem] bg-slate-50">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900 mb-4 border-b border-slate-200 pb-2">Shift Intervention Summary Checklist</p>
-              <div className="grid grid-cols-2 gap-y-4">
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
-                  <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
+          <div className="mt-3 grid grid-cols-3 gap-6">
+            <div className="col-span-2 border border-slate-300 p-3 rounded-[1.5rem] bg-slate-50">
+              <p className="text-[9px] font-black uppercase tracking-[0.1em] text-emerald-900 mb-2 border-b border-slate-200 pb-1">Shift Intervention Summary Checklist</p>
+              <div className="grid grid-cols-2 gap-y-2 text-[8.5px]">
+                <div className="flex items-center gap-2 font-black uppercase tracking-tight text-emerald-900">
+                  <div className="w-4 h-4 border border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">
+                    {!printBlank ? '✓' : ''}
+                  </div> 
                   Medications Administered
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
-                  <div className="w-5 h-5 border-2 border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">✓</div> 
+                <div className="flex items-center gap-2 font-black uppercase tracking-tight text-emerald-900">
+                  <div className="w-4 h-4 border border-slate-900 rounded flex items-center justify-center text-slate-900 font-black">
+                    {!printBlank ? '✓' : ''}
+                  </div> 
                   Treatments Completed
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
-                  <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
+                <div className="flex items-center gap-2 font-black uppercase tracking-tight text-emerald-900">
+                  <div className="w-4 h-4 border border-slate-300 rounded" /> 
                   Physician Notified
                 </div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-tight text-emerald-900">
-                  <div className="w-5 h-5 border-2 border-slate-300 rounded" /> 
+                <div className="flex items-center gap-2 font-black uppercase tracking-tight text-emerald-900">
+                  <div className="w-4 h-4 border border-slate-300 rounded" /> 
                   Family Notified
                 </div>
               </div>
             </div>
-            <div className="text-right flex flex-col justify-end">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900 mb-2">Authenticated By</p>
-              <p className="text-sm font-black uppercase text-emerald-900 tracking-tight">{staff?.first_name} {staff?.last_name}, RN</p>
-              <div className="w-full h-1 bg-slate-900 mt-2 shadow-sm" />
-              <p className="text-[9px] font-black text-emerald-900 mt-2 uppercase tracking-widest">Electronic Hash: {patient?.id?.slice(0, 16)}</p>
+            <div className="text-right flex flex-col justify-end items-end w-64">
+              <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900 mb-1">Authenticated By</p>
+              {printBlank ? (
+                <div className="flex items-end w-full gap-1 justify-end mt-1 mb-2">
+                  <div className="flex-grow border-b border-dotted border-slate-900 h-3.5" />
+                  <span className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest ml-1 leading-none">, RN / LPN</span>
+                </div>
+              ) : (
+                <p className="text-xs font-black uppercase text-emerald-900 tracking-tight">
+                  {staff?.first_name} {staff?.last_name}, RN
+                </p>
+              )}
+              <div className="w-full h-0.5 bg-slate-900 mt-1 shadow-sm" />
+              <p className="text-[8px] font-black text-emerald-900 mt-1 uppercase tracking-widest truncate">
+                Electronic Hash: {printBlank ? 'MANUAL_BACKUP_RECORD' : (patient?.id?.slice(0, 16) || 'N/A')}
+              </p>
             </div>
           </div>
 
-          <div className="mt-8 pt-8 text-[10px] font-black uppercase tracking-[0.4em] text-emerald-900 text-center border-t border-slate-100">
+          <div className="mt-3 pt-2 text-[8px] font-black uppercase tracking-[0.3em] text-emerald-900 text-center border-t border-slate-100">
             Official Clinical Record • Platinum Health Hub • Side B
           </div>
         </div>
