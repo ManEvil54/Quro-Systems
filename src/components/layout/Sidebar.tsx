@@ -16,7 +16,8 @@ import {
   LogOut,
   Building2,
   ChevronDown,
-  Ghost
+  Ghost,
+  Stethoscope
 } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
@@ -76,6 +77,7 @@ export default function Sidebar() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/patients', label: 'Patients', icon: Activity },
+    { href: '/orders', label: 'Provider Orders', icon: Stethoscope },
     { href: '/falls', label: 'Safety & Incidents', icon: ShieldAlert },
     { href: '/handover', label: 'Handover', icon: ClipboardList },
   ];
