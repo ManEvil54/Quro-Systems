@@ -2222,15 +2222,13 @@ export default function PatientChartPage() {
                   <div className="flex items-end w-full gap-1.5 justify-end">
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Date:</span>
                     <div className="w-24 border-b border-dotted border-slate-900 h-3" />
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none ml-2">Time:</span>
-                    <div className="w-16 border-b border-dotted border-slate-900 h-3" />
                   </div>
                 </>
               ) : (
                 <>
                   <p className="text-sm font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
                   <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest mt-0.5">MRN: {patient?.mrn} • Room: {patient?.room_id}</p>
-                  <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mt-0.5">Date: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+                  <p className="text-[9px] font-black text-emerald-900 uppercase tracking-widest mt-0.5">Date: {new Date().toLocaleDateString()}</p>
                 </>
               )}
             </div>
@@ -2814,7 +2812,7 @@ export default function PatientChartPage() {
             <div className="text-right">
               <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
               <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
 
@@ -2958,7 +2956,7 @@ export default function PatientChartPage() {
             <div className="text-right">
               <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
               <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
 

@@ -164,7 +164,7 @@ export default function PhysicianOrderPrintPage() {
       <table className="w-full border-collapse border border-black text-[10px] mb-8">
         <thead>
           <tr className="bg-slate-100 uppercase tracking-wider text-[8px] font-black">
-            <th className="border border-black p-2 text-left w-32">Date & Time</th>
+            <th className="border border-black p-2 text-left w-32">Date</th>
             <th className="border border-black p-2 text-left w-24">Type</th>
             <th className="border border-black p-2 text-left">Clinical Order Description & Instructions</th>
             <th className="border border-black p-2 text-left w-44">Ordering Prescriber</th>
@@ -175,7 +175,7 @@ export default function PhysicianOrderPrintPage() {
           {orders.map((order) => (
             <tr key={order.id} className="h-12 break-inside-avoid">
               <td className="border border-black p-2 font-mono text-[9px]">
-                {safeFormat(order.created_at, 'MM/dd/yyyy HH:mm')}
+                {safeFormat(order.created_at, 'MM/dd/yyyy')}
               </td>
               <td className="border border-black p-2 font-black uppercase text-[8px] text-slate-500">
                 {order.order_type}
@@ -192,7 +192,7 @@ export default function PhysicianOrderPrintPage() {
                 )}
                 {order.signed_at && (
                   <span className="block text-[7px] font-bold text-teal-600 uppercase mt-0.5">
-                    Co-Signed: {safeFormat(order.signed_at, 'MM/dd HH:mm')}
+                    Co-Signed: {safeFormat(order.signed_at, 'MM/dd/yyyy')}
                   </span>
                 )}
               </td>
@@ -219,14 +219,14 @@ export default function PhysicianOrderPrintPage() {
             <div className="h-[1px] bg-black w-full" />
             <div className="flex justify-between">
               <span>Physician / Prescriber Signature</span>
-              <span>Date / Time: __________________</span>
+              <span>Date: __________________</span>
             </div>
           </div>
           <div className="flex flex-col justify-end space-y-4">
             <div className="h-[1px] bg-black w-full" />
             <div className="flex justify-between">
               <span>Nurse / Transcribing Signature</span>
-              <span>Date / Time: __________________</span>
+              <span>Date: __________________</span>
             </div>
           </div>
         </div>
