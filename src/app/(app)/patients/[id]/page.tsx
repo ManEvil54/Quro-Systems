@@ -2184,7 +2184,7 @@ export default function PatientChartPage() {
 
       {/* DEDICATED PRINT VIEW (FOR 2-SIDED SIFF/SNF) */}
       {activeTab === 'charting' && (
-        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-0 m-0 text-black">
+        <div className="print-only hidden print:relative print:block print:inset-auto fixed inset-0 bg-white z-[100] p-0 m-0 text-black">
         {/* Page 1: Assessment (Front Side) */}
         <div 
           className="p-5 bg-white flex flex-col justify-between text-black text-[9px] leading-tight border-b-4 border-slate-900 print-border"
@@ -2669,19 +2669,15 @@ export default function PatientChartPage() {
               Quro Clinical Intelligence Platform • v4.5 Platinum<br />
               Generated Official Record • Page 1 of 2 (Side A)
             </div>
-            <div className="text-right flex flex-col items-end gap-1 w-64">
-              <div className="w-48 h-0.5 bg-slate-900 mb-1" />
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-900 mb-0.5">Licensed Clinical Professional Signature</p>
-              {printBlank ? (
-                <div className="flex items-end w-full gap-1 justify-end mt-1">
-                  <div className="flex-grow border-b border-dotted border-slate-900 h-3.5" />
-                  <span className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest ml-1 leading-none">, RN / LPN</span>
-                </div>
-              ) : (
-                <p className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest">
-                  {staff?.first_name} {staff?.last_name}, RN ({new Date().toLocaleDateString()})
-                </p>
-              )}
+            <div className="mt-6 pt-4 print:break-inside-avoid border-t border-slate-300 w-96 text-left">
+              <div className="flex justify-between items-end gap-4">
+                <div className="w-64 border-b border-dotted border-black h-5" />
+                <div className="w-32 border-b border-dotted border-black h-5" />
+              </div>
+              <div className="flex justify-between text-[8px] uppercase tracking-wider text-slate-500 mt-1">
+                <span>Licensed Clinical Professional Signature</span>
+                <span className="pr-12">Date</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2692,13 +2688,10 @@ export default function PatientChartPage() {
           className="page-break-before-always print:block p-5 bg-white flex flex-col justify-between"
           style={{ 
             boxSizing: 'border-box', 
-            height: '9.8in', 
             minHeight: '9.8in',
-            maxHeight: '10in', 
             pageBreakInside: 'avoid', 
             breakInside: 'avoid', 
-            pageBreakBefore: 'always',
-            overflow: 'hidden'
+            pageBreakBefore: 'always'
           }}
         >
           <div className="flex justify-between items-start mb-3 border-b-2 border-slate-900 pb-2">
@@ -2781,20 +2774,19 @@ export default function PatientChartPage() {
                 </div>
               </div>
             </div>
-            <div className="text-right flex flex-col justify-end items-end w-64">
-              <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900 mb-1">Authenticated By</p>
-              {printBlank ? (
-                <div className="flex items-end w-full gap-1 justify-end mt-1 mb-2">
-                  <div className="flex-grow border-b border-dotted border-slate-900 h-3.5" />
-                  <span className="text-[8px] font-bold text-emerald-900 uppercase tracking-widest ml-1 leading-none">, RN / LPN</span>
+            <div className="flex flex-col justify-end w-96 max-w-full">
+              {/* Ensures the ink line and the descriptive title never get separated across page breaks */}
+              <div className="mt-6 pt-4 print:break-inside-avoid border-t border-slate-300 text-left">
+                <div className="flex justify-between items-end gap-4">
+                  <div className="flex-grow border-b border-dotted border-black h-5" />
+                  <div className="w-32 border-b border-dotted border-black h-5" />
                 </div>
-              ) : (
-                <p className="text-xs font-black uppercase text-emerald-900 tracking-tight">
-                  {staff?.first_name} {staff?.last_name}, RN
-                </p>
-              )}
-              <div className="w-full h-0.5 bg-slate-900 mt-1 shadow-sm" />
-              <p className="text-[8px] font-black text-emerald-900 mt-1 uppercase tracking-widest truncate">
+                <div className="flex justify-between text-[8px] uppercase tracking-wider text-slate-500 mt-1">
+                  <span>Licensed Clinical Professional Signature</span>
+                  <span className="pr-12">Date</span>
+                </div>
+              </div>
+              <p className="text-[8px] font-black text-emerald-900 mt-2 text-right uppercase tracking-widest truncate">
                 Electronic Hash: {printBlank ? 'MANUAL_BACKUP_RECORD' : (patient?.id?.slice(0, 16) || 'N/A')}
               </p>
             </div>
@@ -2809,7 +2801,7 @@ export default function PatientChartPage() {
 
       {/* DEDICATED PRINT VIEW (FOR RESIDENT FACESHEET) */}
       {activeTab === 'facesheet' && (
-        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-6 m-0 text-black font-sans flex flex-col">
+        <div className="print-only hidden print:relative print:block print:inset-auto fixed inset-0 bg-white z-[100] p-6 m-0 text-black font-sans flex flex-col">
           {/* Header Card */}
           <div className="flex justify-between items-start mb-4 border-b-4 border-slate-900 pb-3">
             <div className="flex items-center gap-4">
@@ -2953,7 +2945,7 @@ export default function PatientChartPage() {
 
       {/* DEDICATED PRINT VIEW (FOR MEDICATION LIST) */}
       {activeTab === 'medications' && (
-        <div className="print-only hidden fixed inset-0 bg-white z-[100] p-6 m-0 text-black font-sans flex flex-col">
+        <div className="print-only hidden print:relative print:block print:inset-auto fixed inset-0 bg-white z-[100] p-6 m-0 text-black font-sans flex flex-col">
           {/* Header Card */}
           <div className="flex justify-between items-start mb-4 border-b-4 border-slate-900 pb-3">
             <div className="flex items-center gap-4">
