@@ -163,18 +163,26 @@ export default function MarTarPrintPage() {
 
   // Pagination Configuration:
   // - First pages (Middle pages) can fit up to 6 records per page.
-  // - The last page can fit up to 4 records to leave space for the legend and demographics footer.
+  // - The last page can fit up to 3 records to leave space for the legend, demographics footer, and blank templates.
   const RECORDS_PER_MIDDLE_PAGE = 6;
   const RECORDS_PER_LAST_PAGE = 3;
 
   const pages: ProjectedOrder[][] = [];
-  let currentIdx = 0;
-
-  while (currentIdx < allRecords.length) {
-    const isLastPage = (allRecords.length - currentIdx) <= RECORDS_PER_LAST_PAGE;
-    const chunkSize = isLastPage ? RECORDS_PER_LAST_PAGE : RECORDS_PER_MIDDLE_PAGE;
-    pages.push(allRecords.slice(currentIdx, currentIdx + chunkSize));
-    currentIdx += chunkSize;
+  
+  if (allRecords.length <= RECORDS_PER_LAST_PAGE) {
+    pages.push(allRecords);
+  } else {
+    // Slice off the last RECORDS_PER_LAST_PAGE records to guarantee they go to the last page.
+    const lastRecords = allRecords.slice(allRecords.length - RECORDS_PER_LAST_PAGE);
+    const middleRecords = allRecords.slice(0, allRecords.length - RECORDS_PER_LAST_PAGE);
+    
+    // Chunk middleRecords into chunks of RECORDS_PER_MIDDLE_PAGE
+    for (let i = 0; i < middleRecords.length; i += RECORDS_PER_MIDDLE_PAGE) {
+      pages.push(middleRecords.slice(i, i + RECORDS_PER_MIDDLE_PAGE));
+    }
+    
+    // Append the last page
+    pages.push(lastRecords);
   }
 
   // Ensure at least one page is rendered
@@ -255,7 +263,7 @@ export default function MarTarPrintPage() {
               {/* Header Title Grid */}
               <div className="flex justify-between items-center mb-2 bg-[#0284c7] text-white p-2 rounded text-[9px] font-black uppercase tracking-widest">
                 <span>Medication & Treatment Administration Record (MAR/TAR)</span>
-                <span>{currentMonthName} {currentYear} • Front Copy</span>
+                <span>{currentMonthName} {currentYear} • Front Copy — Page {pageIdx + 1} of {pages.length}</span>
               </div>
 
               {/* Grid Table */}
