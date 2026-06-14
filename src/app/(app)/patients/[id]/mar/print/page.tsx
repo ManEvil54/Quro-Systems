@@ -261,19 +261,19 @@ export default function MarTarPrintPage() {
             {/* ==================== FRONT SIDE: MAR/TAR SHEET (Page X) ==================== */}
             <div className="print-page page-front">
               {/* Header Title Grid */}
-              <div className="flex justify-between items-center mb-2 bg-[#0284c7] text-white p-2 rounded text-[9px] font-black uppercase tracking-widest">
+              <div className="flex justify-between items-center mb-2 bg-[#0284c7] text-white p-2 rounded text-[10px] font-black uppercase tracking-widest">
                 <span>Medication & Treatment Administration Record (MAR/TAR)</span>
                 <span>{currentMonthName} {currentYear} • Front Copy — Page {pageIdx + 1} of {pages.length}</span>
               </div>
 
               {/* Grid Table */}
-              <table className="w-full border-collapse border border-black text-[9px] table-fixed">
+              <table className="w-full border-collapse border border-black text-[10px] table-fixed">
                 <thead>
-                  <tr className="bg-sky-50 text-[8px] uppercase tracking-wider font-black h-8 text-slate-800">
+                  <tr className="bg-sky-50 text-[9px] uppercase tracking-wider font-black h-8 text-slate-800">
                     <th className="border border-black p-1 text-left w-[30%]">Medication / Treatment Details</th>
                     <th className="border border-black p-1 text-center w-[8%]">Hour</th>
                     {daysArray.map((day) => (
-                      <th key={day} className="border border-black w-[2%] text-center font-mono text-[7px]">{day}</th>
+                      <th key={day} className="border border-black w-[2%] text-center font-mono text-[8px]">{day}</th>
                     ))}
                   </tr>
                 </thead>
@@ -291,27 +291,27 @@ export default function MarTarPrintPage() {
                           <tr key={`${record.id}-${rowIndex}`} className="h-5 break-inside-avoid">
                             {rowIndex === 0 && (
                               <td rowSpan={subRowsCount} className="border border-black p-1.5 align-top bg-white print-border overflow-hidden">
-                                <div className="text-[7px] text-rose-600 font-bold mb-0.5">
+                                <div className="text-[8px] text-rose-600 font-bold mb-0.5">
                                   {record.start_date}
                                 </div>
-                                <div className="font-black uppercase text-[8px] text-black leading-tight truncate">
+                                <div className="font-black uppercase text-[9.5px] text-black leading-tight truncate">
                                   {record.title}
                                   {record.is_psychotropic && (
-                                    <span className="ml-1 px-1 bg-red-100 text-red-800 border border-red-200 rounded text-[6px] font-black uppercase tracking-tight">
+                                    <span className="ml-1 px-1 bg-red-100 text-red-800 border border-red-200 rounded text-[7px] font-black uppercase tracking-tight">
                                       Psych
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-[7px] text-slate-500 font-mono mt-0.5 leading-tight truncate-multi">
+                                <div className="text-[8.5px] text-slate-500 font-mono mt-0.5 leading-tight truncate-multi">
                                   {record.details}
                                 </div>
                               </td>
                             )}
-                            <td className="border border-black text-center font-mono text-[7px] bg-white print-border font-bold text-slate-800 h-5">
+                            <td className="border border-black text-center font-mono text-[8.5px] bg-white print-border font-bold text-slate-800 h-5">
                               {displayTimes[rowIndex] || ""}
                             </td>
                             {daysArray.map((day) => (
-                              <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[6px] text-slate-200 relative w-6 h-5 p-0 select-none">
+                              <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[7.5px] text-slate-200 relative w-6 h-5 p-0 select-none">
                                 {day}
                               </td>
                             ))}
@@ -329,14 +329,14 @@ export default function MarTarPrintPage() {
                           {rowIndex === 0 && (
                             <td rowSpan={4} className="border border-black p-1.5 align-bottom bg-white print-border overflow-hidden">
                               <div className="border-b border-dashed border-slate-300 h-6 w-full" />
-                              <div className="text-[6px] text-slate-400 font-mono italic mt-1 leading-tight uppercase font-semibold">
+                              <div className="text-[7.5px] text-slate-400 font-mono italic mt-1 leading-tight uppercase font-semibold">
                                 Additional Order / Medication (Scribe Manually)
                               </div>
                             </td>
                           )}
-                          <td className="border border-black text-center font-mono text-[7px] bg-white print-border h-5" />
+                          <td className="border border-black text-center font-mono text-[8.5px] bg-white print-border h-5" />
                           {daysArray.map((day) => (
-                            <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[6px] text-slate-200 relative w-6 h-5 p-0 select-none">
+                            <td key={day} className="border border-black bg-white print-border text-center align-middle font-mono text-[7.5px] text-slate-200 relative w-6 h-5 p-0 select-none">
                               {day}
                             </td>
                           ))}
@@ -349,7 +349,7 @@ export default function MarTarPrintPage() {
 
               {/* Compact Initial & Signature Legend */}
               <div className="mt-2 break-inside-avoid">
-                <div className="border border-black p-2 grid grid-cols-4 gap-x-4 gap-y-1 text-[7px] uppercase font-mono break-inside-avoid bg-white">
+                <div className="border border-black p-2 grid grid-cols-4 gap-x-4 gap-y-1 text-[8.5px] uppercase font-mono break-inside-avoid bg-white">
                   {Array.from({ length: 8 }).map((_, idx) => (
                     <div key={idx} className="flex justify-between border-b border-slate-200 pb-0.5 items-center">
                       <span>Initial: ______</span>
@@ -360,54 +360,54 @@ export default function MarTarPrintPage() {
               </div>
 
               {/* Styled Demographic Bottom Footer */}
-              <div className="print-page-footer mt-2 border border-black text-[8px] uppercase font-mono tracking-tight divide-y divide-black bg-white">
+              <div className="print-page-footer mt-2 border border-black text-[9.5px] uppercase font-mono tracking-tight divide-y divide-black bg-white">
                 {/* Row 1 */}
                 <div className="grid grid-cols-12 divide-x divide-black">
                   <div className="col-span-3 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Physician/Alt. Physician</span>
+                    <span className="text-[7px] text-slate-400">Physician/Alt. Physician</span>
                     <span className="font-black text-slate-800">{attendingPhysician}</span>
                   </div>
                   <div className="col-span-2 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Phone No.</span>
+                    <span className="text-[7px] text-slate-400">Phone No.</span>
                     <span className="font-bold">_________________</span>
                   </div>
                   <div className="col-span-5 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Primary Diagnosis</span>
+                    <span className="text-[7px] text-slate-400">Primary Diagnosis</span>
                     <span className="font-black text-slate-800 truncate">{patientDiagnoses}</span>
                   </div>
                   <div className="col-span-2 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Pharmacy</span>
+                    <span className="text-[7px] text-slate-400">Pharmacy</span>
                     <span className="font-black text-slate-800 truncate">{pharmacyName}</span>
                   </div>
                 </div>
                 {/* Row 2 */}
                 <div className="grid grid-cols-12 divide-x divide-black">
                   <div className="col-span-3 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Resident</span>
+                    <span className="text-[7px] text-slate-400">Resident</span>
                     <span className="font-black text-slate-800">{patientName}</span>
                   </div>
                   <div className="col-span-1 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Rm/Bed</span>
+                    <span className="text-[7px] text-slate-400">Rm/Bed</span>
                     <span className="font-bold truncate text-slate-850">{patientRoom}</span>
                   </div>
                   <div className="col-span-2 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Admit No./Date</span>
+                    <span className="text-[7px] text-slate-400">Admit No./Date</span>
                     <span className="font-black text-slate-800">{admitDate}</span>
                   </div>
                   <div className="col-span-1 p-1 flex flex-col justify-between text-center">
-                    <span className="text-[6px] text-slate-400">Sex</span>
+                    <span className="text-[7px] text-slate-400">Sex</span>
                     <span className="font-black text-slate-800">{patientGender}</span>
                   </div>
                   <div className="col-span-1 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">DOB</span>
+                    <span className="text-[7px] text-slate-400">DOB</span>
                     <span className="font-black text-slate-800">{patientDobFormatted}</span>
                   </div>
                   <div className="col-span-3 p-1 flex flex-col justify-between">
-                    <span className="text-[6px] text-slate-400">Allergies/Notes</span>
+                    <span className="text-[7px] text-slate-400">Allergies/Notes</span>
                     <span className="font-black text-slate-800 truncate">{patientAllergiesFormatted}</span>
                   </div>
                   <div className="col-span-1 p-1 flex flex-col justify-between text-center">
-                    <span className="text-[6px] text-slate-400">Month/Year</span>
+                    <span className="text-[7px] text-slate-400">Month/Year</span>
                     <span className="font-black text-slate-800">{currentMonthName} {currentYear}</span>
                   </div>
                 </div>
@@ -418,12 +418,12 @@ export default function MarTarPrintPage() {
             <div className="print-page page-back">
               {/* Daily Vital Signs Table */}
               <div className="mb-2">
-                <div className="bg-[#0284c7] text-white p-1 text-center text-[9px] font-black uppercase tracking-widest mb-1 rounded">
+                <div className="bg-[#0284c7] text-white p-1 text-center text-[10px] font-black uppercase tracking-widest mb-1 rounded">
                   Daily Vital Signs Record • Back Copy
                 </div>
-                <table className="w-full border-collapse border border-black text-[8px] uppercase font-mono table-fixed">
+                <table className="w-full border-collapse border border-black text-[9px] uppercase font-mono table-fixed">
                   <thead>
-                    <tr className="bg-slate-100 text-[7px] h-6 text-slate-700">
+                    <tr className="bg-slate-100 text-[8px] h-6 text-slate-700">
                       <th className="border border-black p-1 text-left w-[15%] font-bold">Day of Month</th>
                       {daysArray.map((day) => (
                         <th key={day} className="border border-black w-[2.7%] text-center font-bold">{day}</th>
@@ -433,9 +433,9 @@ export default function MarTarPrintPage() {
                   <tbody>
                     {/* BP Row with Diagonal Split cells */}
                     <tr className="h-10">
-                      <td className="border border-black p-1 font-black bg-slate-50 text-[7.5px] leading-tight">
+                      <td className="border border-black p-1 font-black bg-slate-50 text-[8.5px] leading-tight">
                         Blood Pressure
-                        <span className="block text-[5px] text-slate-400 lowercase font-normal leading-none mt-0.5">
+                        <span className="block text-[6px] text-slate-400 lowercase font-normal leading-none mt-0.5">
                           systolic / diastolic
                         </span>
                       </td>
@@ -444,28 +444,28 @@ export default function MarTarPrintPage() {
                           <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
                             <line x1="0" y1="100%" x2="100%" y2="0" stroke="black" strokeWidth="0.5" />
                           </svg>
-                          <span className="absolute top-0.5 right-1 text-[5px] text-slate-400 leading-none">S</span>
-                          <span className="absolute bottom-0.5 left-1 text-[5px] text-slate-400 leading-none">D</span>
+                          <span className="absolute top-0.5 right-1 text-[6px] text-slate-400 leading-none">S</span>
+                          <span className="absolute bottom-0.5 left-1 text-[6px] text-slate-400 leading-none">D</span>
                         </td>
                       ))}
                     </tr>
                     {/* Pulse Row */}
                     <tr className="h-5">
-                      <td className="border border-black p-1 font-black bg-slate-50 text-[7.5px]">Pulse</td>
+                      <td className="border border-black p-1 font-black bg-slate-50 text-[8.5px]">Pulse</td>
                       {daysArray.map((day) => (
                         <td key={day} className="border border-black bg-white print-border" />
                       ))}
                     </tr>
                     {/* Weight Row */}
                     <tr className="h-5">
-                      <td className="border border-black p-1 font-black bg-slate-50 text-[7.5px]">Weight (lbs)</td>
+                      <td className="border border-black p-1 font-black bg-slate-50 text-[8.5px]">Weight (lbs)</td>
                       {daysArray.map((day) => (
                         <td key={day} className="border border-black bg-white print-border" />
                       ))}
                     </tr>
                     {/* Temperature Row */}
                     <tr className="h-5">
-                      <td className="border border-black p-1 font-black bg-slate-50 text-[7.5px]">Temperature</td>
+                      <td className="border border-black p-1 font-black bg-slate-50 text-[8.5px]">Temperature</td>
                       {daysArray.map((day) => (
                         <td key={day} className="border border-black bg-white print-border" />
                       ))}
@@ -476,12 +476,12 @@ export default function MarTarPrintPage() {
 
               {/* Nurse's Medication Notes Table */}
               <div>
-                <div className="bg-[#0284c7] text-white p-1 text-center text-[9px] font-black uppercase tracking-widest mb-1 rounded">
+                <div className="bg-[#0284c7] text-white p-1 text-center text-[10px] font-black uppercase tracking-widest mb-1 rounded">
                   Nurse&apos;s Medication Notes
                 </div>
-                <table className="w-full border-collapse border border-black text-[8px] uppercase font-mono table-fixed">
+                <table className="w-full border-collapse border border-black text-[9px] uppercase font-mono table-fixed">
                   <thead>
-                    <tr className="bg-slate-100 text-[6.5px] font-bold text-center h-6 text-slate-700">
+                    <tr className="bg-slate-100 text-[8px] font-bold text-center h-6 text-slate-700">
                       <th className="border border-black p-1 w-[8%]">Date</th>
                       <th className="border border-black p-1 w-[8%]">Time Given</th>
                       <th className="border border-black p-1 w-[32%]">Medication & Dosage</th>
@@ -510,7 +510,7 @@ export default function MarTarPrintPage() {
               </div>
 
               {/* Back Page Resident Identifier Footer (HIPAA Compliant safety anchor) */}
-              <div className="absolute bottom-0 left-0 right-0 border-t border-slate-300 pt-1 flex justify-between items-center text-[7px] uppercase font-mono tracking-widest text-slate-400 bg-white">
+              <div className="absolute bottom-0 left-0 right-0 border-t border-slate-300 pt-1 flex justify-between items-center text-[8.5px] uppercase font-mono tracking-widest text-slate-400 bg-white">
                 <span>Resident: {patientName} • MRN: {patientMrn} • Room: {patientRoom}</span>
                 <span>Back Page copy — Page {pageIdx + 1} of {pages.length}</span>
               </div>
