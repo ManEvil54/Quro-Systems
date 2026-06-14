@@ -28,7 +28,7 @@ import { safeFormat } from '@/lib/dateUtils';
 import type { ProviderOrder } from '@/lib/firebase/types';
 
 export default function OrdersPage() {
-  const { organization, activeFacility, staff } = useAuth();
+  const { organization, activeFacility, staff, user, isImpersonating } = useAuth();
   const [filter, setFilter] = useState<'all' | 'medication' | 'treatment' | 'lab'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [liveOrders, setLiveOrders] = useState<ProviderOrder[]>([]);
@@ -73,10 +73,16 @@ export default function OrdersPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ords = snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as ProviderOrder[];
+      const ords = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const pathSegments = docSnap.ref.path.split('/');
+        const patientIdFromPath = pathSegments[3] || data.patient_id;
+        return {
+          id: docSnap.id,
+          patient_id: patientIdFromPath,
+          ...data
+        };
+      }) as ProviderOrder[];
 
       // Sort reverse-chronologically on client side to avoid Firestore index requirement
       ords.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -93,22 +99,25 @@ export default function OrdersPage() {
 
   // 3. Clinical lifecycle actions: Physician Sign Off
   const handleSignOff = async (order: ProviderOrder) => {
-    if (!organization?.id || !staff?.id) return;
+    if (!organization?.id) return;
+    const staffId = staff?.id || user?.uid || 'system';
+    const physicianName = staff ? `Dr. ${staff.last_name}` : 'Attending Physician';
+    const orgId = order.org_id || organization.id;
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'organizations', organization.id, 'patients', order.patient_id, 'provider_orders', order.id);
+      const docRef = doc(db, 'organizations', orgId, 'patients', order.patient_id, 'provider_orders', order.id);
       await updateDoc(docRef, {
         status: 'signed',
         signed_at: new Date().toISOString(),
-        ordering_physician_id: staff.id,
-        ordering_physician_name: `Dr. ${staff.last_name}`,
+        ordering_physician_id: staffId,
+        ordering_physician_name: physicianName,
         updated_at: new Date().toISOString()
       });
 
       // Audit Trail
-      await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+      await addDoc(collection(db, 'organizations', orgId, 'audit_logs'), {
         action: order.order_type === 'treatment' ? 'TREATMENT_ORDER_SIGNED' : 'MED_ORDER_SIGNED',
-        staff_id: staff.id,
+        staff_id: staffId,
         patient_id: order.patient_id,
         details: `Physician signed clinical order from global order board for ${order.title || order.generic_name || order.order_text}`,
         timestamp: new Date().toISOString()
@@ -122,21 +131,23 @@ export default function OrdersPage() {
 
   // 4. Clinical lifecycle actions: Nurse Acknowledge
   const handleAcknowledge = async (order: ProviderOrder) => {
-    if (!organization?.id || !staff?.id) return;
+    if (!organization?.id) return;
+    const staffId = staff?.id || user?.uid || 'system';
+    const orgId = order.org_id || organization.id;
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'organizations', organization.id, 'patients', order.patient_id, 'provider_orders', order.id);
+      const docRef = doc(db, 'organizations', orgId, 'patients', order.patient_id, 'provider_orders', order.id);
       await updateDoc(docRef, {
         status: 'acknowledged',
         acknowledged_at: new Date().toISOString(),
-        acknowledging_nurse_id: staff.id,
+        acknowledging_nurse_id: staffId,
         updated_at: new Date().toISOString()
       });
 
       // Audit Trail
-      await addDoc(collection(db, 'organizations', organization.id, 'audit_logs'), {
+      await addDoc(collection(db, 'organizations', orgId, 'audit_logs'), {
         action: 'ORDER_ACKNOWLEDGED',
-        staff_id: staff.id,
+        staff_id: staffId,
         patient_id: order.patient_id,
         details: `Nurse acknowledged signed order from global order board for ${order.title || order.generic_name || order.order_text}`,
         timestamp: new Date().toISOString()
@@ -178,8 +189,8 @@ export default function OrdersPage() {
     return true;
   });
 
-  const isPhysician = staff?.role === 'physician';
-  const isNurseOrAdmin = staff && ['nurse', 'admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN'].includes(staff.role);
+  const isPhysician = isImpersonating || (staff && ['physician', 'app_owner', 'app_tech', 'super_admin'].includes(staff.role.toLowerCase()));
+  const isNurseOrAdmin = isImpersonating || (staff && ['nurse', 'admin', 'client_admin', 'facility_admin', 'app_owner', 'app_tech', 'super_admin'].includes(staff.role.toLowerCase()));
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
