@@ -2949,72 +2949,72 @@ export default function PatientChartPage() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">Q</div>
               <div>
-                <h1 className="text-2xl font-black uppercase tracking-tighter leading-none mb-1">Active Medication Profile</h1>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Pharmacy Registry</p>
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Active Medication Profile</h1>
+                <p className="text-[11.5px] font-black text-slate-500 uppercase tracking-[0.3em]">Platinum Health Hub • Pharmacy Registry</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-lg font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
-              <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()}</p>
+              <p className="text-xl font-black uppercase tracking-tight">{patient?.last_name}, {patient?.first_name}</p>
+              <p className="text-sm font-bold text-slate-600 uppercase tracking-widest">MRN: {patient?.mrn} • Room: {patient?.room_number || "TBD"}</p>
+              <p className="text-sm font-black text-slate-500 uppercase tracking-widest mt-1">Generated: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
 
           {/* Patient Header Block */}
-          <div className="border border-slate-200 p-2.5 mb-4 grid grid-cols-4 gap-4 text-xs uppercase font-mono tracking-tight bg-slate-50/50 rounded-lg shadow-sm">
+          <div className="border border-slate-200 p-3 mb-4 grid grid-cols-4 gap-4 text-sm uppercase font-mono tracking-tight bg-slate-50/50 rounded-lg shadow-sm">
             <div>
-              <p className="text-[8px] font-black text-slate-400">Allergies</p>
+              <p className="text-[9.5px] font-black text-slate-400">Allergies</p>
               <p className="font-bold text-rose-600 font-sans truncate">{patient?.allergies?.join(', ') || 'NKDA'}</p>
             </div>
             <div>
-              <p className="text-[8px] font-black text-slate-400">Attending Physician</p>
+              <p className="text-[9.5px] font-black text-slate-400">Attending Physician</p>
               <p className="font-bold text-slate-800 font-sans truncate">{patient?.attending_physician || 'Unassigned'}</p>
             </div>
             <div>
-              <p className="text-[8px] font-black text-slate-400">Code Status</p>
+              <p className="text-[9.5px] font-black text-slate-400">Code Status</p>
               <p className="font-black text-slate-800 font-sans">{patient?.code_status || 'FULL CODE'}</p>
             </div>
             <div>
-              <p className="text-[8px] font-black text-slate-400">Diet</p>
+              <p className="text-[9.5px] font-black text-slate-400">Diet</p>
               <p className="font-bold text-slate-800 font-sans truncate">{patient?.diet || 'Regular Diet'}</p>
             </div>
           </div>
 
           {/* Medications Table */}
-          <table className="w-full border-collapse border border-slate-300 text-xs">
+          <table className="w-full border-collapse border border-slate-300 text-[13px]">
             <thead>
-              <tr className="bg-slate-100 border-b border-slate-300 text-[9px] font-black uppercase tracking-widest text-slate-700">
-                <th className="border border-slate-300 p-2 text-left w-1/3">Medication / Strength</th>
-                <th className="border border-slate-300 p-2 text-center w-20">Route</th>
-                <th className="border border-slate-300 p-2 text-center w-28">Frequency</th>
-                <th className="border border-slate-300 p-2 text-center w-28">Schedule Times</th>
-                <th className="border border-slate-300 p-2 text-left">Indication & Prescriber</th>
+              <tr className="bg-slate-100 border-b border-slate-300 text-[10.5px] font-black uppercase tracking-widest text-slate-700">
+                <th className="border border-slate-300 p-2.5 text-left w-1/3">Medication / Strength</th>
+                <th className="border border-slate-300 p-2.5 text-center w-20">Route</th>
+                <th className="border border-slate-300 p-2.5 text-center w-28">Frequency</th>
+                <th className="border border-slate-300 p-2.5 text-center w-28">Schedule Times</th>
+                <th className="border border-slate-300 p-2.5 text-left">Indication & Prescriber</th>
               </tr>
             </thead>
             <tbody>
               {medications.filter(m => m.status === 'active').map((med) => (
                 <tr key={med.id} className="border-b border-slate-200 hover:bg-slate-50/50 break-inside-avoid">
-                  <td className="border border-slate-300 p-2 align-top">
-                    <p className="font-black text-slate-900 text-xs">{med.generic_name}</p>
-                    {med.brand_name && <p className="text-[9px] text-slate-400 italic mt-0.5">Brand: {med.brand_name}</p>}
-                    <p className="text-[9px] font-bold text-slate-500 mt-1">Dose: {med.dose || 'As ordered'} ({med.strength})</p>
+                  <td className="border border-slate-300 p-2.5 align-top">
+                    <p className="font-black text-slate-900 text-sm">{med.generic_name}</p>
+                    {med.brand_name && <p className="text-[10.5px] text-slate-400 italic mt-0.5">Brand: {med.brand_name}</p>}
+                    <p className="text-[10.5px] font-bold text-slate-500 mt-1">Dose: {med.dose || 'As ordered'} ({med.strength})</p>
                   </td>
-                  <td className="border border-slate-300 p-2 text-center font-bold text-slate-800 align-top uppercase text-[10px]">{med.route}</td>
-                  <td className="border border-slate-300 p-2 text-center font-bold text-slate-800 align-top uppercase text-[10px]">
+                  <td className="border border-slate-300 p-2.5 text-center font-bold text-slate-800 align-top uppercase text-[11.5px]">{med.route}</td>
+                  <td className="border border-slate-300 p-2.5 text-center font-bold text-slate-800 align-top uppercase text-[11.5px]">
                     {med.frequency}
-                    {med.prn_interval && <p className="text-[9px] font-bold text-teal-600 mt-0.5">{med.prn_interval}</p>}
+                    {med.prn_interval && <p className="text-[10.5px] font-bold text-teal-600 mt-0.5">{med.prn_interval}</p>}
                   </td>
-                  <td className="border border-slate-300 p-2 text-center align-top font-mono text-[9px]">
+                  <td className="border border-slate-300 p-2.5 text-center align-top font-mono text-[11px]">
                     {med.frequency === 'PRN' ? (
-                      <span className="px-1.5 py-0.5 border border-teal-200 text-teal-700 text-[8px] font-black uppercase rounded bg-teal-50">PRN Dose</span>
+                      <span className="px-1.5 py-0.5 border border-teal-200 text-teal-700 text-[9px] font-black uppercase rounded bg-teal-50">PRN Dose</span>
                     ) : (
                       med.frequency_times?.join(', ') || 'N/A'
                     )}
                   </td>
-                  <td className="border border-slate-300 p-2 align-top">
-                    <p className="font-bold text-slate-700 italic text-[10px]">&quot;{med.indication || 'Routine Pass'}&quot;</p>
-                    <p className="text-[8px] text-slate-400 uppercase tracking-widest mt-1">Ordered by:</p>
-                    <p className="font-semibold text-slate-600 mt-0.5 text-[9px]">{med.prescriber_name || 'Attending Physician'} {med.prescriber_npi ? `(NPI: ${med.prescriber_npi})` : ''}</p>
+                  <td className="border border-slate-300 p-2.5 align-top">
+                    <p className="font-bold text-slate-700 italic text-[11.5px]">&quot;{med.indication || 'Routine Pass'}&quot;</p>
+                    <p className="text-[9.5px] text-slate-400 uppercase tracking-widest mt-1">Ordered by:</p>
+                    <p className="font-semibold text-slate-600 mt-0.5 text-[10.5px]">{med.prescriber_name || 'Attending Physician'} {med.prescriber_npi ? `(NPI: ${med.prescriber_npi})` : ''}</p>
                   </td>
                 </tr>
               ))}
@@ -3027,7 +3027,7 @@ export default function PatientChartPage() {
           </table>
 
           {/* Footer certification */}
-          <div className="mt-auto border-t-2 border-slate-900 pt-4 flex justify-between items-end text-[9px] uppercase font-mono tracking-tight text-slate-500">
+          <div className="mt-auto border-t-2 border-slate-900 pt-4 flex justify-between items-end text-[10.5px] uppercase font-mono tracking-tight text-slate-500">
             <div>
               <p className="font-black text-slate-800">Quro Clinical Verification System</p>
               <p className="mt-0.5">Certified Active Medication List</p>
