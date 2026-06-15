@@ -531,13 +531,26 @@ export interface StaffInvitation {
   created_at: string;
 }
 
+export interface CarePlanCardGoal {
+  text: string;
+  target_date: string;
+}
+
+export interface CarePlanCardIntervention {
+  text: string;
+  discipline: string;
+}
+
 export interface CarePlanCard {
-  id: 'respiratory' | 'skin' | 'adl';
-  title: string;
-  problem_statement: string;
-  goals: string[];
-  interventions: string[];
-  schedule: string;
+  id: string;
+  category: string;
+  focus: string;
+  goals: CarePlanCardGoal[];
+  interventions: CarePlanCardIntervention[];
+  status?: string;
+  title?: string;
+  problem_statement?: string;
+  schedule?: string;
 }
 
 export interface CarePlan {

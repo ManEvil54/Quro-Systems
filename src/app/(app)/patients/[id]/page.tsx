@@ -1084,7 +1084,7 @@ export default function PatientChartPage() {
 
           {activeTab === 'careplan' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4">
-              <CarePlanManager patient={patient} />
+              <CarePlanManager patient={patient} medications={medications} />
             </div>
           )}
 

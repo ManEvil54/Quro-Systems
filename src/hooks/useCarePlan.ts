@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { CarePlan, CarePlanCard } from '@/lib/firebase/types';
+import type { CarePlan, CarePlanCard, Medication } from '@/lib/firebase/types';
 
 export function useCarePlan(patientId: string) {
   const { organization, staff } = useAuth();
@@ -91,7 +91,8 @@ export function useCarePlan(patientId: string) {
     patientProfile: unknown, 
     confirmedDiagnosis: string, 
     baselines: string[], 
-    notes: string
+    notes: string,
+    medications: Medication[]
   ): Promise<CarePlanCard[]> => {
     const response = await fetch('/api/clinical/generate-care-plan', {
       method: 'POST',
@@ -100,7 +101,8 @@ export function useCarePlan(patientId: string) {
         patient: patientProfile,
         confirmedDiagnosis,
         baselines,
-        notes
+        notes,
+        medications
       })
     });
 

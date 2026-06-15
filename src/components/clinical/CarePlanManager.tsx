@@ -22,7 +22,18 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCarePlan } from '@/hooks/useCarePlan';
-import type { Patient, CarePlan, CarePlanCard } from '@/lib/firebase/types';
+import type { Patient, CarePlan, CarePlanCard, Medication } from '@/lib/firebase/types';
+
+export const CARE_PLAN_THEME_MAP: Record<string, { icon: any, colorClass: string, bgClass: string }> = {
+  psychotropic: { icon: ShieldCheck, colorClass: "text-purple-600", bgClass: "bg-purple-50 border-purple-200" },
+  "nutrition-weight": { icon: Activity, colorClass: "text-emerald-600", bgClass: "bg-emerald-50 border-emerald-200" },
+  "fall-risk": { icon: AlertTriangle, colorClass: "text-orange-600", bgClass: "bg-orange-50 border-orange-200" },
+  cognitive: { icon: Info, colorClass: "text-indigo-600", bgClass: "bg-indigo-50 border-indigo-200" },
+  respiratory: { icon: Wind, colorClass: "text-blue-600", bgClass: "bg-blue-50 border-blue-200" },
+  skin: { icon: Activity, colorClass: "text-amber-600", bgClass: "bg-amber-50 border-amber-200" },
+  adl: { icon: Heart, colorClass: "text-rose-600", bgClass: "bg-rose-50 border-rose-200" },
+  fallback: { icon: Heart, colorClass: "text-rose-600", bgClass: "bg-rose-50 border-rose-200" }
+};
 
 // Speech Recognition types for TS
 interface SpeechRecognitionEvent {
@@ -48,9 +59,10 @@ interface SpeechRecognition {
 
 interface CarePlanManagerProps {
   patient: Patient;
+  medications: Medication[];
 }
 
-export default function CarePlanManager({ patient }: CarePlanManagerProps) {
+export default function CarePlanManager({ patient, medications }: CarePlanManagerProps) {
   const { staff } = useAuth();
   const { 
     carePlan, 
@@ -90,7 +102,7 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
   // Dictation States
   const [isDictating, setIsDictating] = useState(false);
   const [dictatingTarget, setDictatingTarget] = useState<{
-    cardId: 'respiratory' | 'skin' | 'adl';
+    cardId: string;
     fieldType: 'problem_statement' | 'goals' | 'interventions';
     index?: number;
   } | null>(null);
@@ -150,7 +162,7 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
   const handleTriggerAIGeneration = async () => {
     setIsGenerating(true);
     try {
-      const cards = await generateCarePlanAI(patient, confirmedDiagnosis, selectedBaselines, customNotes);
+      const cards = await generateCarePlanAI(patient, confirmedDiagnosis, selectedBaselines, customNotes, medications);
       await saveDraft(cards);
       setShowAIIntakeDrawer(false);
       alert('AI Preliminary Care Plan generated successfully.');
@@ -164,7 +176,7 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
 
   // Card text update handlers
   const handleUpdateProblemStatement = (cardId: string, text: string) => {
-    setEditedCards(prev => prev.map(c => c.id === cardId ? { ...c, problem_statement: text } : c));
+    setEditedCards(prev => prev.map(c => c.id === cardId ? { ...c, focus: text, problem_statement: text } : c));
     setHasUnsavedChanges(true);
   };
 
@@ -177,7 +189,12 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
     setEditedCards(prev => prev.map(c => {
       if (c.id === cardId) {
         const updatedGoals = [...c.goals];
-        updatedGoals[goalIndex] = text;
+        const currentGoal = updatedGoals[goalIndex];
+        if (typeof currentGoal === 'object' && currentGoal !== null) {
+          updatedGoals[goalIndex] = { ...currentGoal, text };
+        } else {
+          updatedGoals[goalIndex] = text as any;
+        }
         return { ...c, goals: updatedGoals };
       }
       return c;
@@ -188,7 +205,12 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
   const handleAddGoal = (cardId: string) => {
     setEditedCards(prev => prev.map(c => {
       if (c.id === cardId) {
-        return { ...c, goals: [...c.goals, 'New measurable outcome goal (SMART)...'] };
+        const hasStructured = c.goals.length > 0 && typeof c.goals[0] === 'object';
+        const targetDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const newGoal = hasStructured 
+          ? { text: 'New measurable outcome goal (SMART)...', target_date: targetDate }
+          : 'New measurable outcome goal (SMART)...';
+        return { ...c, goals: [...c.goals, newGoal as any] };
       }
       return c;
     }));
@@ -209,7 +231,12 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
     setEditedCards(prev => prev.map(c => {
       if (c.id === cardId) {
         const updatedInts = [...c.interventions];
-        updatedInts[intIndex] = text;
+        const currentInt = updatedInts[intIndex];
+        if (typeof currentInt === 'object' && currentInt !== null) {
+          updatedInts[intIndex] = { ...currentInt, text };
+        } else {
+          updatedInts[intIndex] = text as any;
+        }
         return { ...c, interventions: updatedInts };
       }
       return c;
@@ -220,7 +247,13 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
   const handleAddIntervention = (cardId: string) => {
     setEditedCards(prev => prev.map(c => {
       if (c.id === cardId) {
-        return { ...c, interventions: [...c.interventions, 'New clinical intervention...'] };
+        const hasStructured = c.interventions.length > 0 && typeof c.interventions[0] === 'object';
+        const category = c.category || c.id;
+        const discipline = category === 'adl' || category === 'adl-function' ? 'CNA' : 'Nursing';
+        const newInt = hasStructured
+          ? { text: 'New clinical intervention...', discipline }
+          : 'New clinical intervention...';
+        return { ...c, interventions: [...c.interventions, newInt as any] };
       }
       return c;
     }));
@@ -306,7 +339,7 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
 
   // Voice Dictation triggers
   const startDictating = (
-    cardId: 'respiratory' | 'skin' | 'adl',
+    cardId: string,
     fieldType: 'problem_statement' | 'goals' | 'interventions',
     index?: number
   ) => {
@@ -340,7 +373,11 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
       handleUpdateGoal(cardId, index, spoken);
     } else if (fieldType === 'interventions' && index !== undefined) {
       // Get current value and append
-      const currentVal = editedCards.find(c => c.id === cardId)?.interventions[index] || '';
+      const card = editedCards.find(c => c.id === cardId);
+      const targetInt = card?.interventions[index];
+      const currentVal = targetInt 
+        ? (typeof targetInt === 'string' ? targetInt : targetInt.text) 
+        : '';
       const cleanVal = currentVal.includes('New clinical intervention') ? '' : currentVal;
       const newVal = cleanVal ? `${cleanVal} ${spoken}` : spoken;
       handleUpdateIntervention(cardId, index, newVal);
@@ -568,21 +605,28 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
             {/* THREE CARDS RENDERER */}
             <div className="space-y-10 relative z-10">
               {editedCards.map((card) => {
-                const IconComponent = card.id === 'respiratory' ? Wind : card.id === 'skin' ? Activity : Heart;
+                const category = card.category || card.id;
+                const theme = CARE_PLAN_THEME_MAP[category] || CARE_PLAN_THEME_MAP.fallback;
+                const IconComponent = theme.icon;
                 const isLocked = carePlan.status === 'active';
 
                 return (
-                  <div key={card.id} className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/20">
+                  <div key={card.id} className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/20 animate-in fade-in duration-300">
                     {/* Header */}
-                    <div className="flex items-center gap-4 border-b border-slate-100 pb-6 mb-6">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                        card.id === 'respiratory' ? 'bg-blue-50 text-blue-500' : card.id === 'skin' ? 'bg-amber-50 text-amber-500' : 'bg-rose-50 text-rose-500'
-                      }`}>
-                        <IconComponent size={20} />
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${theme.bgClass} ${theme.colorClass}`}>
+                          <IconComponent size={20} />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-black uppercase text-slate-900 tracking-tight">{card.title || card.category || card.id}</h4>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Protocol Card</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-base font-black uppercase text-slate-900 tracking-tight">{card.title}</h4>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Protocol Card</p>
+                      <div className="text-right">
+                        <span className="text-[8px] font-black uppercase bg-slate-100 text-slate-500 px-2.5 py-1 rounded-md tracking-wider">
+                          Module: {category}
+                        </span>
                       </div>
                     </div>
 
@@ -593,12 +637,12 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                         <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Problem Statement</label>
                         {isLocked ? (
                           <div className="p-4 bg-slate-50/50 rounded-2xl text-slate-700 text-sm font-medium leading-relaxed">
-                            {card.problem_statement}
+                            {card.focus || card.problem_statement}
                           </div>
                         ) : (
                           <div className="relative">
                             <textarea
-                              value={card.problem_statement}
+                              value={card.focus || card.problem_statement || ''}
                               onChange={e => handleUpdateProblemStatement(card.id, e.target.value)}
                               rows={3}
                               className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:outline-none focus:border-quro-teal focus:bg-white transition-all text-sm leading-relaxed"
@@ -630,30 +674,64 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                           )}
                         </div>
                         <div className="space-y-3">
-                          {card.goals.map((goal, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-900 flex-shrink-0" />
-                              {isLocked ? (
-                                <p className="text-sm font-bold text-slate-900">{goal}</p>
-                              ) : (
-                                <div className="flex-1 flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={goal}
-                                    onChange={e => handleUpdateGoal(card.id, idx, e.target.value)}
-                                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm"
-                                  />
-                                  <button
-                                    onClick={() => handleDeleteGoal(card.id, idx)}
-                                    type="button"
-                                    className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                          {card.goals.map((goal, idx) => {
+                            const goalText = typeof goal === 'string' ? goal : (goal?.text || '');
+                            const goalDate = typeof goal === 'string' ? '' : (goal?.target_date || '');
+
+                            return (
+                              <div key={idx} className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-900 flex-shrink-0" />
+                                {isLocked ? (
+                                  <div className="flex-1 flex justify-between items-center bg-slate-50/30 p-2 rounded-xl border border-slate-100/30">
+                                    <p className="text-sm font-bold text-slate-900">{goalText}</p>
+                                    {goalDate && (
+                                      <span className="font-mono text-[10px] text-slate-400 font-black uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
+                                        Target: {goalDate}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex-1 flex gap-2 items-center">
+                                    <input
+                                      type="text"
+                                      value={goalText}
+                                      onChange={e => handleUpdateGoal(card.id, idx, e.target.value)}
+                                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm"
+                                    />
+                                    {typeof goal !== 'string' && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Target:</span>
+                                        <input
+                                          type="date"
+                                          value={goalDate}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            setEditedCards(prev => prev.map(c => {
+                                              if (c.id === card.id) {
+                                                const updatedGoals = [...c.goals];
+                                                updatedGoals[idx] = { ...updatedGoals[idx] as any, target_date: val };
+                                                return { ...c, goals: updatedGoals };
+                                              }
+                                              return c;
+                                            }));
+                                            setHasUnsavedChanges(true);
+                                          }}
+                                          className="px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-xs font-mono"
+                                        />
+                                      </div>
+                                    )}
+                                    <button
+                                      onClick={() => handleDeleteGoal(card.id, idx)}
+                                      type="button"
+                                      className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -672,38 +750,74 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                           )}
                         </div>
                         <div className="space-y-4">
-                          {card.interventions.map((int, idx) => (
-                            <div key={idx} className="flex items-start gap-3">
-                              <span className="w-2 h-2 rounded bg-quro-teal mt-4 flex-shrink-0" />
-                              {isLocked ? (
-                                <p className="text-sm font-bold text-slate-900 mt-2">{int}</p>
-                              ) : (
-                                <div className="flex-1 flex items-center gap-2 relative">
-                                  <textarea
-                                    value={int}
-                                    onChange={e => handleUpdateIntervention(card.id, idx, e.target.value)}
-                                    rows={2}
-                                    className="flex-1 px-5 py-3 pr-12 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm leading-relaxed"
-                                  />
-                                  <button
-                                    onClick={() => startDictating(card.id, 'interventions', idx)}
-                                    type="button"
-                                    className="absolute right-14 top-3 p-2 bg-slate-950 text-white rounded-lg shadow hover:bg-slate-800 transition-all"
-                                    title="Dictate clinical note"
-                                  >
-                                    <Mic size={12} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteIntervention(card.id, idx)}
-                                    type="button"
-                                    className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all mt-1"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                          {card.interventions.map((int, idx) => {
+                            const intText = typeof int === 'string' ? int : (int?.text || '');
+                            const intDiscipline = typeof int === 'string' ? '' : (int?.discipline || '');
+
+                            return (
+                              <div key={idx} className="flex items-start gap-3">
+                                <span className="w-2 h-2 rounded bg-quro-teal mt-4 flex-shrink-0" />
+                                {isLocked ? (
+                                  <div className="flex-1 mt-2 bg-slate-50/30 p-3 rounded-xl border border-slate-100/30">
+                                    <p className="text-sm font-bold text-slate-900">{intText}</p>
+                                    {intDiscipline && (
+                                      <span className="inline-block mt-2 bg-slate-900 text-white font-black uppercase text-[8px] tracking-widest px-2 py-0.5 rounded-md">
+                                        {intDiscipline}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex-1 flex items-start gap-2 relative">
+                                    <div className="flex-1 flex flex-col gap-2">
+                                      <textarea
+                                        value={intText}
+                                        onChange={e => handleUpdateIntervention(card.id, idx, e.target.value)}
+                                        rows={2}
+                                        className="w-full px-5 py-3 pr-12 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm leading-relaxed"
+                                      />
+                                      {typeof int !== 'string' && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Discipline:</span>
+                                          <input
+                                            type="text"
+                                            value={intDiscipline}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              setEditedCards(prev => prev.map(c => {
+                                                if (c.id === card.id) {
+                                                  const updatedInts = [...c.interventions];
+                                                  updatedInts[idx] = { ...updatedInts[idx] as any, discipline: val };
+                                                  return { ...c, interventions: updatedInts };
+                                                }
+                                                return c;
+                                              }));
+                                              setHasUnsavedChanges(true);
+                                            }}
+                                            className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-slate-900 font-bold text-[10px] font-mono w-32 uppercase"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={() => startDictating(card.id, 'interventions', idx)}
+                                      type="button"
+                                      className="absolute right-14 top-3 p-2 bg-slate-950 text-white rounded-lg shadow hover:bg-slate-800 transition-all"
+                                      title="Dictate clinical note"
+                                    >
+                                      <Mic size={12} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteIntervention(card.id, idx)}
+                                      type="button"
+                                      className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all mt-1"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -712,12 +826,12 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                         <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Protocol Schedule</label>
                         {isLocked ? (
                           <div className="inline-block px-4 py-2 bg-slate-100 rounded-xl text-slate-800 font-black text-[10px] tracking-widest uppercase">
-                            {card.schedule}
+                            {card.schedule || 'Shiftly'}
                           </div>
                         ) : (
                           <input
                             type="text"
-                            value={card.schedule}
+                            value={card.schedule || ''}
                             onChange={e => handleUpdateSchedule(card.id, e.target.value)}
                             className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm max-w-xs"
                           />
@@ -953,17 +1067,31 @@ export default function CarePlanManager({ patient }: CarePlanManagerProps) {
                         <div>
                           <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">SMART Goals</span>
                           <ul className="list-disc list-inside space-y-1 text-slate-800 font-semibold">
-                            {card.goals.map((goal, i) => (
-                              <li key={i}>{goal}</li>
-                            ))}
+                            {card.goals.map((goal, i) => {
+                              const goalText = typeof goal === 'string' ? goal : (goal?.text || '');
+                              const goalDate = typeof goal === 'string' ? '' : (goal?.target_date || '');
+                              return (
+                                <li key={i}>
+                                  {goalText}
+                                  {goalDate && <span className="text-[9px] text-slate-400 ml-2">({goalDate})</span>}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                         <div>
                           <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block mb-1">Interventions</span>
                           <ul className="list-decimal list-inside space-y-1 text-slate-850 font-medium">
-                            {card.interventions.map((int, i) => (
-                              <li key={i}>{int}</li>
-                            ))}
+                            {card.interventions.map((int, i) => {
+                              const intText = typeof int === 'string' ? int : (int?.text || '');
+                              const intDiscipline = typeof int === 'string' ? '' : (int?.discipline || '');
+                              return (
+                                <li key={i}>
+                                  {intText}
+                                  {intDiscipline && <span className="text-[8px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded ml-2">{intDiscipline}</span>}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                         <div className="pt-2 border-t border-slate-100 mt-2">

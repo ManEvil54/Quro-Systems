@@ -16,27 +16,49 @@ Your task is to generate a comprehensive, highly relevant, and regulatory-compli
 
 Congregate Living Health Facilities serve patients with high-acuity needs (e.g. ventilator-dependent, tracheostomy, spinal cord or brain injuries, neuromuscular disorders, severe dysphagia).
 
-Generate exactly three Care Plan Cards:
-1. Respiratory Management
-2. Skin & Tissue Integrity
-3. ADLs & Mobility
+Generate a Care Plan consisting of structured Care Plan Cards. The cards generated MUST be tailored to the resident's specific clinical profile.
 
-For each card, you must provide:
-- A clinical Problem Statement that is patient-specific and incorporates their specific diagnoses and active risks.
-- 2 to 3 SMART Goals (Specific, Measurable, Achievable, Relevant, Time-Bound) that contain objective metrics (e.g., maintain SpO2 >= 94% on nasal cannula at 2LPM continuously, zero signs of skin breakdown or new redness over the next 90 days, ambulates 50 feet with rolling walker daily by next evaluation).
-- 3 to 5 clear, direct, and actionable Interventions.
+You must generate:
+1. Respiratory Management (id: "respiratory", category: "respiratory", title: "Respiratory Management")
+2. Skin & Tissue Integrity (id: "skin", category: "skin", title: "Skin & Tissue Integrity")
+3. ADLs & Mobility (id: "adl", category: "adl", title: "ADLs & Mobility")
+
+And you MUST automatically scan the patient profile and active medication list to include the following additional cards if applicable:
+4. Psychotropic Monitoring (id: "psychotropic", category: "psychotropic", title: "Psychotropic Monitoring")
+   - MUST generate this card if the active medication list contains any psychotropic medication (e.g., Zyprexa, Olanzapine, Haldol, Haloperidol, Seroquel, Quetiapine, Ativan, Lorazepam, Risperdal, Risperidone, Geodon, Abilify, Valium, Xanax, Restoril, etc., or any medication marked with "Psychotropic: Yes").
+   - Focus: Target behaviors/symptoms of the medication, monitoring for adverse effects, extrapyramidal symptoms (EPS), tardive dyskinesia, and scheduling AIMS (Abnormal Involuntary Movement Scale) testing.
+5. Nutrition & Weight Management (id: "nutrition-weight", category: "nutrition-weight", title: "Nutrition & Weight Management")
+   - Generate if the resident has a G-Tube/enteral state, dysphagia, or other nutrition-related baseline indicators.
+   - Focus: Maintaining weight, dietary specifications, aspiration precautions.
+6. Fall Risk Management (id: "fall-risk", category: "fall-risk", title: "Fall Risk Management")
+   - Generate if "fall_risk" or "High Fall Risk" is listed in baseline indicators or primary diagnoses, or patient has active mobility impairments.
+   - Focus: Safe transfers, fall prevention precautions.
+7. Cognitive & Dementia Care (id: "cognitive", category: "cognitive", title: "Cognitive & Dementia Care")
+   - Generate if the patient has a primary diagnosis of Dementia, Alzheimer's, Lewy Body Dementia, or cognitive impairment.
+   - Focus: Memory support, redirecting, safe environment.
+
+Each Care Plan Card must contain:
+- A clinical focus/problem statement (string) that is patient-specific and incorporates their specific diagnoses, active risks, and medications.
+- 2 to 3 SMART Goals (Specific, Measurable, Achievable, Relevant, Time-Bound) as objects containing text and target date. Target dates should be set to exactly 90 days from the current date (e.g., "2026-09-14").
+- 3 to 5 clear, direct, and actionable Interventions as objects containing text and discipline (e.g., "Nursing", "CNA", "PT/OT", "Dietary", "MD").
 - A recommended clinical Schedule (e.g. Q2H, Q4H, Shiftly, Daily, PRN).
 
 IMPORTANT: You must return the response ONLY as a valid JSON object matching the following structure:
 {
   "cards": [
     {
-      "id": "respiratory" | "skin" | "adl",
+      "id": string,
+      "category": string,
       "title": string,
-      "problem_statement": string,
-      "goals": string[],
-      "interventions": string[],
-      "schedule": string
+      "focus": string,
+      "goals": [
+        { "text": string, "target_date": string }
+      ],
+      "interventions": [
+        { "text": string, "discipline": string }
+      ],
+      "schedule": string,
+      "status": "active"
     }
   ]
 }
@@ -52,7 +74,7 @@ export async function POST(req: Request) {
       location: LOCATION,
     });
 
-    const { patient, confirmedDiagnosis, baselines, notes } = await req.json();
+    const { patient, confirmedDiagnosis, baselines, notes, medications } = await req.json();
 
     if (!patient) {
       return NextResponse.json({ error: 'Missing patient profile details' }, { status: 400 });
@@ -61,6 +83,13 @@ export async function POST(req: Request) {
     const patientAge = patient.date_of_birth 
       ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() 
       : 'Unknown';
+
+    const activeMedsInfo = Array.isArray(medications)
+      ? medications
+          .filter((m: any) => m.status === 'active')
+          .map((m: any) => `- ${m.generic_name} ${m.strength || ''} (Route: ${m.route || ''}, Freq: ${m.frequency || ''}, Psychotropic: ${m.is_psychotropic ? 'Yes' : 'No'}, Indication: ${m.indication || 'Not listed'})`)
+          .join('\n')
+      : 'None active or listed';
 
     const userPrompt = `
 Generate a preliminary CLHF clinical Care Plan based on the following profile:
@@ -73,6 +102,8 @@ Resident Profile:
 - Code Status: ${patient.code_status || 'Full Code'}
 - Active Respiratory Status: ${patient.respiratory_state ? JSON.stringify(patient.respiratory_state) : 'Not documented'}
 - Active Enteral G-Tube Status: ${patient.enteral_state ? JSON.stringify(patient.enteral_state) : 'Not documented'}
+- Active Medication List:
+${activeMedsInfo}
 
 Intake / Admitting Nurse Inputs:
 - Confirmed Clinical Admitting Diagnosis: ${confirmedDiagnosis || 'No custom diagnosis entered'}
