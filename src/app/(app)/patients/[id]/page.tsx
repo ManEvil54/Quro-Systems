@@ -2187,16 +2187,7 @@ export default function PatientChartPage() {
         <div className="print-only hidden print:relative print:block print:inset-auto fixed inset-0 bg-white z-[100] p-0 m-0 text-black">
         {/* Page 1: Assessment (Front Side) */}
         <div 
-          className="p-5 bg-white flex flex-col justify-between text-black text-[9px] leading-tight border-b-4 border-slate-900 print-border"
-          style={{ 
-            boxSizing: 'border-box', 
-            height: '9.8in', 
-            minHeight: '9.8in',
-            maxHeight: '10in', 
-            pageBreakInside: 'avoid', 
-            breakInside: 'avoid', 
-            overflow: 'hidden' 
-          }}
+          className="print-record-page-a p-5 bg-white flex flex-col justify-between text-black text-[9px] leading-tight border-b-4 border-slate-900 print-border"
         >
           <div className="flex justify-between items-start mb-2.5 border-b-2 border-slate-900 pb-1.5">
             <div className="flex items-center gap-3">
@@ -2683,14 +2674,7 @@ export default function PatientChartPage() {
         {/* Page 2: Narrative (Back Side) */}
         {/* Explicit boundary split to lock Side B directly to the back page */}
         <div 
-          className="page-break-before-always print:block p-5 bg-white flex flex-col justify-between"
-          style={{ 
-            boxSizing: 'border-box', 
-            minHeight: '9.8in',
-            pageBreakInside: 'avoid', 
-            breakInside: 'avoid', 
-            pageBreakBefore: 'always'
-          }}
+          className="print-record-page-b page-break-before-always print:block p-5 bg-white flex flex-col justify-between"
         >
           <div className="flex justify-between items-start mb-3 border-b-2 border-slate-900 pb-2">
             <div className="flex items-center gap-3">
@@ -2723,7 +2707,7 @@ export default function PatientChartPage() {
             </div>
           </div>
 
-          <div className="border-2 border-slate-900 p-5 rounded-[1.5rem] flex-grow relative bg-slate-50/30 flex flex-col justify-between animate-none" style={{ minHeight: '5.5in' }}>
+          <div className="print-narrative-box border-2 border-slate-900 p-5 rounded-[1.5rem] flex-grow relative bg-slate-50/30 flex flex-col justify-between animate-none">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-rose-500 rounded-full" />
               <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900 font-mono">

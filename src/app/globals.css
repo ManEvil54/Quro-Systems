@@ -710,5 +710,22 @@ body {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
+  .print-record-page-a {
+    height: 9.8in;
+    min-height: 9.8in;
+    max-height: 10in;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    overflow: hidden;
+  }
+  .print-record-page-b {
+    min-height: 9.8in;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    page-break-before: always;
+  }
+  .print-narrative-box {
+    min-height: 5.5in;
+  }
 }
 

@@ -187,6 +187,18 @@ export default function MasterConsolePage() {
     }
   }
 
+  async function handleDeleteOrg(orgId: string, orgName: string) {
+    const confirm = window.confirm(`Are you sure you want to permanently delete the organization "${orgName}"?\n\nWARNING: This will permanently delete the organization record from Firestore. This action cannot be undone.`);
+    if (!confirm) return;
+    try {
+      await deleteDoc(doc(db, 'organizations', orgId));
+      fetchData();
+    } catch (err) {
+      console.error('Error deleting organization:', err);
+      alert('Failed to delete organization: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }
+
   async function toggleTechStatus(techId: string, currentStatus: boolean) {
     try {
       await setDoc(doc(db, 'organizations', 'SYSTEM', 'staff', techId), { is_active: !currentStatus }, { merge: true });
@@ -351,7 +363,14 @@ export default function MasterConsolePage() {
                         {org.name.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="font-black text-slate-900 text-xl tracking-tight">{org.name}</h4>
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-black text-slate-900 text-xl tracking-tight">{org.name}</h4>
+                          {!org.is_active && (
+                            <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[8px] font-black uppercase tracking-widest">
+                              Archived
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-4 mt-2">
                           <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
                              <span className="text-[9px] text-slate-400 uppercase tracking-widest font-black italic">slug://</span>
@@ -368,9 +387,9 @@ export default function MasterConsolePage() {
                     <div className="flex items-center gap-4">
                       <button 
                         onClick={() => toggleOrgStatus(org.id, org.is_active)}
-                        className={`px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${org.is_active ? 'bg-white text-slate-400 border-slate-100 hover:text-rose-600 hover:bg-rose-50' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}
+                        className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${org.is_active ? 'bg-white text-slate-400 border-slate-100 hover:text-amber-600 hover:bg-amber-50' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}
                       >
-                        {org.is_active ? 'Deactivate' : 'Reactivate'}
+                        {org.is_active ? 'Archive Client' : 'Restore Client'}
                       </button>
                       <button 
                         onClick={() => handleImpersonate(org.id, org.name)}
@@ -378,6 +397,13 @@ export default function MasterConsolePage() {
                       >
                         <Ghost size={16} />
                         Ghost Mode
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteOrg(org.id, org.name)}
+                        className="p-4 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                        title="Delete Organization"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>

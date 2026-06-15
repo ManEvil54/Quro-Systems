@@ -26,7 +26,7 @@ import type { Facility } from '@/lib/firebase/types';
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, staff, organization, signOut, switchFacility } = useAuth();
+  const { user, staff, organization, activeFacility, signOut, switchFacility } = useAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [currentFacilityName, setCurrentFacilityName] = useState('Select Facility');
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
@@ -54,8 +54,9 @@ export default function Sidebar() {
         
         if (isMounted) {
           setFacilities(accessible);
-          const current = accessible.find(f => f.id === staff?.facility_id);
+          const current = accessible.find(f => f.id === (activeFacility?.id || staff?.facility_id));
           if (current) setCurrentFacilityName(current.name);
+          else setCurrentFacilityName('Select Facility');
         }
       } catch (err) {
         console.error('Error fetching facilities for sidebar:', err);
@@ -67,7 +68,7 @@ export default function Sidebar() {
     return () => {
       isMounted = false;
     };
-  }, [organization, staff]);
+  }, [organization, staff, activeFacility]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -145,7 +146,7 @@ export default function Sidebar() {
             className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-sm border border-white/10 group shadow-lg"
           >
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${staff?.facility_id ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              <div className={`w-2 h-2 rounded-full ${(activeFacility?.id || staff?.facility_id) ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
               <div className="text-left">
                 <p className="text-teal-500 font-black text-[10px] uppercase tracking-widest leading-none mb-1">Active Facility</p>
                 <p className="text-slate-200 font-bold text-xs truncate max-w-[120px]">{currentFacilityName}</p>
@@ -166,13 +167,13 @@ export default function Sidebar() {
                       setIsSwitcherOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-all mb-1 flex items-center justify-between ${
-                      f.id === staff?.facility_id 
+                      f.id === (activeFacility?.id || staff?.facility_id) 
                         ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' 
                         : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span className="truncate">{f.name}</span>
-                    {f.id === staff?.facility_id && <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />}
+                    {f.id === (activeFacility?.id || staff?.facility_id) && <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />}
                   </button>
                 ))}
               </div>

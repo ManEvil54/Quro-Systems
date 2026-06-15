@@ -13,7 +13,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/client';
 import type { Staff, StaffRole } from '@/lib/firebase/types';
 
@@ -156,6 +156,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (staffDoc.exists()) {
           staffData = { id: staffDoc.id, ...staffDoc.data() } as Staff;
         }
+      } else {
+        // Ghost mode impersonation without a specific staff target: synthesize staff data
+        // from the Master Admin's own profile but scoped to the target organization
+        const idTokenResult = await user.getIdTokenResult();
+        const customRole = (idTokenResult.claims.role as StaffRole) || 'APP_OWNER';
+        const isOwner = customRole === 'APP_OWNER' || customRole === 'SUPER_ADMIN';
+
+        staffData = {
+          id: user.uid,
+          auth_id: user.uid,
+          org_id: orgId,
+          facility_id: null,
+          first_name: isOwner ? 'System' : 'Tech',
+          last_name: isOwner ? 'Owner (Ghost)' : 'Specialist (Ghost)',
+          initials: isOwner ? 'ROOT' : 'TECH',
+          role: customRole,
+          credential: 'DEVELOPER',
+          email: user.email || '',
+          phone: null,
+          is_active: true,
+          is_onboarded: true,
+          must_change_password: false,
+          access_expires_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
+
+      // Handle Active Facility initialization for Ghost Mode
+      let activeFacility = null;
+      const storedFacilityId = localStorage.getItem(`quro_active_facility_${orgId}`);
+      if (storedFacilityId) {
+        const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', storedFacilityId));
+        if (facDoc.exists()) {
+          activeFacility = { id: facDoc.id, name: facDoc.data().name, bed_count: facDoc.data().bed_count };
+        }
+      }
+
+      if (!activeFacility && staffData) {
+        // Fallback 1: Use staff default facility
+        const facId = staffData.facility_id || staffData.assigned_facility_ids?.[0];
+        if (facId) {
+          const facDoc = await getDoc(doc(db, 'organizations', orgId, 'facilities', facId));
+          if (facDoc.exists()) {
+            activeFacility = { id: facDoc.id, name: facDoc.data().name, bed_count: facDoc.data().bed_count };
+          }
+        }
+      }
+
+      if (!activeFacility) {
+        // Fallback 2: Find the first active facility of the organization
+        const facQuery = query(
+          collection(db, 'organizations', orgId, 'facilities'),
+          where('is_active', '==', true)
+        );
+        const facSnap = await getDocs(facQuery);
+        if (!facSnap.empty) {
+          const firstFac = facSnap.docs[0];
+          activeFacility = { id: firstFac.id, name: firstFac.data().name, bed_count: firstFac.data().bed_count };
+        }
       }
 
       // Log the impersonation (HIPAA Audit Trail)
@@ -174,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization: orgData,
         isImpersonating: true,
         impersonatedDonName: staffData ? `${staffData.first_name} ${staffData.last_name}` : orgData.name,
-        activeFacility: staffData ? { id: staffData.facility_id || '', name: '...', bed_count: null } : null, 
+        activeFacility, 
         loading: false,
         error: null
       });
