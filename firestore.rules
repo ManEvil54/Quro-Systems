@@ -104,6 +104,7 @@ service cloud.firestore {
       allow read: if isOrgMember(orgId) || (request.auth != null && resource.data.contact_email == request.auth.token.email);
       allow update: if isMasterAdmin() || (isOrgMember(orgId) && hasOrgRole(orgId, ['admin', 'CLIENT_ADMIN', 'FACILITY_ADMIN']));
       allow create: if isAuthenticated(); 
+      allow delete: if isMasterAdmin();
 
       // 2. Staff: Scoped by OrgId
       match /staff/{staffId} {
