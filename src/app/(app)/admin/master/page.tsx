@@ -228,6 +228,18 @@ export default function MasterConsolePage() {
     }
   }
 
+  async function handleDeleteTech(techId: string, techName: string) {
+    const confirm = window.confirm(`Are you sure you want to permanently delete the tech specialist "${techName}"?\n\nWARNING: This will permanently delete the staff record from Firestore. This action cannot be undone.`);
+    if (!confirm) return;
+    try {
+      await deleteDoc(doc(db, 'organizations', 'SYSTEM', 'staff', techId));
+      fetchData();
+    } catch (err) {
+      console.error('Error deleting tech specialist:', err);
+      alert('Failed to delete tech specialist: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }
+
   async function handleDeleteLead(leadId: string) {
     const confirm = window.confirm('Are you sure you want to delete this lead? This action cannot be undone.');
     if (!confirm) return;
@@ -467,6 +479,13 @@ export default function MasterConsolePage() {
                       <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${tech.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                          {tech.is_active ? 'ACTIVE AUTHORITY' : 'REVOKED'}
                       </div>
+                      <button 
+                        onClick={() => handleDeleteTech(tech.id, `${tech.first_name} ${tech.last_name}`)}
+                        className="p-4 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                        title="Delete Tech Specialist"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))
