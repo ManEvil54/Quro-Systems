@@ -1,4 +1,6 @@
 export type StaffRole = 
+  | 'SUPER_ADMIN'    // Quro Super Admin
+  | 'super_admin'    // Alternate casing for Super Admin
   | 'APP_OWNER'      // Quro System Owner - Full platform control
   | 'APP_TECH'       // Quro Technical Staff - Troubleshooting & Facility Access
   | 'CLIENT_ADMIN'   // Client/Organization Owner - Manage Org, Facilities, & Staff
