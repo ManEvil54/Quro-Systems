@@ -68,8 +68,10 @@ export default function DashboardPage() {
   const isDemoUser = user?.email === 'demo@qurosystems.com';
   
   const { beds: facilityBeds, alerts } = useDashboard(activeFacility?.id || '');
-
   const [telemetryAlerts, setTelemetryAlerts] = useState<any[]>([]);
+  const [isAlertsDropdownOpen, setIsAlertsDropdownOpen] = useState(false);
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     if (!organization?.id) return;
@@ -126,7 +128,43 @@ export default function DashboardPage() {
 
     return () => unsubscribe();
   }, [organization?.id]);
-  
+
+  useEffect(() => {
+    if (!isAlertsDropdownOpen) return;
+    const handleClose = () => setIsAlertsDropdownOpen(false);
+    document.addEventListener('click', handleClose);
+    return () => document.removeEventListener('click', handleClose);
+  }, [isAlertsDropdownOpen]);
+
+  const combinedAlerts = [
+    ...(alerts || []).map(a => ({
+      id: a.id,
+      type: 'handover_urgent',
+      title: 'Urgent Handover Note',
+      message: a.general_notes,
+      severity: 'warning' as const,
+      timestamp: a.created_at,
+      patientId: undefined
+    })),
+    ...telemetryAlerts.map(a => ({
+      id: a.id,
+      type: a.type,
+      title: a.severity === 'warning' ? 'Co-Signature Pending' : 'New Signed Order',
+      message: a.message,
+      severity: a.severity as 'warning' | 'success',
+      timestamp: a.timestamp,
+      patientId: a.patientId
+    }))
+  ];
+
+  combinedAlerts.sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  const visibleAlerts = combinedAlerts.filter(a => !dismissedAlertIds.has(a.id));
+
   // High-Fidelity Mock Patients for Platinum Health Hub (Design Demo)
   const mockPatients: DashboardBed[] = [
     {
@@ -497,14 +535,113 @@ export default function DashboardPage() {
               />
             </div>
             
-            <div className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner">
-                <Bell size={20} />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">Active Alerts</p>
-                <p className="text-lg font-black text-rose-500 leading-none">{alerts.length}</p>
-              </div>
+            <div className="relative" onClick={e => e.stopPropagation()}>
+              <button 
+                onClick={() => setIsAlertsDropdownOpen(!isAlertsDropdownOpen)}
+                className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-slate-200 transition-all text-left"
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-colors ${
+                  visibleAlerts.length > 0 ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-50 text-slate-400'
+                }`}>
+                  <Bell size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">Active Alerts</p>
+                  <p className="text-lg font-black text-rose-500 leading-none">{visibleAlerts.length}</p>
+                </div>
+              </button>
+              
+              {isAlertsDropdownOpen && (
+                <div className="absolute right-0 mt-3 w-96 p-5 bg-slate-900/95 border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-[100] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center pb-3 border-b border-white/5 mb-3">
+                    <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">Notification Engine</span>
+                    {visibleAlerts.length > 0 && (
+                      <span className="text-[9px] font-bold text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {visibleAlerts.length} Actionable
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="max-h-80 overflow-y-auto space-y-3 custom-scrollbar">
+                    {visibleAlerts.length === 0 ? (
+                      <div className="py-8 text-center text-slate-500 text-xs italic font-medium">
+                        No active clinical alerts
+                      </div>
+                    ) : (
+                      visibleAlerts.map(alert => (
+                        <div 
+                          key={alert.id} 
+                          className={`p-4 rounded-2xl border transition-all ${
+                            alert.severity === 'warning'
+                              ? 'bg-amber-500/5 border-amber-500/20 text-amber-200'
+                              : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-[9px] font-black uppercase tracking-widest ${
+                                alert.severity === 'warning' ? 'text-amber-400' : 'text-emerald-400'
+                              }`}>
+                                {alert.title}
+                              </p>
+                              <p className="text-[11px] font-bold text-slate-100 mt-1 leading-relaxed break-words">{alert.message}</p>
+                              {alert.patientId && (
+                                <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                  Patient: {getPatientName(alert.patientId)} • {getPatientRoom(alert.patientId)}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              {alert.type === 'telephone_pending' && (staff?.role === 'physician' || staff?.role === 'APP_OWNER' || staff?.role === 'SUPER_ADMIN') && !isReadOnly && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      if (!organization?.id) return;
+                                      const docRef = doc(db, 'organizations', organization.id, 'patients', alert.patientId!, 'provider_orders', alert.id);
+                                      await updateDoc(docRef, {
+                                        signed_at: new Date().toISOString(),
+                                        ordering_physician_id: staff?.id || 'system',
+                                        status: 'signed',
+                                        updated_at: new Date().toISOString()
+                                      });
+                                      setTelemetryAlerts(prev => prev.filter(a => a.id !== alert.id));
+                                    } catch (err) {
+                                      console.error('Error co-signing from dropdown:', err);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[8px] font-black uppercase tracking-widest transition-colors shadow-md shadow-amber-950/20"
+                                >
+                                  Co-Sign
+                                </button>
+                              )}
+                              
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDismissedAlertIds(prev => {
+                                    const next = new Set(prev);
+                                    next.add(alert.id);
+                                    return next;
+                                  });
+                                  if (alert.type !== 'handover_urgent') {
+                                    setTelemetryAlerts(prev => prev.filter(a => a.id !== alert.id));
+                                  }
+                                }}
+                                className="p-1 hover:bg-white/5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
+                                title="Dismiss alert"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -517,75 +654,6 @@ export default function DashboardPage() {
         {/* Live AI Shift Handoff Briefing */}
         {activeFacility?.id && (
           <ActiveShiftIntelligenceBanner facilityId={activeFacility.id} />
-        )}
-
-        {/* Telemetry Alerts Banner */}
-        {telemetryAlerts.length > 0 && (
-          <div className="mt-8 mb-4 space-y-3">
-            {telemetryAlerts.map(alert => (
-              <div 
-                key={alert.id} 
-                className={`p-6 rounded-[2.5rem] border-2 flex items-center justify-between gap-6 animate-in slide-in-from-top-4 duration-300 shadow-lg ${
-                  alert.severity === 'warning' 
-                    ? 'bg-amber-50/80 border-amber-200 text-amber-900 shadow-amber-900/5' 
-                    : 'bg-emerald-50/80 border-emerald-200 text-emerald-950 shadow-emerald-950/5'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-                    alert.severity === 'warning' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
-                  }`}>
-                    <AlertCircle size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black uppercase tracking-tight">
-                      {alert.severity === 'warning' ? 'Telephone Order Pending Co-Signature' : 'New Clinically Signed Order'}
-                    </h4>
-                    <p className="text-xs font-semibold mt-0.5 opacity-90">{alert.message}</p>
-                    <p className="text-[10px] font-bold opacity-60 uppercase mt-1">
-                      Patient: {getPatientName(alert.patientId)} • Location: {getPatientRoom(alert.patientId)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {alert.severity === 'warning' && staff?.role === 'physician' && !isReadOnly && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          if (!organization?.id) {
-                            alert('No active organization found.');
-                            return;
-                          }
-                          const docRef = doc(db, 'organizations', organization.id, 'patients', alert.patientId, 'provider_orders', alert.id);
-                          await updateDoc(docRef, {
-                            signed_at: new Date().toISOString(),
-                            ordering_physician_id: staff.id,
-                            status: 'signed',
-                            updated_at: new Date().toISOString()
-                          });
-                          alert('Order co-signed successfully.');
-                        } catch (err) {
-                          console.error('Error signing from alert:', err);
-                        }
-                      }}
-                      className="px-4 py-2 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-700 transition-colors shadow-md shadow-amber-900/20"
-                    >
-                      Co-Sign Now
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      setTelemetryAlerts(prev => prev.filter(a => a.id !== alert.id));
-                    }}
-                    title="Dismiss alert"
-                    className="p-2 hover:bg-black/5 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         )}
 
         {/* Bed Grid */}
