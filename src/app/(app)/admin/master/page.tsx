@@ -57,6 +57,8 @@ export default function MasterConsolePage() {
   // Modals
   const [isAddingOrg, setIsAddingOrg] = useState(false);
   const [isAddingTech, setIsAddingTech] = useState(false);
+  const [impersonateTarget, setImpersonateTarget] = useState<{ id: string; name: string } | null>(null);
+
 
   // Form States
   const [newOrg, setNewOrg] = useState({
@@ -169,14 +171,23 @@ export default function MasterConsolePage() {
     }
   }
 
-  const handleImpersonate = async (orgId: string, orgName: string) => {
-    const confirm = window.confirm(`Activate Ghost Mode for ${orgName}?\n\nThis will grant you full clinical access to their facilities for support purposes. All actions will be logged in the system audit trail.`);
-    if (confirm) {
-      await impersonate(orgId);
+  const handleImpersonateClick = (orgId: string, orgName: string) => {
+    setImpersonateTarget({ id: orgId, name: orgName });
+  };
+
+  const confirmImpersonate = async () => {
+    if (!impersonateTarget) return;
+    try {
+      await impersonate(impersonateTarget.id);
       // Auto-redirect to dashboard to verify environment state
       window.location.href = '/dashboard';
+    } catch (err) {
+      console.error('Failed to impersonate:', err);
+    } finally {
+      setImpersonateTarget(null);
     }
   };
+
 
   async function toggleOrgStatus(orgId: string, currentStatus: boolean) {
     try {
@@ -408,7 +419,7 @@ export default function MasterConsolePage() {
                         {org.is_active ? 'Archive Client' : 'Restore Client'}
                       </button>
                       <button 
-                        onClick={() => handleImpersonate(org.id, org.name)}
+                        onClick={() => handleImpersonateClick(org.id, org.name)}
                         className="px-8 py-4 bg-slate-900 text-white border border-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:border-rose-600 transition-all flex items-center gap-3 shadow-sm active:scale-95"
                       >
                         <Ghost size={16} />
@@ -664,6 +675,57 @@ export default function MasterConsolePage() {
             </div>
           </div>
         )}
+
+        {/* Custom Impersonate Confirmation Modal */}
+        {impersonateTarget && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="bg-slate-950 border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-[0_32px_64px_-16px_rgba(0,0,0,0.7)] overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-8 border-b border-white/5 bg-slate-900/50 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+                  <Ghost size={24} className="animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Activate Ghost Mode</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Impersonation Request</p>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  You are initiating System Owner access for <span className="text-white font-black">{impersonateTarget.name}</span>.
+                </p>
+
+                <div className="bg-rose-500/5 border border-rose-500/10 p-5 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-widest">
+                    <ShieldAlert size={14} />
+                    Audit Warning
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-bold">
+                    This action will grant you full clinical and operational oversight of this organization's facilities. All actions performed during this session will be permanently logged in the system audit trail for security and HIPAA compliance.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setImpersonateTarget(null)}
+                    className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmImpersonate}
+                    className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-900/20"
+                  >
+                    Proceed (Ghost)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </ProtectedRoute>
   );

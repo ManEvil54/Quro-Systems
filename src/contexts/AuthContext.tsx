@@ -40,7 +40,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   impersonate: (orgId: string, staffId?: string) => Promise<void>;
   stopImpersonating: () => void;
-  switchFacility: (facilityId: string) => void;
+  switchFacility: (facilityId: string, facilityData?: { name: string; bed_count?: number | null }) => void;
   clearError: () => void;
 }
 
@@ -67,8 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  const switchFacility = useCallback(async (facilityId: string) => {
+  const switchFacility = useCallback(async (facilityId: string, facilityData?: { name: string; bed_count?: number | null }) => {
     if (!state.organization?.id) return;
+    
+    // If facility data is supplied, switch instantly without hitting the network/Firestore
+    if (facilityData) {
+      setState(prev => ({ 
+        ...prev, 
+        activeFacility: { id: facilityId, name: facilityData.name, bed_count: facilityData.bed_count } 
+      }));
+      localStorage.setItem(`quro_active_facility_${state.organization.id}`, facilityId);
+      return;
+    }
     
     try {
       const facilityDoc = await getDoc(doc(db, 'organizations', state.organization.id, 'facilities', facilityId));

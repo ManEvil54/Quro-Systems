@@ -159,23 +159,27 @@ export default function Sidebar() {
             <div className="absolute top-full left-0 right-0 mt-2 p-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
               <p className="px-3 py-1 text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Switch House</p>
               <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                {facilities.map(f => (
-                  <button 
-                    key={f.id}
-                    onClick={() => {
-                      switchFacility(f.id);
-                      setIsSwitcherOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-all mb-1 flex items-center justify-between ${
-                      f.id === (activeFacility?.id || staff?.facility_id) 
-                        ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' 
-                        : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <span className="truncate">{f.name}</span>
-                    {f.id === (activeFacility?.id || staff?.facility_id) && <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />}
-                  </button>
-                ))}
+                {facilities.length === 0 ? (
+                  <p className="px-3 py-3 text-[10px] text-slate-500 italic font-bold">No active houses found</p>
+                ) : (
+                  facilities.map(f => (
+                    <button 
+                      key={f.id}
+                      onClick={() => {
+                        switchFacility(f.id, { name: f.name, bed_count: f.bed_count });
+                        setIsSwitcherOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-all mb-1 flex items-center justify-between ${
+                        f.id === (activeFacility?.id || staff?.facility_id) 
+                          ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' 
+                          : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="truncate">{f.name}</span>
+                      {f.id === (activeFacility?.id || staff?.facility_id) && <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}
