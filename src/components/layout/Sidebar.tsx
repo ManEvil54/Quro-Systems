@@ -26,7 +26,7 @@ import type { Facility } from '@/lib/firebase/types';
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, staff, organization, activeFacility, signOut, switchFacility } = useAuth();
+  const { user, staff, organization, activeFacility, signOut, switchFacility, isImpersonating } = useAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [currentFacilityName, setCurrentFacilityName] = useState('Select Facility');
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function Sidebar() {
         const snap = await getDocs(q);
         const allFacilities = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Facility));
         
-        const isSystemAdmin = staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH';
+        const isSystemAdmin = staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH' || staff?.role === 'SUPER_ADMIN' || isImpersonating;
         const isOrgAdmin = staff?.role === 'CLIENT_ADMIN' || staff?.role === 'FACILITY_ADMIN' || staff?.role === 'admin' || staff?.role === 'nurse' || staff?.role === 'physician';
 
         const accessible = isSystemAdmin || isOrgAdmin
@@ -68,7 +68,7 @@ export default function Sidebar() {
     return () => {
       isMounted = false;
     };
-  }, [organization, staff, activeFacility]);
+  }, [organization, staff, activeFacility, isImpersonating]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -250,7 +250,7 @@ export default function Sidebar() {
         )}
 
         {/* Master Admin Links */}
-        {(staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH') && (
+        {(staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH' || staff?.role === 'SUPER_ADMIN' || staff?.role === 'super_admin') && (
           <div className="pt-6 mt-6 border-t border-white/5">
             <p className="px-3 mb-2 text-[10px] font-black text-rose-500 uppercase tracking-widest">Master Console</p>
             <Link
@@ -288,7 +288,7 @@ export default function Sidebar() {
       <div className="px-4 py-6 border-t border-white/5 bg-black/20">
         <div className="flex items-center gap-3 px-2">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-xl ${
-            (staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH') ? 'bg-rose-500 text-white' : 'bg-teal-500 text-white'
+            (staff?.role === 'APP_OWNER' || staff?.role === 'APP_TECH' || staff?.role === 'SUPER_ADMIN' || staff?.role === 'super_admin') ? 'bg-rose-500 text-white' : 'bg-teal-500 text-white'
           }`}>
             {staff?.initials || user?.displayName?.charAt(0) || 'U'}
           </div>
