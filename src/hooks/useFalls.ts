@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Patient, Incident } from '@/lib/firebase/types';
 
 export function useFalls(facilityId: string) {
-  const { organization, staff } = useAuth();
+  const { organization, staff, isReadOnly } = useAuth();
   const [monitoringPatients, setMonitoringPatients] = useState<Patient[]>([]);
   const [recentIncidents, setRecentIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +67,10 @@ export function useFalls(facilityId: string) {
   }, [organization?.id, facilityId]);
 
   const reportIncident = async (data: Omit<Incident, 'id' | 'org_id' | 'facility_id' | 'reported_by' | 'created_at' | 'updated_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId || !staff?.id) throw new Error('Auth context missing');
 
     const incidentsRef = collection(db, 'organizations', organization.id, 'incidents');

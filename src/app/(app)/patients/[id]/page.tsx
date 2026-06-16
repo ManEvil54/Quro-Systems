@@ -97,7 +97,7 @@ export default function PatientChartPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { activeFacility, staff, organization } = useAuth();
+  const { activeFacility, staff, organization, isReadOnly } = useAuth();
   const { patient, loading: patientLoading, error, updatePatient } = usePatient(id);
   const { physicians: facilityPhysicians } = useFacilityPhysicians(patient?.facility_id || activeFacility?.id);
   const { medications, loading: medsLoading, updateMedication } = useMedications(id);
@@ -210,6 +210,7 @@ export default function PatientChartPage() {
   });
 
   const handleSavePhysician = async () => {
+    if (isReadOnly) return;
     try {
       await updatePatient({ attending_physician: tempPhysician });
       setShowPhysicianModal(false);
@@ -220,6 +221,7 @@ export default function PatientChartPage() {
 
   const handleSaveRoomAssignment = async () => {
     if (!organization?.id || !patient) return;
+    if (isReadOnly) return;
     setSavingRoom(true);
     try {
       const facilityId = patient.facility_id || activeFacility?.id;
@@ -277,6 +279,7 @@ export default function PatientChartPage() {
   };
 
   const handleSaveInsurance = async () => {
+    if (isReadOnly) return;
     try {
       await updatePatient({ insurance_info: tempInsurance });
       setShowInsuranceModal(false);
@@ -286,6 +289,7 @@ export default function PatientChartPage() {
   };
 
   const handleSavePharmacy = async () => {
+    if (isReadOnly) return;
     try {
       await updatePatient({ pharmacy_info: tempPharmacy });
       setShowPharmacyModal(false);
@@ -295,6 +299,7 @@ export default function PatientChartPage() {
   };
 
   const handleSaveFamilyMember = async () => {
+    if (isReadOnly) return;
     try {
       const currentList = patient?.family_members || [];
       const updatedList = [...currentList];
@@ -311,6 +316,7 @@ export default function PatientChartPage() {
   };
 
   const handleDeleteFamilyMember = async (index: number) => {
+    if (isReadOnly) return;
     if (!window.confirm('Are you sure you want to delete this family contact?')) return;
     try {
       const currentList = patient?.family_members || [];
@@ -545,7 +551,9 @@ export default function PatientChartPage() {
         await updateNote(currentDraftId, noteData as Partial<ProgressNote>);
       } else {
         const newNote = await saveNote(noteData as unknown as Parameters<typeof saveNote>[0]);
-        if (isDraft) setCurrentDraftId(newNote.id);
+        if (isDraft && newNote && 'id' in newNote) {
+          setCurrentDraftId(newNote.id);
+        }
       }
 
       if (!isDraft) {
@@ -603,6 +611,22 @@ export default function PatientChartPage() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {isReadOnly && (
+        <div className="w-full bg-amber-500/10 border-b border-amber-500/30 px-6 py-2.5 flex items-center justify-between backdrop-blur-md animate-fade-in no-print mb-6 rounded-2xl">
+          <div className="flex items-center gap-3">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <p className="text-[11px] uppercase tracking-widest font-black text-amber-500 font-mono">
+              READ-ONLY SECURITY BOUNDARY ENFORCED • SURVEYOR / IMMUTABLE VERBAL LOG VIEW ACTIVE
+            </p>
+          </div>
+          <div className="text-[9px] uppercase tracking-wider font-bold text-amber-400/70 font-mono">
+            SYSTEM ACCESS LOCKED
+          </div>
+        </div>
+      )}
       <div className="no-print">
         {/* Header Actions - Hidden on Print */}
       <div className="no-print flex items-center justify-between mb-8">
@@ -796,33 +820,37 @@ export default function PatientChartPage() {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Physician</p>
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-black text-slate-900">{patient.attending_physician || 'Unassigned'}</p>
-                      <button 
-                        onClick={() => {
-                          setTempPhysician(patient.attending_physician || '');
-                          setShowPhysicianModal(true);
-                        }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
-                        title="Edit Physician"
-                      >
-                        <Edit2 size={14} />
-                      </button>
+                      {!isReadOnly && (
+                        <button 
+                          onClick={() => {
+                            setTempPhysician(patient.attending_physician || '');
+                            setShowPhysicianModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
+                          title="Edit Physician"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Room & Bed</p>
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-black text-slate-900">{patient.room_number || 'Unassigned'}</p>
-                      <button 
-                        onClick={() => {
-                          setSelectedRoomId(patient.room_id || null);
-                          setSelectedBedId(patient.bed_id || null);
-                          setShowRoomModal(true);
-                        }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
-                        title="Assign Room & Bed"
-                      >
-                        <Edit2 size={14} />
-                      </button>
+                      {!isReadOnly && (
+                        <button 
+                          onClick={() => {
+                            setSelectedRoomId(patient.room_id || null);
+                            setSelectedBedId(patient.bed_id || null);
+                            setShowRoomModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-quro-teal transition-all"
+                          title="Assign Room & Bed"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -874,21 +902,23 @@ export default function PatientChartPage() {
                       <Shield size={18} className="text-emerald-500" />
                       Insurance Coverage
                     </h3>
-                    <button
-                      onClick={() => {
-                        setTempInsurance({
-                          provider_name: patient.insurance_info?.provider_name || '',
-                          policy_number: patient.insurance_info?.policy_number || '',
-                          group_number: patient.insurance_info?.group_number || '',
-                          phone: patient.insurance_info?.phone || '',
-                        });
-                        setShowInsuranceModal(true);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
-                    >
-                      <Edit2 size={12} />
-                      Edit Info
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => {
+                          setTempInsurance({
+                            provider_name: patient.insurance_info?.provider_name || '',
+                            policy_number: patient.insurance_info?.policy_number || '',
+                            group_number: patient.insurance_info?.group_number || '',
+                            phone: patient.insurance_info?.phone || '',
+                          });
+                          setShowInsuranceModal(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                      >
+                        <Edit2 size={12} />
+                        Edit Info
+                      </button>
+                    )}
                   </div>
                   
                   {patient.insurance_info?.provider_name ? (
@@ -915,15 +945,17 @@ export default function PatientChartPage() {
                   ) : (
                     <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-3xl">
                       <p className="text-sm font-bold text-slate-400">No Insurance Information Configured</p>
-                      <button
-                        onClick={() => {
-                          setTempInsurance({ provider_name: '', policy_number: '', group_number: '', phone: '' });
-                          setShowInsuranceModal(true);
-                        }}
-                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
-                      >
-                        Add Insurance
-                      </button>
+                      {!isReadOnly && (
+                        <button
+                          onClick={() => {
+                            setTempInsurance({ provider_name: '', policy_number: '', group_number: '', phone: '' });
+                            setShowInsuranceModal(true);
+                          }}
+                          className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
+                        >
+                          Add Insurance
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -935,21 +967,23 @@ export default function PatientChartPage() {
                       <Pill size={18} className="text-quro-teal" />
                       Preferred Pharmacy
                     </h3>
-                    <button
-                      onClick={() => {
-                        setTempPharmacy({
-                          name: patient.pharmacy_info?.name || '',
-                          phone: patient.pharmacy_info?.phone || '',
-                          address: patient.pharmacy_info?.address || '',
-                          fax: patient.pharmacy_info?.fax || '',
-                        });
-                        setShowPharmacyModal(true);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
-                    >
-                      <Edit2 size={12} />
-                      Edit Info
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => {
+                          setTempPharmacy({
+                            name: patient.pharmacy_info?.name || '',
+                            phone: patient.pharmacy_info?.phone || '',
+                            address: patient.pharmacy_info?.address || '',
+                            fax: patient.pharmacy_info?.fax || '',
+                          });
+                          setShowPharmacyModal(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-quro-teal hover:text-quro-teal rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                      >
+                        <Edit2 size={12} />
+                        Edit Info
+                      </button>
+                    )}
                   </div>
 
                   {patient.pharmacy_info?.name ? (
@@ -976,15 +1010,17 @@ export default function PatientChartPage() {
                   ) : (
                     <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-3xl">
                       <p className="text-sm font-bold text-slate-400">No Pharmacy Assigned</p>
-                      <button
-                        onClick={() => {
-                          setTempPharmacy({ name: '', phone: '', address: '', fax: '' });
-                          setShowPharmacyModal(true);
-                        }}
-                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
-                      >
-                        Assign Pharmacy
-                      </button>
+                      {!isReadOnly && (
+                        <button
+                          onClick={() => {
+                            setTempPharmacy({ name: '', phone: '', address: '', fax: '' });
+                            setShowPharmacyModal(true);
+                          }}
+                          className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all"
+                        >
+                          Assign Pharmacy
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

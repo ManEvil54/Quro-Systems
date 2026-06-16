@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Patient } from '@/lib/firebase/types';
 
 export function usePatients(facilityId?: string | null) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,10 @@ export function usePatients(facilityId?: string | null) {
   }, [staff?.org_id, facilityId]);
 
   const admitPatient = async (data: Omit<Patient, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id) throw new Error('Not authenticated');
     
     // Sanitize payload to strip undefined fields (which Firestore rejects)
@@ -85,6 +89,10 @@ export function usePatients(facilityId?: string | null) {
   };
 
   const updatePatient = async (patientId: string, data: Partial<Patient>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id) throw new Error('Not authenticated');
     
     // Sanitize payload to strip undefined fields (which Firestore rejects)

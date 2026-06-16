@@ -6,7 +6,7 @@ import type { Patient } from '@/lib/firebase/types';
 import { DEMO_PATIENTS } from '@/lib/demoData';
 
 export function usePatient(patientId: string) {
-  const { organization } = useAuth();
+  const { organization, isReadOnly } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +41,10 @@ export function usePatient(patientId: string) {
   }, [organization?.id, patientId]);
 
   const updatePatient = async (data: Partial<Patient>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !patientId) throw new Error('Not authenticated');
     const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
     return await setDoc(patientRef, {

@@ -2,15 +2,8 @@
 // Quro — Master Demo Seeding Engine
 // Populates the "Platinum Health Hub" with realistic clinical data
 // ============================================================
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  deleteDoc,
-  getDocs
-} from 'firebase/firestore';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { Bed, Room, VitalSign } from '../lib/firebase/types';
@@ -18,17 +11,48 @@ import { Bed, Room, VitalSign } from '../lib/firebase/types';
 // Load env vars
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
+// Initialize firebase-admin using application default credentials (ADC) or environmental project ID
+const app = initializeApp({
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quro-13d98'
+});
 const db = getFirestore(app);
+
+// Mock Firebase Client SDK Firestore functions using Admin SDK under the hood
+function collection(dbInstance: any, ...pathSegments: string[]) {
+  if (dbInstance === db) {
+    return db.collection(pathSegments.join('/'));
+  }
+  return dbInstance.collection(pathSegments.join('/'));
+}
+
+function doc(dbInstance: any, ...pathSegments: string[]) {
+  if (dbInstance === db) {
+    return db.doc(pathSegments.join('/'));
+  }
+  // When dbInstance is a CollectionReference
+  const id = pathSegments[0];
+  return id ? dbInstance.doc(id) : dbInstance.doc();
+}
+
+async function setDoc(docRef: any, data: any, options?: any) {
+  return docRef.set(data, options || {});
+}
+
+async function deleteDoc(docRef: any) {
+  return docRef.delete();
+}
+
+async function getDocs(collectionQuery: any) {
+  const snapshot = await collectionQuery.get();
+  return {
+    docs: snapshot.docs.map((d: any) => ({
+      id: d.id,
+      ref: d.ref,
+      data: () => d.data()
+    })),
+    empty: snapshot.empty
+  };
+}
 
 const ORG_ID = 'mq-demo-org';
 const FACILITY_ID = 'platinum-health-hub';
@@ -86,6 +110,8 @@ async function seed() {
       id: ORG_ID,
       name: 'ModernQure Demo Org',
       subscription_status: 'active',
+      is_active: true,
+      is_readonly: true,
       created_at: new Date().toISOString()
     });
     // 1. Create Facility
@@ -121,9 +147,10 @@ async function seed() {
     const rooms: Room[] = [];
 
     for (const item of setup) {
-      const roomRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms'));
+      const roomId = `room-${item.room}`;
+      const roomRef = doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'rooms', roomId);
       const roomData: Room = {
-        id: roomRef.id,
+        id: roomId,
         org_id: ORG_ID,
         facility_id: FACILITY_ID,
         name: `Room ${item.room}`,
@@ -135,10 +162,11 @@ async function seed() {
       rooms.push(roomData);
 
       for (const b of item.beds) {
-        const bedRef = doc(collection(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds'));
+        const bedId = `bed-${item.room}-${b.toLowerCase()}`;
+        const bedRef = doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds', bedId);
         const bedData: Bed = {
-          id: bedRef.id,
-          room_id: roomRef.id,
+          id: bedId,
+          room_id: roomId,
           facility_id: FACILITY_ID,
           org_id: ORG_ID,
           name: `Bed ${b}`,
@@ -153,6 +181,7 @@ async function seed() {
     // 3. Clinical Demo Patients
     const demoPatients = [
       { 
+        id: 'margaret-thompson',
         first_name: 'Margaret', last_name: 'Thompson', mrn: 'MRN-001', code: 'dnr', status: 'Serious', monitoring: true, 
         dob: '1938-11-12', ssn: '4412', gender: 'female', room_number: '101-A',
         allergies: ['Penicillin', 'Sulfa'], 
@@ -164,9 +193,11 @@ async function seed() {
           { generic: 'Furosemide', brand: 'Lasix', strength: '40mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Fluid retention' },
           { generic: 'Warfarin', brand: 'Coumadin', strength: '5mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '18:00', indication: 'Anticoagulation' },
           { generic: 'Digoxin', brand: 'Lanoxin', strength: '125mcg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Heart rate control' }
-        ]
+        ],
+        note_content: 'Resident resting in bed with head of bed elevated 30 degrees. Oxygen at 2L/NC, pulse oximetry showing 88-90% on room air, currently 92% on oxygen. Heart rate is 112 bpm, irregular rhythm. No complaints of chest pain, but mild dyspnea on exertion noted when transferring to chair. Attending physician notified of HR.'
       },
       { 
+        id: 'robert-chen',
         first_name: 'Robert', last_name: 'Chen', mrn: 'MRN-002', code: 'full', status: 'Stable', monitoring: false,
         dob: '1945-06-22', ssn: '1092', gender: 'male', room_number: '101-B',
         allergies: ['Latex'], 
@@ -179,9 +210,11 @@ async function seed() {
           { generic: 'Lisinopril', brand: 'Zestril', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Hypertension' },
           { generic: 'Atorvastatin', brand: 'Lipitor', strength: '20mg', dose: '1 tab', route: 'PO', frequency: 'QHS', time: '21:00', indication: 'Cholesterol' },
           { generic: 'Gabapentin', brand: 'Neurontin', strength: '300mg', dose: '1 cap', route: 'PO', frequency: 'TID', time: '09:00, 14:00, 20:00', indication: 'Nerve pain' }
-        ]
+        ],
+        note_content: 'Patient is alert and oriented x3. Fasting blood glucose recorded at 118 mg/dL before breakfast. Metformin administered as scheduled. Patient reports mild numbness in bilateral lower extremities (consistent with peripheral neuropathy). No new skin breakdown noted. Compliant with diet.'
       },
       { 
+        id: 'eleanor-vance',
         first_name: 'Eleanor', last_name: 'Vance', mrn: 'MRN-003', code: 'dnr_dni', status: 'Stable', monitoring: false,
         dob: '1942-03-08', ssn: '8832', gender: 'female', room_number: '102-A',
         allergies: ['None Reported'], 
@@ -194,9 +227,11 @@ async function seed() {
           { generic: 'Sertraline', brand: 'Zoloft', strength: '50mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Anxiety', is_psychotropic: true },
           { generic: 'Memantine', brand: 'Namenda', strength: '10mg', dose: '1 tab', route: 'PO', frequency: 'BID', time: '09:00, 18:00', indication: 'Dementia' },
           { generic: 'Quetiapine', brand: 'Seroquel', strength: '25mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Agitation', is_psychotropic: true }
-        ]
+        ],
+        note_content: 'Resident resting in room. Alert to self, but disoriented to time and place. Intermittent anxiety noted during morning care; redirected successfully by staff. Tolerable oral intake (consumed 75% of breakfast). Seroquel administered as PRN for agitation yesterday evening with good effect.'
       },
       { 
+        id: 'arthur-morgan',
         first_name: 'Arthur', last_name: 'Morgan', mrn: 'MRN-004', code: 'full', status: 'Serious', monitoring: true,
         dob: '1950-08-15', ssn: '2214', gender: 'male', room_number: '102-B',
         allergies: ['Aspirin'], 
@@ -209,9 +244,11 @@ async function seed() {
           { generic: 'Ceftriaxone', brand: 'Rocephin', strength: '1g', dose: '1g', route: 'IV', frequency: 'Daily', time: '10:00', indication: 'Bacterial infection' },
           { generic: 'Prednisone', brand: 'Deltasone', strength: '20mg', dose: '2 tabs', route: 'PO', frequency: 'Daily', time: '08:00', indication: 'Inflammation' },
           { generic: 'Spiriva', brand: 'Tiotropium', strength: '18mcg', dose: '1 cap inhaled', route: 'INH', frequency: 'Daily', time: '08:00', indication: 'COPD maintenance' }
-        ]
+        ],
+        note_content: 'Resident experiencing productive cough with thick yellow sputum. Respiratory rate elevated at 28 breaths/min. Lung sounds reveal crackles in right lower lobe. Temperature is 100.2 F. Attending physician notified; Ceftriaxone IV administered as ordered. Oxygen increased to 3L/NC to maintain SpO2 >92%.'
       },
       { 
+        id: 'sarah-jenkins',
         first_name: 'Sarah', last_name: 'Jenkins', mrn: 'MRN-005', code: 'full', status: 'Stable', monitoring: false,
         dob: '1948-12-01', ssn: '5521', gender: 'female', room_number: '103-A',
         allergies: ['Codeine'], 
@@ -224,9 +261,11 @@ async function seed() {
           { generic: 'Omeprazole', brand: 'Prilosec', strength: '20mg', dose: '1 cap', route: 'PO', frequency: 'Daily', time: '07:00', indication: 'Acid reflux' },
           { generic: 'Folic Acid', brand: 'Folvite', strength: '1mg', dose: '1 tab', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Supplementation' },
           { generic: 'Adalimumab', brand: 'Humira', strength: '40mg', dose: '40mg', route: 'SQ', frequency: 'Every 2 Weeks', time: '09:00', indication: 'Autoimmune' }
-        ]
+        ],
+        note_content: 'Resident reports dry eyes and morning stiffness in bilateral hands. ROM exercises completed with physical therapy. Compliant with medication regimen. Appetite is good. GERD symptoms well-controlled on Omeprazole. No acute distress.'
       },
       { 
+        id: 'victor-dumont',
         first_name: 'Victor', last_name: 'Dumont', mrn: 'MRN-006', code: 'comfort', status: 'Stable', monitoring: false,
         dob: '1935-01-30', ssn: '9901', gender: 'male', room_number: '104-A',
         allergies: ['None Reported'], 
@@ -239,25 +278,23 @@ async function seed() {
           { generic: 'Lorazepam', brand: 'Ativan', strength: '0.5mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Agitation', is_psychotropic: true },
           { generic: 'Docusate Sodium', brand: 'Colace', strength: '100mg', dose: '1 cap', route: 'PO', frequency: 'Daily', time: '09:00', indication: 'Stool softener' },
           { generic: 'Haloperidol', brand: 'Haldol', strength: '1mg', dose: '1 tab', route: 'PO', frequency: 'PRN', time: 'PRN', indication: 'Delirium', is_psychotropic: true }
-        ]
+        ],
+        note_content: 'Resident resting comfortably in bed. Palliative care team reviewed pain medication. Resident reports pain level 3/10 (down from 6/10) after Morphine administration. Affect remains flat, but cooperative with care. Comfort measures maintained.'
       },
     ];
 
     for (let i = 0; i < demoPatients.length; i++) {
       const p = demoPatients[i];
-      const bed = beds[i];
-      if (!bed) continue;
+      const roomId = `room-${p.room_number.split('-')[0]}`;
+      const bedId = `bed-${p.room_number.toLowerCase()}`;
       
-      const room = rooms.find(r => r.id === bed.room_id);
-      if (!room) continue;
-
-      const patientRef = doc(collection(db, 'organizations', ORG_ID, 'patients'));
+      const patientRef = doc(db, 'organizations', ORG_ID, 'patients', p.id);
       const patientData = {
-        id: patientRef.id,
+        id: p.id,
         org_id: ORG_ID,
         facility_id: FACILITY_ID,
-        room_id: room.id,
-        bed_id: bed.id,
+        room_id: roomId,
+        bed_id: bedId,
         mrn: p.mrn,
         first_name: p.first_name,
         last_name: p.last_name,
@@ -283,21 +320,26 @@ async function seed() {
       console.log(`👤 Seeded Patient: ${p.first_name} ${p.last_name} [${p.mrn}]`);
       
       // Update Bed status
-      await setDoc(doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds', bed.id), {
-        ...bed,
-        patient_id: patientRef.id,
-        status: 'occupied'
+      await setDoc(doc(db, 'organizations', ORG_ID, 'facilities', FACILITY_ID, 'beds', bedId), {
+        id: bedId,
+        room_id: roomId,
+        facility_id: FACILITY_ID,
+        org_id: ORG_ID,
+        name: `Bed ${p.room_number.split('-')[1]}`,
+        patient_id: p.id,
+        status: 'occupied',
+        created_at: new Date().toISOString()
       });
 
       // 4. Create Vitals history
-      const vitalsRef = collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'vital_signs');
+      const vitalsRef = collection(db, 'organizations', ORG_ID, 'patients', p.id, 'vital_signs');
       for (let h = 0; h < 5; h++) {
         const timeOffset = h * 4 * 60 * 60 * 1000;
         const recorded_at = new Date(Date.now() - timeOffset).toISOString();
         const isLatest = h === 0;
         const vitalData: Partial<VitalSign> = {
           org_id: ORG_ID,
-          patient_id: patientRef.id,
+          patient_id: p.id,
           recorded_by: 'demo-staff-member',
           temperature: 98.2 + (Math.random() * 0.8),
           pulse: 72 + Math.floor(Math.random() * 12),
@@ -346,13 +388,28 @@ async function seed() {
         }
       }
 
+      // 4b. Seed Progress Note directly in Firestore
+      const notesRef = collection(db, 'organizations', ORG_ID, 'patients', p.id, 'progress_notes');
+      const noteDoc = doc(notesRef);
+      await setDoc(noteDoc, {
+        id: noteDoc.id,
+        org_id: ORG_ID,
+        patient_id: p.id,
+        authored_by: 'demo-staff-member',
+        type: 'shift_assessment',
+        content: p.note_content,
+        status: 'SIGNED',
+        created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        updated_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+      });
+
       // 5. Seed Medications & MAR
       for (const med of p.meds) {
-        const medRef = doc(collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'medications'));
+        const medRef = doc(collection(db, 'organizations', ORG_ID, 'patients', p.id, 'medications'));
         const medData = {
           id: medRef.id,
           org_id: ORG_ID,
-          patient_id: patientRef.id,
+          patient_id: p.id,
           generic_name: med.generic,
           brand_name: med.brand,
           strength: med.strength,
@@ -370,7 +427,7 @@ async function seed() {
         await setDoc(medRef, medData);
 
         // Seed administrations for the last 24 hours
-        const adminRef = collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'mar_entries');
+        const adminRef = collection(db, 'organizations', ORG_ID, 'patients', p.id, 'mar_entries');
         const times = medData.frequency_times;
         for (const t of times) {
           if (t === 'PRN') continue;
@@ -383,7 +440,7 @@ async function seed() {
             await setDoc(aDoc, {
               id: aDoc.id,
               org_id: ORG_ID,
-              patient_id: patientRef.id,
+              patient_id: p.id,
               medication_id: medRef.id,
               administered_by: 'demo-staff-member',
               scheduled_date: adminDate.toISOString().split('T')[0],
@@ -397,7 +454,7 @@ async function seed() {
       }
 
       // 6. Seed Clinical Orders
-      const ordersRef = collection(db, 'organizations', ORG_ID, 'patients', patientRef.id, 'provider_orders');
+      const ordersRef = collection(db, 'organizations', ORG_ID, 'patients', p.id, 'provider_orders');
       const orders = [
         { type: 'medication', text: `Verify response to ${p.meds[0].generic}`, priority: 'routine' },
         { type: 'lab', text: 'Weekly metabolic panel every Tuesday', priority: 'routine' },
@@ -408,7 +465,7 @@ async function seed() {
         await setDoc(oDoc, {
           id: oDoc.id,
           org_id: ORG_ID,
-          patient_id: patientRef.id,
+          patient_id: p.id,
           facility_id: FACILITY_ID,
           order_type: order.type,
           order_text: order.text,

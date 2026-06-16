@@ -22,7 +22,7 @@ import type { VitalSign } from '@/lib/firebase/types';
 import { DEMO_VITALS } from '@/lib/demoData';
 
 export function useVitals(patientId: string) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [vitals, setVitals] = useState<VitalSign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,10 @@ export function useVitals(patientId: string) {
   }, [staff?.org_id, patientId]);
 
   const recordVitals = async (data: Omit<VitalSign, 'id' | 'org_id' | 'patient_id' | 'recorded_by' | 'created_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const vitalsRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'vital_signs');

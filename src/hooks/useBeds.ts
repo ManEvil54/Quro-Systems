@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Room, Bed } from '@/lib/firebase/types';
 
 export function useBeds(facilityId: string) {
-  const { organization } = useAuth();
+  const { organization, isReadOnly } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +51,10 @@ export function useBeds(facilityId: string) {
   }, [organization?.id, facilityId]);
 
   const addRoom = async (name: string, type: Room['type']) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId) return;
     const roomsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms');
     return await addDoc(roomsRef, {
@@ -64,6 +68,10 @@ export function useBeds(facilityId: string) {
   };
 
   const addBed = async (roomId: string, name: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId) return;
     const bedsRef = collection(db, 'organizations', organization.id, 'facilities', facilityId, 'beds');
     return await addDoc(bedsRef, {
@@ -77,11 +85,19 @@ export function useBeds(facilityId: string) {
   };
 
   const deleteBed = async (bedId: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId) return;
     return await deleteDoc(doc(db, 'organizations', organization.id, 'facilities', facilityId, 'beds', bedId));
   };
 
   const deleteRoom = async (roomId: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId) return;
     // Delete room
     await deleteDoc(doc(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms', roomId));
@@ -93,6 +109,10 @@ export function useBeds(facilityId: string) {
   };
 
   const renameRoom = async (roomId: string, newName: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !facilityId) return;
     const roomRef = doc(db, 'organizations', organization.id, 'facilities', facilityId, 'rooms', roomId);
     return await updateDoc(roomRef, { name: newName });

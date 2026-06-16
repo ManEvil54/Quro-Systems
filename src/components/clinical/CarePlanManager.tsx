@@ -63,7 +63,7 @@ interface CarePlanManagerProps {
 }
 
 export default function CarePlanManager({ patient, medications }: CarePlanManagerProps) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const { 
     carePlan, 
     history,
@@ -421,7 +421,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
           </p>
           <button
             onClick={() => setShowAIIntakeDrawer(true)}
-            className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 mx-auto"
+            disabled={isReadOnly}
+            className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles size={16} />
             Generate Preliminary Care Plan
@@ -444,6 +445,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
             </div>
             <button 
               onClick={() => setShowAIIntakeDrawer(false)}
+              title="Close Intake Drawer"
+              aria-label="Close"
               className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-50 transition-all"
             >
               <X size={20} />
@@ -552,14 +555,15 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                 <>
                   <button
                     onClick={handleSaveDraftChanges}
-                    disabled={savingState || !hasUnsavedChanges}
-                    className="px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white border border-slate-700 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all"
+                    disabled={savingState || !hasUnsavedChanges || isReadOnly}
+                    className="px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white border border-slate-700 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all disabled:cursor-not-allowed"
                   >
                     {savingState ? 'Saving...' : 'Save Draft'}
                   </button>
                   <button
                     onClick={handleOpenSignModal}
-                    className="flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-slate-900 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-teal-500/20"
+                    disabled={isReadOnly}
+                    className="flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-slate-900 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                   >
                     <FileSignature size={14} />
                     Approve & Sign
@@ -570,8 +574,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                 <>
                   <button
                     onClick={handleTriggerRevision}
-                    disabled={revisingState}
-                    className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white border border-slate-700 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-slate-800/15"
+                    disabled={revisingState || isReadOnly}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white border border-slate-700 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-slate-800/15 disabled:cursor-not-allowed"
                   >
                     {revisingState ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -582,7 +586,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                   </button>
                   <button
                     onClick={handleArchivePlan}
-                    className="flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-rose-500/10"
+                    disabled={isReadOnly}
+                    className="flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-xl shadow-rose-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Archive size={14} />
                     Discontinue & Archive
@@ -608,7 +613,7 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                 const category = card.category || card.id;
                 const theme = CARE_PLAN_THEME_MAP[category] || CARE_PLAN_THEME_MAP.fallback;
                 const IconComponent = theme.icon;
-                const isLocked = carePlan.status === 'active';
+                const isLocked = carePlan.status === 'active' || isReadOnly;
 
                 return (
                   <div key={card.id} className="glass-card p-10 bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/20 animate-in fade-in duration-300">
@@ -645,6 +650,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                               value={card.focus || card.problem_statement || ''}
                               onChange={e => handleUpdateProblemStatement(card.id, e.target.value)}
                               rows={3}
+                              title="Problem Statement"
+                              placeholder="Enter problem statement..."
                               className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:outline-none focus:border-quro-teal focus:bg-white transition-all text-sm leading-relaxed"
                             />
                             <button
@@ -696,6 +703,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                       type="text"
                                       value={goalText}
                                       onChange={e => handleUpdateGoal(card.id, idx, e.target.value)}
+                                      title="Goal Outcome"
+                                      placeholder="Enter goal outcome..."
                                       className="flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm"
                                     />
                                     {typeof goal !== 'string' && (
@@ -716,6 +725,7 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                             }));
                                             setHasUnsavedChanges(true);
                                           }}
+                                          title="Goal Target Date"
                                           className="px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-xs font-mono"
                                         />
                                       </div>
@@ -723,6 +733,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                     <button
                                       onClick={() => handleDeleteGoal(card.id, idx)}
                                       type="button"
+                                      title="Delete Goal"
+                                      aria-label="Delete Goal"
                                       className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all"
                                     >
                                       <Trash2 size={14} />
@@ -773,6 +785,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                         value={intText}
                                         onChange={e => handleUpdateIntervention(card.id, idx, e.target.value)}
                                         rows={2}
+                                        title="Clinical Intervention"
+                                        placeholder="Enter clinical intervention..."
                                         className="w-full px-5 py-3 pr-12 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm leading-relaxed"
                                       />
                                       {typeof int !== 'string' && (
@@ -793,6 +807,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                               }));
                                               setHasUnsavedChanges(true);
                                             }}
+                                            title="Intervention Discipline"
+                                            placeholder="e.g. RN"
                                             className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-slate-900 font-bold text-[10px] font-mono w-32 uppercase"
                                           />
                                         </div>
@@ -809,6 +825,8 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                                     <button
                                       onClick={() => handleDeleteIntervention(card.id, idx)}
                                       type="button"
+                                      title="Delete Intervention"
+                                      aria-label="Delete Intervention"
                                       className="p-3 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-50 transition-all mt-1"
                                     >
                                       <Trash2 size={14} />
@@ -830,11 +848,13 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                           </div>
                         ) : (
                           <input
-                            type="text"
-                            value={card.schedule || ''}
-                            onChange={e => handleUpdateSchedule(card.id, e.target.value)}
-                            className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm max-w-xs"
-                          />
+                                    type="text"
+                                    value={card.schedule || ''}
+                                    onChange={e => handleUpdateSchedule(card.id, e.target.value)}
+                                    title="Protocol Schedule"
+                                    placeholder="e.g. Shiftly"
+                                    className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold text-sm max-w-xs"
+                                  />
                         )}
                       </div>
                     </div>
@@ -949,6 +969,7 @@ export default function CarePlanManager({ patient, medications }: CarePlanManage
                 <select
                   value={nurseCredential}
                   onChange={e => setNurseCredential(e.target.value)}
+                  title="Professional Credential"
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-quro-teal focus:bg-white transition-all text-sm uppercase"
                 >
                   <option value="RN">Registered Nurse (RN)</option>

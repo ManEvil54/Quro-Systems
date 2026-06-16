@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { HandoverNote } from '@/lib/firebase/types';
 
 export function useHandover(facilityId?: string) {
-  const { staff, organization } = useAuth();
+  const { staff, organization, isReadOnly } = useAuth();
   const [notes, setNotes] = useState<HandoverNote[]>([]);
   const [pendingAcks, setPendingAcks] = useState<string[]>([]); // IDs of notes not yet acked by current user
   const [loading, setLoading] = useState(true);
@@ -79,6 +79,10 @@ export function useHandover(facilityId?: string) {
   }, [organization?.id, staff?.id, facilityId]);
 
   const createNote = async (data: Omit<HandoverNote, 'id' | 'org_id' | 'authored_by' | 'created_at' | 'updated_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !staff?.id) throw new Error('Not authenticated');
     
     const notesRef = collection(db, 'organizations', organization.id, 'handover_notes');
@@ -92,6 +96,10 @@ export function useHandover(facilityId?: string) {
   };
 
   const acknowledgeNote = async (noteId: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !staff?.id) throw new Error('Not authenticated');
     
     const acksRef = collection(db, 'organizations', organization.id, 'handover_notes', noteId, 'acks');
@@ -104,6 +112,10 @@ export function useHandover(facilityId?: string) {
   };
 
   const performShiftHandshake = async (noteIds: string[]) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!organization?.id || !staff?.id) throw new Error('Not authenticated');
     
     const batch = writeBatch(db);

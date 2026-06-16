@@ -31,13 +31,14 @@ export default function MedicationList({ patientId }: Props) {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
 
-  const { staff, organization } = useAuth();
+  const { staff, organization, isReadOnly } = useAuth();
   const [medToContinue, setMedToContinue] = useState<Medication | null>(null);
   const [pinEntry, setPinEntry] = useState('');
   const [isSigning, setIsSigning] = useState(false);
 
   const handleContinueMed = async () => {
     if (!medToContinue) return;
+    if (isReadOnly) return;
     setIsSigning(true);
     try {
       // Reactivate medication order on eMAR by setting status to active, resetting start_date to today
@@ -97,7 +98,8 @@ export default function MedicationList({ patientId }: Props) {
         
         <button 
           onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center gap-2 py-2 px-4 text-sm shadow-lg shadow-teal-500/10"
+          disabled={isReadOnly}
+          className="btn-primary flex items-center gap-2 py-2 px-4 text-sm shadow-lg shadow-teal-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={16} />
           <span>Add Medication</span>
@@ -192,10 +194,12 @@ export default function MedicationList({ patientId }: Props) {
                     <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl border border-slate-100 shadow-xl py-1.5 z-30 animate-in fade-in slide-in-from-top-1 duration-200">
                       <button
                         onClick={() => {
+                          if (isReadOnly) return;
                           setEditingMed(med);
                           setActiveDropdownId(null);
                         }}
-                        className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors uppercase tracking-wider"
+                        disabled={isReadOnly}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -206,10 +210,12 @@ export default function MedicationList({ patientId }: Props) {
                       {med.status === 'active' ? (
                         <button
                           onClick={async () => {
+                            if (isReadOnly) return;
                             setActiveDropdownId(null);
                             await updateMedication(med.id, { status: 'discontinued' });
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
+                          disabled={isReadOnly}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -219,10 +225,12 @@ export default function MedicationList({ patientId }: Props) {
                       ) : (
                         <button
                           onClick={async () => {
+                            if (isReadOnly) return;
                             setActiveDropdownId(null);
                             setMedToContinue(med);
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-teal-600 hover:bg-teal-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50"
+                          disabled={isReadOnly}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-teal-600 hover:bg-teal-50 flex items-center gap-2 transition-colors uppercase tracking-wider border-t border-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg className="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

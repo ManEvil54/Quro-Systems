@@ -20,7 +20,7 @@ import type { MAREntry } from '@/lib/firebase/types';
 import { DEMO_MAR } from '@/lib/demoData';
 
 export function useMAR(patientId: string) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [entries, setEntries] = useState<MAREntry[]>([]);
   const [isSubscribing, setIsSubscribing] = useState(!!(staff?.org_id && patientId));
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +55,10 @@ export function useMAR(patientId: string) {
   }, [staff?.org_id, patientId]);
 
   const logAdministration = async (data: Partial<MAREntry>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     // Deterministic ID to prevent race-condition "Double Dosing"

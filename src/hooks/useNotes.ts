@@ -22,7 +22,7 @@ import type { ProgressNote } from '@/lib/firebase/types';
 import { DEMO_NOTES } from '@/lib/demoData';
 
 export function useNotes(patientId: string) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [notes, setNotes] = useState<ProgressNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,10 @@ export function useNotes(patientId: string) {
   }, [staff?.org_id, patientId]);
 
   const saveNote = async (data: Omit<ProgressNote, 'id' | 'org_id' | 'patient_id' | 'authored_by' | 'created_at' | 'updated_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const notesRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'progress_notes');
@@ -73,6 +77,10 @@ export function useNotes(patientId: string) {
   };
 
   const updateNote = async (noteId: string, data: Partial<ProgressNote>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const noteRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'progress_notes', noteId);

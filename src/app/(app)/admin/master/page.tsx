@@ -187,6 +187,15 @@ export default function MasterConsolePage() {
     }
   }
 
+  async function toggleOrgReadonly(orgId: string, currentStatus: boolean) {
+    try {
+      await setDoc(doc(db, 'organizations', orgId), { is_readonly: !currentStatus }, { merge: true });
+      fetchData();
+    } catch (err) {
+      console.error('Error toggling org readonly status:', err);
+    }
+  }
+
   async function handleDeleteOrg(orgId: string, orgName: string) {
     const confirm = window.confirm(`Are you sure you want to permanently delete the organization "${orgName}"?\n\nWARNING: This will permanently delete the organization record from Firestore. This action cannot be undone.`);
     if (!confirm) return;
@@ -385,6 +394,13 @@ export default function MasterConsolePage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => toggleOrgReadonly(org.id, !!org.is_readonly)}
+                        className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 ${org.is_readonly ? 'bg-amber-50/50 text-amber-600 border-amber-200/50 hover:bg-amber-100/50' : 'bg-white text-slate-400 border-slate-100 hover:text-teal-600 hover:bg-teal-50'}`}
+                      >
+                        <Lock size={12} className={org.is_readonly ? 'text-amber-500 animate-pulse' : 'text-slate-300'} />
+                        {org.is_readonly ? 'Locked' : 'Unlocked'}
+                      </button>
                       <button 
                         onClick={() => toggleOrgStatus(org.id, org.is_active)}
                         className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${org.is_active ? 'bg-white text-slate-400 border-slate-100 hover:text-amber-600 hover:bg-amber-50' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}

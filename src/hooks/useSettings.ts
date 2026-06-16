@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Organization, Facility, StaffInvitation } from '@/lib/firebase/types';
 
 export function useSettings() {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [org, setOrg] = useState<Organization | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
@@ -52,6 +52,10 @@ export function useSettings() {
   }, [staff?.org_id]);
 
   const updateOrg = async (data: Partial<Organization>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id) return;
     return await updateDoc(doc(db, 'organizations', staff.org_id), {
       ...data,
@@ -60,6 +64,10 @@ export function useSettings() {
   };
 
   const addFacility = async (data: Omit<Facility, 'id' | 'org_id' | 'created_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id) return;
     const facRef = collection(db, 'organizations', staff.org_id, 'facilities');
     return await addDoc(facRef, {
@@ -70,6 +78,10 @@ export function useSettings() {
   };
 
   const inviteStaff = async (email: string, role: string, facilityId: string) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id) return;
     const invRef = collection(db, 'organizations', staff.org_id, 'invitations');
     return await addDoc(invRef, {

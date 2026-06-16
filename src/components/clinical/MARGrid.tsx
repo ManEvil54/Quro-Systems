@@ -25,7 +25,7 @@ interface Props {
 export default function MARGrid({ patientId }: Props) {
   const { medications, loading: medsLoading } = useMedications(patientId);
   const { entries, loading: marLoading, logAdministration } = useMAR(patientId);
-  const { organization } = useAuth();
+  const { organization, isReadOnly } = useAuth();
   const { orders } = useOrders(patientId);
   
   const isElectronicMode = organization?.clinical_settings?.emar_mode !== false;
@@ -233,7 +233,9 @@ export default function MARGrid({ patientId }: Props) {
                             {isElectronicMode && (
                               <button
                                 title="Log PRN dose"
+                                disabled={isReadOnly}
                                 onClick={async () => {
+                                  if (isReadOnly) return;
                                   const defaultTime = new Date().toLocaleTimeString('en-US', {
                                     hour12: false,
                                     hour: '2-digit',
@@ -252,7 +254,7 @@ export default function MARGrid({ patientId }: Props) {
                                     alert(`Error: ${(err as Error).message}`);
                                   }
                                 }}
-                                className="w-5 h-5 rounded-full flex items-center justify-center border border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400 text-[10px] font-black cursor-pointer transition-colors"
+                                className="w-5 h-5 rounded-full flex items-center justify-center border border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400 text-[10px] font-black cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +
                               </button>
@@ -265,15 +267,15 @@ export default function MARGrid({ patientId }: Props) {
                               <button
                                 key={time}
                                 title={isElectronicMode ? `${time} - Click to log` : `${time} - Paper MAR Only`}
-                                onClick={() => isElectronicMode && !action && handleLog(med, dateStr, time)}
-                                disabled={!isElectronicMode || !!action}
+                                onClick={() => isElectronicMode && !action && !isReadOnly && handleLog(med, dateStr, time)}
+                                disabled={!isElectronicMode || !!action || isReadOnly}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
                                   action === 'given' ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20' :
                                   action === 'refused' ? 'bg-red-500 text-white' :
                                   action === 'held' ? 'bg-amber-500 text-white' :
                                   logging?.medId === med.id && logging?.date === dateStr && logging?.time === time
                                     ? 'bg-amber-500 text-white animate-pulse'
-                                    : isElectronicMode
+                                    : isElectronicMode && !isReadOnly
                                       ? 'bg-slate-100 text-slate-400 hover:bg-slate-200 cursor-pointer'
                                       : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                                 }`}
@@ -322,7 +324,9 @@ export default function MARGrid({ patientId }: Props) {
                               <button
                                 type="button"
                                 title={`DAY shift score for ${behavior}`}
+                                disabled={isReadOnly}
                                 onClick={() => {
+                                  if (isReadOnly) return;
                                   setActiveCell({
                                     rowId: virtualId,
                                     label: `${behavior} (DAY)`,
@@ -335,7 +339,9 @@ export default function MARGrid({ patientId }: Props) {
                                 className={`w-7 h-6 rounded flex items-center justify-center font-bold text-[9px] transition-all ${
                                   dayScore !== ''
                                     ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
+                                    : isReadOnly
+                                      ? 'bg-slate-50 text-slate-300 border border-slate-150 cursor-not-allowed'
+                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
                                 }`}
                               >
                                 {dayScore !== '' ? `D:${dayScore}` : 'D'}
@@ -344,7 +350,9 @@ export default function MARGrid({ patientId }: Props) {
                               <button
                                 type="button"
                                 title={`NIGHT shift score for ${behavior}`}
+                                disabled={isReadOnly}
                                 onClick={() => {
+                                  if (isReadOnly) return;
                                   setActiveCell({
                                     rowId: virtualId,
                                     label: `${behavior} (NIGHT)`,
@@ -357,7 +365,9 @@ export default function MARGrid({ patientId }: Props) {
                                 className={`w-7 h-6 rounded flex items-center justify-center font-bold text-[9px] transition-all ${
                                   nightScore !== ''
                                     ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
+                                    : isReadOnly
+                                      ? 'bg-slate-50 text-slate-300 border border-slate-150 cursor-not-allowed'
+                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
                                 }`}
                               >
                                 {nightScore !== '' ? `N:${nightScore}` : 'N'}
@@ -393,7 +403,9 @@ export default function MARGrid({ patientId }: Props) {
                             <button
                               type="button"
                               title={`AIMS score for ${area}`}
+                              disabled={isReadOnly}
                               onClick={() => {
+                                if (isReadOnly) return;
                                 setActiveCell({
                                   rowId: virtualId,
                                   label: area,
@@ -406,7 +418,9 @@ export default function MARGrid({ patientId }: Props) {
                               className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs transition-all ${
                                 score !== ''
                                   ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                                  : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
+                                  : isReadOnly
+                                    ? 'bg-slate-50 text-slate-300 border border-slate-150 cursor-not-allowed'
+                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-150 hover:border-slate-350 cursor-pointer'
                               }`}
                             >
                               {score !== '' ? score : '-'}
@@ -482,7 +496,9 @@ export default function MARGrid({ patientId }: Props) {
                 </button>
                 <button
                   type="button"
+                  disabled={isReadOnly}
                   onClick={async () => {
+                    if (isReadOnly) return;
                     if (activeScore === '') {
                       alert('Please select a score.');
                       return;
@@ -501,7 +517,7 @@ export default function MARGrid({ patientId }: Props) {
                       alert(`Error logging score: ${(err as Error).message}`);
                     }
                   }}
-                  className="flex-1 py-3 bg-slate-900 hover:bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-widest transition-all animate-pulse"
+                  className="flex-1 py-3 bg-slate-900 hover:bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save Score
                 </button>

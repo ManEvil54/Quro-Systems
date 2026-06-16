@@ -116,7 +116,7 @@ interface Props {
 }
 
 export default function OrderAcknowledgment({ patientId }: Props) {
-  const { staff, organization } = useAuth();
+  const { staff, organization, isReadOnly } = useAuth();
   const [pendingOrders, setPendingOrders] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -145,6 +145,7 @@ export default function OrderAcknowledgment({ patientId }: Props) {
 
   async function acknowledgeOrder(order: Medication) {
     if (!staff || !organization) return;
+    if (isReadOnly) return;
     try {
       // 1. Update ProviderOrder Status to Acknowledged
       await updateDoc(
@@ -206,8 +207,9 @@ export default function OrderAcknowledgment({ patientId }: Props) {
             </div>
 
             <button 
+              disabled={isReadOnly}
               onClick={() => acknowledgeOrder(order)}
-              className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-900/20 transition-all flex items-center justify-center gap-2"
+              className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <ShieldCheck size={18} />
               VERIFY & ACTIVATE ON MAR

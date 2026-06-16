@@ -20,7 +20,8 @@ import type { Staff, StaffRole } from '@/lib/firebase/types';
 interface AuthContextType {
   user: User | null;
   staff: Staff | null;
-  organization: { id: string; name: string; max_facilities?: number; clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
+  organization: { id: string; name: string; max_facilities?: number; is_readonly?: boolean; clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
+  isReadOnly: boolean;
   loading: boolean;
   isImpersonating: boolean;
   impersonatedDonName: string | null;
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{
     user: User | null;
     staff: Staff | null;
-    organization: { id: string, name: string, max_facilities?: number, clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
+    organization: { id: string, name: string, max_facilities?: number, is_readonly?: boolean, clinical_settings?: { emar_mode: boolean; mar_template_psych?: boolean; mar_template_weights?: boolean; mar_template_sleep?: boolean; require_pin_for_narcotics?: boolean } } | null;
     isImpersonating: boolean;
     impersonatedDonName: string | null;
     activeFacility: { id: string, name: string, bed_count?: number | null } | null;
@@ -105,9 +106,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: orgDoc.id, 
           name: orgDoc.data().name, 
           max_facilities: orgDoc.data().max_facilities,
-          clinical_settings: orgDoc.data().clinical_settings 
+          clinical_settings: orgDoc.data().clinical_settings,
+          is_readonly: orgDoc.data().is_readonly || false
         } 
-      : { id: orgId, name: 'Quro Facility', max_facilities: 3 };
+      : { id: orgId, name: 'Quro Facility', max_facilities: 3, is_readonly: false };
 
     // Handle Active Facility initialization
     let activeFacility = null;
@@ -147,7 +149,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: orgDoc.id, 
         name: orgDoc.data().name, 
         max_facilities: orgDoc.data().max_facilities,
-        clinical_settings: orgDoc.data().clinical_settings
+        clinical_settings: orgDoc.data().clinical_settings,
+        is_readonly: orgDoc.data().is_readonly || false
       };
 
       let staffData: Staff | null = null;
@@ -412,10 +415,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = useCallback(() => setState((s) => ({ ...s, error: null })), []);
 
+  const isReadOnly = useMemo(() => {
+    if (state.staff?.role === 'SURVEYOR') return true;
+    return !!state.organization?.is_readonly;
+  }, [state.staff?.role, state.organization?.is_readonly]);
+
   const contextValue = useMemo(() => ({
     user: state.user,
     staff: state.staff,
     organization: state.organization,
+    isReadOnly,
     isImpersonating: state.isImpersonating,
     impersonatedDonName: state.impersonatedDonName,
     activeFacility: state.activeFacility,
@@ -432,6 +441,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     state.user,
     state.staff,
     state.organization,
+    isReadOnly,
     state.isImpersonating,
     state.impersonatedDonName,
     state.activeFacility,

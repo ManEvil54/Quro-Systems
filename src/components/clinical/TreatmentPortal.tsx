@@ -56,7 +56,7 @@ const mapOrderToTreatment = (order: any): Treatment => {
 };
 
 export default function TreatmentPortal({ patientId, patientRoom, patientName }: Props) {
-  const { staff, organization, activeFacility } = useAuth();
+  const { staff, organization, activeFacility, isReadOnly } = useAuth();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -117,6 +117,7 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!staff || !organization) return;
+    if (isReadOnly) return;
     setIsSaving(true);
 
     try {
@@ -156,6 +157,7 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
 
   async function handlePerformTreatment(treatment: Treatment) {
     if (!staff || !organization) return;
+    if (isReadOnly) return;
     
     try {
       const entry: Partial<TreatmentEntry> = {
@@ -226,8 +228,9 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
         </div>
         {!isAdding && (
           <button 
+            disabled={isReadOnly}
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 disabled:opacity-50"
           >
             <Plus size={16} />
             Add Treatment
@@ -334,8 +337,8 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
             </button>
             <button 
               type="submit"
-              disabled={isSaving}
-              className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 flex items-center gap-3"
+              disabled={isSaving || isReadOnly}
+              className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 flex items-center gap-3 disabled:opacity-50"
             >
               <ShieldCheck size={18} className="text-teal-400" />
               {isSaving ? 'Saving...' : 'Authorize Treatment'}
@@ -379,8 +382,9 @@ export default function TreatmentPortal({ patientId, patientRoom, patientName }:
 
               <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-4">
                 <button 
+                  disabled={isReadOnly}
                   onClick={() => handlePerformTreatment(t)}
-                  className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                  className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
                 >
                   Document Treatment
                 </button>

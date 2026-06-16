@@ -106,7 +106,7 @@ interface Props {
 }
 
 export default function PhysicianOrderPortal({ patientId }: Props) {
-  const { staff, organization, activeFacility } = useAuth();
+  const { staff, organization, activeFacility, isReadOnly } = useAuth();
   const [providerOrders, setProviderOrders] = useState<ProviderOrder[]>([]);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<'signed' | 'draft'>('signed');
@@ -604,7 +604,12 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
           {!isOrdering && (
             <button 
               onClick={() => setIsOrdering(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-quro-teal text-white rounded-2xl text-xs font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-900/20"
+              disabled={isReadOnly}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-bold transition-all shadow-xl ${
+                isReadOnly 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                  : 'bg-quro-teal text-white hover:bg-teal-700 shadow-teal-900/20'
+              }`}
             >
               <FilePlus size={18} />
               WRITE NEW ORDER
@@ -664,8 +669,12 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
 
                     <button
                       onClick={() => handleCoSignOrder(order.id)}
-                      disabled={isSaving}
-                      className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-teal-900/15 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                      disabled={isSaving || isReadOnly}
+                      className={`w-full md:w-auto px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                        isReadOnly 
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                          : 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-900/15 hover:scale-[1.02] active:scale-[0.98]'
+                      }`}
                     >
                       <ShieldCheck size={16} />
                       Co-Sign Order
@@ -1055,18 +1064,26 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                 <button 
                   type="submit"
                   onClick={() => setTargetStatus('signed')}
-                  disabled={isSaving || (newOrder.order_type === 'telephone' && !newOrder.physician_id)}
-                  className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
+                  disabled={isSaving || isReadOnly || (newOrder.order_type === 'telephone' && !newOrder.physician_id)}
+                  className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] transition-all flex items-center justify-center gap-3 ${
+                    isReadOnly 
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                      : 'bg-quro-charcoal text-white hover:bg-slate-800 shadow-xl'
+                  }`}
                 >
-                  <ShieldCheck size={18} className="text-quro-teal" />
+                  <ShieldCheck size={18} className={isReadOnly ? 'text-slate-400' : 'text-quro-teal'} />
                   {isSaving && targetStatus === 'signed' ? 'SIGNING...' : (newOrder.order_type === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT')}
                 </button>
 
                 <button 
                   type="submit"
                   onClick={() => setTargetStatus('draft')}
-                  disabled={isSaving}
-                  className="flex-1 bg-teal-50 text-quro-teal py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-teal-100 transition-all flex items-center justify-center gap-3 border border-teal-200"
+                  disabled={isSaving || isReadOnly}
+                  className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] transition-all flex items-center justify-center gap-3 border ${
+                    isReadOnly 
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none' 
+                      : 'bg-teal-50 text-quro-teal hover:bg-teal-100 border-teal-200'
+                  }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -1226,18 +1243,26 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                     <button 
                       type="submit"
                       onClick={() => setTargetStatus('signed')}
-                      disabled={isSaving || (treatmentOrderMethod === 'telephone' && !treatmentPhysicianId)}
-                      className="flex-1 bg-quro-charcoal text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3"
+                      disabled={isSaving || isReadOnly || (treatmentOrderMethod === 'telephone' && !treatmentPhysicianId)}
+                      className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] transition-all flex items-center justify-center gap-3 ${
+                        isReadOnly 
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                          : 'bg-quro-charcoal text-white hover:bg-slate-800 shadow-xl'
+                      }`}
                     >
-                      <ShieldCheck size={18} className="text-quro-teal" />
+                      <ShieldCheck size={18} className={isReadOnly ? 'text-slate-400' : 'text-quro-teal'} />
                       {isSaving && targetStatus === 'signed' ? 'SIGNING...' : (treatmentOrderMethod === 'telephone' ? 'SIGN AS T.O.' : 'SIGN & COMMIT')}
                     </button>
 
                     <button 
                       type="submit"
                       onClick={() => setTargetStatus('draft')}
-                      disabled={isSaving}
-                      className="flex-1 bg-teal-50 text-quro-teal py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] hover:bg-teal-100 transition-all flex items-center justify-center gap-3 border border-teal-200"
+                      disabled={isSaving || isReadOnly}
+                      className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.15em] transition-all flex items-center justify-center gap-3 border ${
+                        isReadOnly 
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none' 
+                          : 'bg-teal-50 text-quro-teal hover:bg-teal-100 border-teal-200'
+                      }`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />

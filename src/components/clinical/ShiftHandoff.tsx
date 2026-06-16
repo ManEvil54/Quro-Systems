@@ -65,7 +65,7 @@ interface Props {
 }
 
 export default function ShiftHandoff({ patientId }: Props) {
-  const { staff, organization } = useAuth();
+  const { staff, organization, isReadOnly } = useAuth();
   const [entries, setEntries] = useState<HandoffEntry[]>([]);
   const [loading, setLoading] = useState(!!(organization && patientId));
   const [isAdding, setIsAdding] = useState(false);
@@ -137,6 +137,7 @@ export default function ShiftHandoff({ patientId }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!staff || !organization) return;
+    if (isReadOnly) return;
     setIsSaving(true);
 
     try {
@@ -204,6 +205,7 @@ export default function ShiftHandoff({ patientId }: Props) {
 
   async function signOff(entryId: string) {
     if (!staff || !organization) return;
+    if (isReadOnly) return;
     try {
       await updateDoc(
         doc(db, 'organizations', organization.id, 'patients', patientId, 'handoff_logs', entryId),
@@ -234,8 +236,9 @@ export default function ShiftHandoff({ patientId }: Props) {
         </div>
         {!isAdding && (
           <button 
+            disabled={isReadOnly}
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-quro-teal text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-900/20"
+            className="flex items-center gap-2 px-4 py-2 bg-quro-teal text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-900/20 disabled:opacity-50"
           >
             <Plus size={16} />
             NEW HANDOFF REPORT
@@ -384,7 +387,7 @@ export default function ShiftHandoff({ patientId }: Props) {
               <div className="flex gap-3 pt-4">
                 <button 
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isReadOnly}
                   className="flex-1 bg-quro-teal text-white py-3 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Save size={18} />
@@ -440,8 +443,9 @@ export default function ShiftHandoff({ patientId }: Props) {
               </div>
               {!entry.is_signed_off && staff?.id !== entry.outgoing_nurse_id && (
                 <button 
+                  disabled={isReadOnly}
                   onClick={() => signOff(entry.id)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black shadow-lg shadow-emerald-900/10 flex items-center gap-2"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black shadow-lg shadow-emerald-900/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   <UserCheck size={14} />
                   SIGN & ACKNOWLEDGE

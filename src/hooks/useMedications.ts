@@ -112,9 +112,8 @@ const mapOrderToMedication = (order: ProviderOrder, staffOrgId: string, patientI
     rxcui: order.rxcui || null,
   };
 };
-
 export function useMedications(patientId: string) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,6 +170,10 @@ export function useMedications(patientId: string) {
   }, [staff?.org_id, patientId]);
 
   const addMedication = async (data: any) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context parameter missing');
     
     const ordersRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders');
@@ -180,6 +183,7 @@ export function useMedications(patientId: string) {
       ? `PRN (every ${data.prn_interval || '8 hours'} as needed for ${data.prn_reason || data.indication || 'pain'})` 
       : data.frequency;
     const orderText = `${data.generic_name} ${data.strength} - Dose: ${data.dose} (${data.dosage}) via ${data.route} ${frequencyText}${data.special_instructions ? `. Special Instructions: ${data.special_instructions}` : ''}`;
+ 
 
     const isTelephone = data.order_type === 'telephone' || !data.order_type;
 
@@ -226,6 +230,10 @@ export function useMedications(patientId: string) {
   };
 
   const updateMedication = async (medicationId: string, data: any) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context parameter missing');
     
     const orderRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders', medicationId);

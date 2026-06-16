@@ -46,6 +46,7 @@ export interface Organization {
   max_facilities?: number;
   subscription_tier?: 'standard' | 'premium' | 'enterprise';
   is_active: boolean;
+  is_readonly?: boolean;
   clinical_settings?: {
     mar_template_psych: boolean;
     mar_template_weights: boolean;

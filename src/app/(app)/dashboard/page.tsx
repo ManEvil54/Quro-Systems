@@ -33,7 +33,7 @@ import { db } from '@/lib/firebase/client';
 type DashboardPatient = NonNullable<DashboardBed['patient']>;
 
 export default function DashboardPage() {
-  const { user, organization, staff, activeFacility, isImpersonating } = useAuth();
+  const { user, organization, staff, activeFacility, isImpersonating, isReadOnly } = useAuth();
   const [selectedPatientForVitals, setSelectedPatientForVitals] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForRT, setSelectedPatientForRT] = useState<DashboardBed['patient'] | null>(null);
   const [selectedPatientForGT, setSelectedPatientForGT] = useState<DashboardBed['patient'] | null>(null);
@@ -298,6 +298,7 @@ export default function DashboardPage() {
   const handleVitalsSubmit = async (data: Record<string, string | number | boolean | null>) => {
     const patientId = data.patient_id as string;
     if (!organization?.id || !patientId) return;
+    if (isReadOnly) return;
     
     const vitalsRef = collection(db, 'organizations', organization.id, 'patients', patientId, 'vital_signs');
     const patientRef = doc(db, 'organizations', organization.id, 'patients', patientId);
@@ -352,6 +353,7 @@ export default function DashboardPage() {
 
   const handleRTSubmit = async () => {
     if (!organization?.id || !activeFacility?.id || !selectedPatientForRT) return;
+    if (isReadOnly) return;
 
     try {
       const roomStr = getPatientRoom(selectedPatientForRT.id);
@@ -389,6 +391,7 @@ export default function DashboardPage() {
 
   const handleGTSubmit = async () => {
     if (!organization?.id || !activeFacility?.id || !selectedPatientForGT) return;
+    if (isReadOnly) return;
 
     try {
       const roomStr = getPatientRoom(selectedPatientForGT.id);
@@ -426,6 +429,22 @@ export default function DashboardPage() {
 
   return (
     <div className={`animate-in fade-in duration-700 min-h-screen bg-slate-50/30 ${isImpersonating ? 'border-t-4 border-rose-500' : ''}`}>
+      {isReadOnly && (
+        <div className="w-full bg-amber-500/10 border-b border-amber-500/30 px-8 py-3.5 flex items-center justify-between backdrop-blur-md animate-fade-in no-print">
+          <div className="flex items-center gap-3">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <p className="text-[11px] uppercase tracking-widest font-black text-amber-500 font-mono">
+              READ-ONLY SECURITY BOUNDARY ENFORCED • CENTRAL SECURITY CONTEXT ACTIVE
+            </p>
+          </div>
+          <div className="text-[9px] uppercase tracking-wider font-bold text-amber-400/70 font-mono">
+            SYSTEM ACCESS LOCKED
+          </div>
+        </div>
+      )}
       
       {staff?.role === 'SURVEYOR' && (
         <div className="no-print p-4 bg-amber-500 text-white flex items-center justify-between gap-6 shadow-xl">
@@ -529,7 +548,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {alert.severity === 'warning' && staff?.role === 'physician' && (
+                  {alert.severity === 'warning' && staff?.role === 'physician' && !isReadOnly && (
                     <button
                       onClick={async () => {
                         try {
@@ -578,7 +597,7 @@ export default function DashboardPage() {
               isSerious={bed.patient?.status === 'Serious'}
               viewType={viewType}
               showDiagnostics={isImpersonating}
-              readOnly={staff?.role === 'SURVEYOR'}
+              readOnly={isReadOnly}
               onVitalsClick={(p: DashboardPatient) => setSelectedPatientForVitals(p)}
               onRTClick={(p: DashboardPatient) => setSelectedPatientForRT(p)}
               onGTClick={(p: DashboardPatient) => setSelectedPatientForGT(p)}

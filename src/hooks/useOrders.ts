@@ -21,7 +21,7 @@ import type { ProviderOrder } from '@/lib/firebase/types';
 import { DEMO_ORDERS } from '@/lib/demoData';
 
 export function useOrders(patientId: string) {
-  const { staff } = useAuth();
+  const { staff, isReadOnly } = useAuth();
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +58,10 @@ export function useOrders(patientId: string) {
   }, [staff?.org_id, patientId]);
 
   const addOrder = async (data: Omit<ProviderOrder, 'id' | 'org_id' | 'patient_id' | 'created_at' | 'updated_at'>) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const ordersRef = collection(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders');
@@ -71,6 +75,10 @@ export function useOrders(patientId: string) {
   };
 
   const updateOrderStatus = async (orderId: string, status: ProviderOrder['status']) => {
+    if (isReadOnly) {
+      console.warn("⚠️ Transaction aborted: Active organization context or user role is restricted to READ-ONLY mode.");
+      return { success: false, error: "Read-only enforcement boundary active." };
+    }
     if (!staff?.org_id || !patientId) throw new Error('Context missing');
     
     const orderRef = doc(db, 'organizations', staff.org_id, 'patients', patientId, 'provider_orders', orderId);
