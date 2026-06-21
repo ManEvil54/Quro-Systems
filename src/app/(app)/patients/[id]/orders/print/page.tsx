@@ -20,6 +20,7 @@ interface PrintOrder {
   created_at: string;
   signed_at?: string;
   order_method?: string;
+  indication?: string;
 }
 
 function PhysicianOrderPrintContent() {
@@ -83,7 +84,8 @@ function PhysicianOrderPrintContent() {
               status: data.status || "",
               created_at: data.created_at || new Date().toISOString(),
               signed_at: data.signed_at || "",
-              order_method: data.order_method || "direct"
+              order_method: data.order_method || "direct",
+              indication: data.indication || ""
             });
           }
         } else {
@@ -106,7 +108,8 @@ function PhysicianOrderPrintContent() {
               status: data.status || "",
               created_at: data.created_at || new Date().toISOString(),
               signed_at: data.signed_at || "",
-              order_method: data.order_method || "direct"
+              order_method: data.order_method || "direct",
+              indication: data.indication || ""
             });
           });
 
@@ -202,7 +205,12 @@ function PhysicianOrderPrintContent() {
                 {order.order_type}
               </td>
               <td className="border border-black p-2 font-medium text-[9px]">
-                {order.order_text}
+                <div>{order.order_text}</div>
+                {order.indication && (
+                  <div className="text-[7.5px] font-black text-slate-500 uppercase mt-1 tracking-tight">
+                    Indication: {order.indication}
+                  </div>
+                )}
               </td>
               <td className="border border-black p-2 font-mono text-[9px]">
                 {order.ordering_physician_name}
