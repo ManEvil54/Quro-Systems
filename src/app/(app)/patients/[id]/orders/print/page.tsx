@@ -4,10 +4,8 @@
 // ============================================================
 "use client";
 
-export const dynamic = 'force-dynamic';
-
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+export const dynamic = 'force-dynamic';import React, { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { collection, query, where, getDocs, getDoc, doc, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,9 +22,11 @@ interface PrintOrder {
   order_method?: string;
 }
 
-export default function PhysicianOrderPrintPage() {
+function PhysicianOrderPrintContent() {
   const params = useParams() as { id: string };
   const { organization, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
   
   const [orders, setOrders] = useState<PrintOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function PhysicianOrderPrintPage() {
         return;
       }
       
-      console.log("[POS Print Engine] Loading print data for:", { orgId: organization.id, patientId: params.id });
+      console.log("[POS Print Engine] Loading print data for:", { orgId: organization.id, patientId: params.id, orderId });
       
       try {
         // 1. Fetch Patient Record dynamically for header card
@@ -68,32 +68,51 @@ export default function PhysicianOrderPrintPage() {
           }
         }
 
-        // 2. Query All Active / Signed / Acknowledged Orders (status !== 'draft')
-        const ordersRef = collection(db, "organizations", organization.id, "patients", params.id, "provider_orders");
-        const q = query(
-          ordersRef,
-          where("status", "!=", "draft")
-        );
-        
-        const snapshot = await getDocs(q);
         const compiledOrders: PrintOrder[] = [];
-        
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          compiledOrders.push({
-            id: doc.id,
-            order_type: data.order_type || "other",
-            order_text: data.order_text || "",
-            ordering_physician_name: data.ordering_physician_name || "Attending Physician",
-            status: data.status || "",
-            created_at: data.created_at || new Date().toISOString(),
-            signed_at: data.signed_at || "",
-            order_method: data.order_method || "direct"
-          });
-        });
 
-        // Sort chronologically (oldest to newest for clinical charting)
-        compiledOrders.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        if (orderId) {
+          // Fetch single order
+          const oDoc = await getDoc(doc(db, "organizations", organization.id, "patients", params.id, "provider_orders", orderId));
+          if (oDoc.exists()) {
+            const data = oDoc.data();
+            compiledOrders.push({
+              id: oDoc.id,
+              order_type: data.order_type || "other",
+              order_text: data.order_text || "",
+              ordering_physician_name: data.ordering_physician_name || "Attending Physician",
+              status: data.status || "",
+              created_at: data.created_at || new Date().toISOString(),
+              signed_at: data.signed_at || "",
+              order_method: data.order_method || "direct"
+            });
+          }
+        } else {
+          // 2. Query All Active / Signed / Acknowledged Orders (status !== 'draft')
+          const ordersRef = collection(db, "organizations", organization.id, "patients", params.id, "provider_orders");
+          const q = query(
+            ordersRef,
+            where("status", "!=", "draft")
+          );
+          
+          const snapshot = await getDocs(q);
+          
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            compiledOrders.push({
+              id: doc.id,
+              order_type: data.order_type || "other",
+              order_text: data.order_text || "",
+              ordering_physician_name: data.ordering_physician_name || "Attending Physician",
+              status: data.status || "",
+              created_at: data.created_at || new Date().toISOString(),
+              signed_at: data.signed_at || "",
+              order_method: data.order_method || "direct"
+            });
+          });
+
+          // Sort chronologically (oldest to newest for clinical charting)
+          compiledOrders.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        }
         
         setOrders(compiledOrders);
       } catch (err) {
@@ -103,7 +122,7 @@ export default function PhysicianOrderPrintPage() {
       }
     }
     loadPrintData();
-  }, [organization, params.id, authLoading]);
+  }, [organization, params.id, authLoading, orderId]);
 
   if (authLoading) return <div className="p-8 text-xs font-mono">Authenticating Session...</div>;
   if (!organization) return <div className="p-8 text-xs font-mono text-red-500">Error: Unauthorized or Organization Not Found.</div>;
@@ -115,8 +134,10 @@ export default function PhysicianOrderPrintPage() {
       {/* Print Control Header Bar */}
       <div className="no-print mb-6 flex justify-between items-center bg-slate-900 text-white p-4 rounded-2xl">
         <div>
-          <h1 className="text-sm font-bold tracking-wider uppercase text-teal-400">Physician Order Sheet Print Ready</h1>
-          <p className="text-xs text-slate-400 font-light">Optimized for landscape/portrait medical chart files.</p>
+          <h1 className="text-sm font-bold tracking-wider uppercase text-teal-400">
+            {orderId ? "Physician Single Order Sheet Print Ready" : "Physician Order Sheet Print Ready"}
+          </h1>
+          <p className="text-xs text-slate-400 font-light font-mono">Optimized for landscape/portrait medical chart files.</p>
         </div>
         <button 
           type="button"
@@ -203,7 +224,7 @@ export default function PhysicianOrderPrintPage() {
           ))}
 
           {/* Section B: Automated Blank Order Template for Handwriting */}
-          {Array.from({ length: 3 }).map((_, idx) => (
+          {!orderId && Array.from({ length: 3 }).map((_, idx) => (
             <tr key={`blank-order-${idx}`} className="h-16 break-inside-avoid text-slate-400">
               <td className="border border-black p-2 font-mono text-[9px] align-bottom text-slate-400">
                 ____/____/________
@@ -286,5 +307,13 @@ export default function PhysicianOrderPrintPage() {
       `}} />
 
     </div>
+  );
+}
+
+export default function PhysicianOrderPrintPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-xs font-mono">Loading Print Template...</div>}>
+      <PhysicianOrderPrintContent />
+    </Suspense>
   );
 }

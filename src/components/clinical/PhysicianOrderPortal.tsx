@@ -1372,6 +1372,15 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         <ShieldCheck size={10} className="text-quro-teal" />
                         Sign Now
                       </button>
+                      <a
+                        href={`/patients/${patientId}/orders/print?orderId=${order.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Printer size={12} className="text-slate-400" />
+                        Print
+                      </a>
                     </>
                   ) : (
                     <>
@@ -1394,6 +1403,15 @@ export default function PhysicianOrderPortal({ patientId }: Props) {
                         </svg>
                         Edit Order
                       </button>
+                      <a
+                        href={`/patients/${patientId}/orders/print?orderId=${order.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Printer size={12} className="text-slate-400" />
+                        Print
+                      </a>
                     </>
                   )}
                 </div>
