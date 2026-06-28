@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Plus,
   ChevronRight,
+  ChevronDown,
   Clock,
   TrendingUp,
   Brain,
@@ -138,6 +139,7 @@ export default function PatientChartPage() {
   const [activeTab, setActiveTab] = useState<'facesheet' | 'medications' | 'mar' | 'vitals' | 'treatments' | 'respiratory' | 'enteral' | 'orders' | 'charting' | 'careplan' | 'trends' | 'compliance' | 'handoff'>('facesheet');
   const [printBlank, setPrintBlank] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showMarPrintDropdown, setShowMarPrintDropdown] = useState(false);
   const [showDelayReasonModal, setShowDelayReasonModal] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
   const [showEffectivenessModal, setShowEffectivenessModal] = useState(false);
@@ -639,13 +641,65 @@ export default function PatientChartPage() {
         </button>
 
         <div className="flex gap-4">
-          <button 
-            onClick={handlePrint}
-            className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
-          >
-            <Printer size={16} />
-            Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'mar' ? 'MAR' : activeTab === 'handoff' ? 'Handoff Log' : activeTab === 'charting' ? 'SIFF' : 'Medication List'}
-          </button>
+          {activeTab === 'mar' ? (
+            <div className="relative">
+              <button 
+                onClick={() => setShowMarPrintDropdown(!showMarPrintDropdown)}
+                className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 cursor-pointer"
+              >
+                <Printer size={16} />
+                Print MAR <ChevronDown size={14} />
+              </button>
+              {showMarPrintDropdown && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setShowMarPrintDropdown(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-100 rounded-2xl shadow-xl z-40 py-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button
+                      onClick={() => {
+                        window.open(`/patients/${id}/mar/print`, '_blank');
+                        setShowMarPrintDropdown(false);
+                      }}
+                      className="w-full text-left px-5 py-3 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <Printer size={14} className="text-slate-400" />
+                      Print Surveyor MAR/TAR (Prefilled)
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`/patients/${id}/mar/print?blank=true`, '_blank');
+                        setShowMarPrintDropdown(false);
+                      }}
+                      className="w-full text-left px-5 py-3 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
+                    >
+                      <Printer size={14} className="text-slate-400" />
+                      Print Blank MAR (Patient Info)
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`/patients/${id}/mar/print?blank=true&template=true`, '_blank');
+                        setShowMarPrintDropdown(false);
+                      }}
+                      className="w-full text-left px-5 py-3 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <Printer size={14} className="text-slate-400" />
+                      Print Blank MAR (Completely Blank)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <button 
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+            >
+              <Printer size={16} />
+              Print {activeTab === 'facesheet' ? 'Facesheet' : activeTab === 'handoff' ? 'Handoff Log' : activeTab === 'charting' ? 'SIFF' : 'Medication List'}
+            </button>
+          )}
         </div>
       </div>
 

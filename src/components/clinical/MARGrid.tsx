@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Check, 
   Pill,
-  Printer
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import { useMedications } from '@/hooks/useMedications';
 import { useMAR } from '@/hooks/useMAR';
@@ -33,6 +34,7 @@ export default function MARGrid({ patientId }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const currentYear = new Date().getFullYear();
   const [logging, setLogging] = useState<{ medId: string, date: string, time: string } | null>(null);
+  const [showPrintDropdown, setShowPrintDropdown] = useState(false);
 
   // Isolated states for psychotropic compliance logs prompt modal
   const [activeCell, setActiveCell] = useState<{
@@ -131,13 +133,58 @@ export default function MARGrid({ patientId }: Props) {
             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /> Refused</div>
             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> Held</div>
           </div>
-          <button 
-            type="button"
-            onClick={() => window.open(`/patients/${patientId}/mar/print`, '_blank')}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all shadow-md shadow-slate-950/20 cursor-pointer"
-          >
-            <Printer size={12} /> Print Surveyor MAR/TAR
-          </button>
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => setShowPrintDropdown(!showPrintDropdown)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all shadow-md shadow-slate-950/20 cursor-pointer"
+            >
+              <Printer size={12} /> Print Options <ChevronDown size={10} />
+            </button>
+            {showPrintDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-30" 
+                  onClick={() => setShowPrintDropdown(false)}
+                />
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-100 rounded-xl shadow-xl z-40 py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(`/patients/${patientId}/mar/print`, '_blank');
+                      setShowPrintDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <Printer size={12} className="text-slate-400" />
+                    Print Surveyor MAR/TAR (Prefilled)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(`/patients/${patientId}/mar/print?blank=true`, '_blank');
+                      setShowPrintDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
+                  >
+                    <Printer size={12} className="text-slate-400" />
+                    Print Blank MAR (Patient Info)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(`/patients/${patientId}/mar/print?blank=true&template=true`, '_blank');
+                      setShowPrintDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <Printer size={12} className="text-slate-400" />
+                    Print Blank MAR (Completely Blank)
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,13 +1,9 @@
-// ============================================================
-// Quro — Surveyor-Grade MAR & TAR Double-Sided Print Engine
-// Configuration: Landscape Letter Layout with Combined MAR/TAR Matrix & Vitals Back copy
-// ============================================================
 "use client";
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,9 +45,14 @@ function deriveTitle(data: any): string {
   return "Unspecified Order";
 }
 
-export default function MarTarPrintPage() {
+function MarTarPrintContent() {
   const params = useParams() as { id: string };
   const { organization, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  
+  const isBlank = searchParams.get("blank") === "true";
+  const isTemplate = searchParams.get("template") === "true";
+  const isBlankMode = isBlank || isTemplate;
   
   const [patient, setPatient] = useState<any>(null);
   const [medications, setMedications] = useState<ProjectedOrder[]>([]);
@@ -77,7 +78,31 @@ export default function MarTarPrintPage() {
         return;
       }
       
-      console.log("[MAR Print Engine] Loading print data for:", { orgId: organization.id, patientId: params.id });
+      console.log("[MAR Print Engine] Loading print data for:", { orgId: organization.id, patientId: params.id, isBlankMode, isTemplate });
+      
+      if (isTemplate) {
+        setPatient(null);
+        setMedications([]);
+        setTreatments([]);
+        setLoading(false);
+        return;
+      }
+
+      if (isBlank) {
+        try {
+          const pDoc = await getDoc(doc(db, "organizations", organization.id, "patients", params.id));
+          if (pDoc.exists()) {
+            setPatient({ id: pDoc.id, ...pDoc.data() });
+          }
+          setMedications([]);
+          setTreatments([]);
+        } catch (err) {
+          console.error("Print pre-render query fault:", err);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
       
       try {
         // 1. Fetch Patient Record dynamically
@@ -152,10 +177,10 @@ export default function MarTarPrintPage() {
       }
     }
     loadPrintData();
-  }, [organization, params.id, authLoading]);
+  }, [organization, params.id, authLoading, isBlank, isTemplate, isBlankMode]);
 
   if (authLoading) return <div className="p-8 text-xs font-mono">Authenticating Session...</div>;
-  if (!organization) return <div className="p-8 text-xs font-mono text-red-500">Error: Unauthorized or Organization Not Found.</div>;
+  if (!organization && !isTemplate) return <div className="p-8 text-xs font-mono text-red-500">Error: Unauthorized or Organization Not Found.</div>;
   if (loading) return <div className="p-8 text-xs font-mono">Compiling Document Layout...</div>;
 
   // Combine medications and treatments for unified layout
@@ -191,13 +216,13 @@ export default function MarTarPrintPage() {
   }
 
   // Format Patient Info Fallbacks for Footer
-  const patientName = patient ? `${patient.last_name || ""}, ${patient.first_name || ""}`.trim() : "Loading...";
-  const patientRoom = patient?.room_number || "TBD";
-  const patientMrn = patient?.mrn || "TBD";
-  const attendingPhysician = patient?.attending_physician || "Dr. Singhal";
+  const attendingPhysician = isTemplate ? "_________________" : (patient?.attending_physician || "Dr. Singhal");
+  const patientName = isTemplate ? "__________________________________" : (patient ? `${patient.last_name || ""}, ${patient.first_name || ""}`.trim() : "Loading...");
+  const patientRoom = isTemplate ? "________" : (patient?.room_number || "TBD");
+  const patientMrn = isTemplate ? "________" : (patient?.mrn || "TBD");
   
-  let patientDobFormatted = "TBD";
-  if (patient?.date_of_birth) {
+  let patientDobFormatted = isTemplate ? "________" : "TBD";
+  if (!isTemplate && patient?.date_of_birth) {
     try {
       const d = new Date(patient.date_of_birth);
       if (!isNaN(d.getTime())) {
@@ -206,13 +231,13 @@ export default function MarTarPrintPage() {
     } catch {}
   }
 
-  let patientGender = "F";
-  if (patient?.gender) {
+  let patientGender = isTemplate ? "___" : "F";
+  if (!isTemplate && patient?.gender) {
     patientGender = patient.gender.charAt(0).toUpperCase();
   }
 
-  let admitDate = "02/05/2026";
-  if (patient?.admission_date) {
+  let admitDate = isTemplate ? "________" : "02/05/2026";
+  if (!isTemplate && patient?.admission_date) {
     try {
       const d = new Date(patient.admission_date);
       if (!isNaN(d.getTime())) {
@@ -221,17 +246,17 @@ export default function MarTarPrintPage() {
     } catch {}
   }
 
-  let patientAllergiesFormatted = "NKDA";
-  if (patient?.allergies && patient.allergies.length > 0) {
+  let patientAllergiesFormatted = isTemplate ? "________________________" : "NKDA";
+  if (!isTemplate && patient?.allergies && patient.allergies.length > 0) {
     patientAllergiesFormatted = patient.allergies.join(", ");
   }
 
-  let patientDiagnoses = "FAILURE TO THRIVE, ANXIETY";
-  if (patient?.diagnoses && patient.diagnoses.length > 0) {
+  let patientDiagnoses = isTemplate ? "________________________________________________" : "FAILURE TO THRIVE, ANXIETY";
+  if (!isTemplate && patient?.diagnoses && patient.diagnoses.length > 0) {
     patientDiagnoses = patient.diagnoses.join(", ").toUpperCase();
   }
 
-  const pharmacyName = patient?.pharmacy_info?.name?.toUpperCase() || "MEDICNE SHOPPE";
+  const pharmacyName = isTemplate ? "________________________" : (patient?.pharmacy_info?.name?.toUpperCase() || "MEDICNE SHOPPE");
 
   return (
     <div className="p-4 bg-white text-black min-h-screen">
@@ -263,7 +288,7 @@ export default function MarTarPrintPage() {
               {/* Header Title Grid */}
               <div className="flex justify-between items-center mb-2 bg-[#0284c7] text-white p-2 rounded text-[11px] font-black uppercase tracking-widest">
                 <span>Medication & Treatment Administration Record (MAR/TAR)</span>
-                <span>{currentMonthName} {currentYear} • Front Copy — Page {pageIdx + 1} of {pages.length}</span>
+                <span>{isTemplate ? "BLANK TEMPLATE" : `${currentMonthName} ${currentYear} • Front Copy — Page ${pageIdx + 1} of ${pages.length}`}</span>
               </div>
 
               {/* Grid Table */}
@@ -321,8 +346,8 @@ export default function MarTarPrintPage() {
                     );
                   })}
 
-                  {/* Render Handwriting Templates on the Last Page */}
-                  {isLastPage && Array.from({ length: 3 }).map((_, idx) => (
+                  {/* Render Handwriting Templates on the Last Page (fill up to 6 total slots) */}
+                  {isLastPage && Array.from({ length: 6 - pageRecords.length }).map((_, idx) => (
                     <React.Fragment key={`blank-template-${idx}`}>
                       {Array.from({ length: 4 }).map((_, rowIndex) => (
                         <tr key={`blank-template-${idx}-${rowIndex}`} className="h-5 break-inside-avoid">
@@ -408,7 +433,7 @@ export default function MarTarPrintPage() {
                   </div>
                   <div className="col-span-1 p-1 flex flex-col justify-between text-center">
                     <span className="text-[7.5px] text-slate-400">Month/Year</span>
-                    <span className="font-black text-slate-800">{currentMonthName} {currentYear}</span>
+                    <span className="font-black text-slate-800">{isTemplate ? "________" : `${currentMonthName} ${currentYear}`}</span>
                   </div>
                 </div>
               </div>
@@ -512,7 +537,7 @@ export default function MarTarPrintPage() {
               {/* Back Page Resident Identifier Footer (HIPAA Compliant safety anchor) */}
               <div className="absolute bottom-0 left-0 right-0 border-t border-slate-300 pt-1 flex justify-between items-center text-[9px] uppercase font-mono tracking-widest text-slate-400 bg-white">
                 <span>Resident: {patientName} • MRN: {patientMrn} • Room: {patientRoom}</span>
-                <span>Back Page copy — Page {pageIdx + 1} of {pages.length}</span>
+                <span>{isTemplate ? "Back Page copy — Blank Template" : `Back Page copy — Page ${pageIdx + 1} of ${pages.length}`}</span>
               </div>
             </div>
 
@@ -589,5 +614,13 @@ export default function MarTarPrintPage() {
       `}} />
 
     </div>
+  );
+}
+
+export default function MarTarPrintPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-xs font-mono">Loading Print Template...</div>}>
+      <MarTarPrintContent />
+    </Suspense>
   );
 }
